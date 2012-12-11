@@ -1,0 +1,697 @@
+#+title: Chapter 12 : Higher Order Recursion
+
+* <<introduction>>
+
+In this chapter we continue the study of higher order recursion, with emphasis on third and fourth order recursion. The style of this chapter resembles that of Chapter 8 in that toy programs are used to illustrate techniques. There are two programs which use third order recursion to do without internal code what normally is done with internal code.
+
+* Third order recursion
+
+In the literature there are hardly any examples of procedures which take as parameters procedures which in turn take procedures as parameters. I only know of one example, due to Steengaard-Masden (1981), in which he uses such a technique for information hiding. The program below is adapted from his paper (p 1334); its sole output is the sequence of numbers =33 22 11\equal1= from procedure =demo=. The point of using the method at all is to hide the variables =s= and =ptr=, the stack and its top of stack pointer, in procedure =stack-implementation=, so that they cannot be inadvertently corrupted by =main= or by =demo=. Observe that procedure =demo= uses readable names for the stack operations =new=, =empty=, =push=, =pop= and =top=. Observe also that the corresponding local procedures inside the stack implementation procedure have cryptic names, and that the parameter procedures to the formal parameter of the stack implementation procedure are even more cryptic. This is intentional --- the user of the stack implementation procedure need not know the names of its parameters or its local variables and procedures.
+
+#+begin_src pascal
+PROGRAM stackmodule(output);
+
+  PROCEDURE stack_implementation
+        (PROCEDURE cp
+                  (PROCEDURE n;
+                   FUNCTION e : boolean;
+                   PROCEDURE p1(n : integer);
+                   PROCEDURE p2;
+                   FUNCTION t : integer));
+
+VAR s : ARRAY[0..20] OF integer; ptr : integer;
+
+    PROCEDURE nw; BEGIN ptr := 0 END;
+    FUNCTION em : boolean; BEGIN em := ptr = 0 END;
+    PROCEDURE psh(n : integer); BEGIN ptr := ptr + 1; s[ptr] := n END;
+    PROCEDURE pp; BEGIN ptr := ptr - 1 END;
+    FUNCTION tp : integer; BEGIN tp := s[ptr] END;
+
+BEGIN (* stack_implementation *)
+  cp(nw,em,psh,pp,tp)
+END; (* stack_implementation *)
+
+PROCEDURE demo(PROCEDURE new;
+               FUNCTION empty : boolean;
+               PROCEDURE push(n : integer);
+               PROCEDURE pop;
+               FUNCTION top : integer);
+
+BEGIN (* demo *)
+  new; push(11); push(22); push(33);
+WHILE NOT empty DO
+    BEGIN write(top); pop END
+END; (* demo *)
+
+BEGIN (* main *)
+stack_implementation(demo)
+END. (* main *)
+#+end_src
+<P>
+But note that there is no recursion in this program;
+in what follows we shall only be concerned with
+third order procedures which are recursive
+in an interesting way.
+** An example of third order recursion
+<P>
+The following program again reads lines of what will be
+digit characters.
+For each line
+that it has read it will write on one line six lots of characters:
+the digits forward,
+their uppercase letter counterpart backward,
+the lowercase letter counterpart forward,
+the lowercase letter counterpart backward,
+the uppercase letter counterpart forward,
+the digits backward.
+Between any two lots of characters there is a separating space.
+Note again that as for several programs in Chapter 8
+there is no explicit array and there are no linked structures
+to save the input line.
+Every character of the input line
+is saved in the single local variable =ch=
+on the run time stack.
+Since there are six lots of printing characters,
+there are five occurrences of the separating space.
+In the program, these five occurrences have been commented
+with =(* 1 *)= = .. = =(* 5 *)=.
+The forward and backward sequencing of characters is also commented.
+#+begin_src pascal
+PROGRAM third_order_recursion(input,output);
+
+PROCEDURE spacing;
+BEGIN write('    ') END;
+
+PROCEDURE spacedcall(PROCEDURE c);
+BEGIN
+spacing;                (* 2 *)
+c;
+spacing                 (* 4 *)
+END; (* spacedcall *)
+
+PROCEDURE recurse(PROCEDURE cp(PROCEDURE c); PROCEDURE ccp);
+VAR ch : char;
+
+    PROCEDURE local(PROCEDURE c);
+
+        PROCEDURE locallocal;
+        BEGIN                                    (* lower case *)
+        write(chr(ord(ch) + ord('a') - ord('0'))); (* forward  *)
+        c;      (* when c = spacing, 3 *)
+        write(chr(ord(ch) + ord('a') - ord('0')))  (* backward *)
+        END; (* locallocal *)
+
+    BEGIN (* local *)                        (* upper case *)
+    write(chr(ord(ch) + ord('A') - ord('0'))); (* backward *)
+    cp(locallocal);
+    write(chr(ord(ch) + ord('A') - ord('0')))  (* forward  *)
+    END; (* local *)
+
+BEGIN (* recurse *)
+IF eoln THEN
+    BEGIN
+    ccp;                        (* 1 *)
+    cp(ccp);
+    ccp                         (* 5 *)
+    END
+  ELSE
+    BEGIN                       (* digit    *)
+    read(ch);
+    write(ch);                  (* forward  *)
+    recurse(local,ccp);
+    write(ch)                   (* backward *)
+    END
+END; (* recurse *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN recurse(spacedcall,spacing); writeln; readln END
+END. (* main *)
+#+end_src
+<P>
+Again note that there is only one variable,
+local to procedure =recurse=.
+It is accessed directly in procedure =recurse=
+for reading and writing the digits,
+it is accessed indirectly by one step through the static chain
+or its equivalent in procedure =local=
+for writing the upper case letters,
+and it is accessed indirectly by two steps through the static chain
+or its equivalent in procedure =locallocal=
+for writing the lower case letters.
+The program is only useful as a skeleton for studying access
+into the recursion stack.
+** Partitioning numbers again
+<P>
+The previous program structure lends itself to writing a program
+which again will read lines of numbers and
+write them out on one line, partitioned into three lots:
+those which after division by 3 leave a remainder of 0, 1 or 2.
+Within each lot the original order is preserved.
+#+begin_src pascal
+PROGRAM partition3(input,output);
+
+PROCEDURE writespace;
+BEGIN write('    ') END;
+
+PROCEDURE writespace_call(PROCEDURE c);
+BEGIN writespace; c END;
+
+PROCEDURE rem0(PROCEDURE cp(PROCEDURE c); PROCEDURE ccp);
+VAR n : integer;
+
+    PROCEDURE rem1(PROCEDURE c);
+
+        PROCEDURE rem2;
+        BEGIN write(n:0,' '); c END;
+
+    BEGIN (* rem1 *)
+    IF n MOD 3 = 1 THEN cp(rem2) ELSE
+        BEGIN cp(c); write(n:0,' ') END
+    END; (* rem1 *)
+
+BEGIN (* rem0 *)
+IF eoln THEN cp(ccp) ELSE
+    BEGIN
+    read(n);
+    IF n MOD 3 = 0
+        THEN BEGIN write(n:0,' '); rem0(cp,ccp) END
+        ELSE rem0(rem1,ccp)
+    END
+END; (* rem0 *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN rem0(writespace_call,writespace); writeln; readln END
+END. (* main *)
+#+end_src
+<P>
+** Infix to prefix translation
+<P>
+Translations between prefix, infix and postfix notations
+for arithmetical, logical or any other expressions
+fall into two groups:
+1) those in which operators have to be shifted to the right,
+as in prefix to infix, prefix to postfix, and infix to postfix,
+and 2) those in which operators have to be shifted to the left,
+as in postfix to infix, infix to prefix, and postfix to prefix.
+Translations of the first kind can be done on the fly
+by a recursive descent translator, no intermediate
+representation is necessary.
+By contrast, for translations of the second kind
+the normal practice would be to produce an internal intermediate
+code representation, and then to translate that into the desired form.
+For example, binary trees are an excellent intermediate form.
+But there is a way of doing it which avoids any explicit
+intermediate representation.
+<P>
+The program to be written next
+repeatedly reads formulas of propositional
+logic in infix notation and translates them into prefix notation;
+the two notations are in accordance
+with the translation grammar:
+#+begin_src pascal
+INFIX                                   PREFIX
+formula ::=                             formula ::=
+    'a' .. 'z'                              'a' .. 'z'
+  | '-' formula                           | 'N' formula
+  | '(' formula1 '&' formula2 ')'         | 'K' formula1 formula2
+  | '(' formula1 'v' formula2 ')'         | 'A' formula1 formula2
+  | '(' formula1 '>' formula2 ')'         | 'C' formula1 formula2
+  | '(' formula1 '=' formula2 ')'         | 'E' formula1 formula2
+#+end_src
+The conventional way would be to write a recursive descent
+parser for the infix grammar, augmented to produce a binary
+tree as an internal representation,
+and upon completing the parsing to do a pre-order traversal
+of the tree to generate the prefix translation.
+The program to be written avoids the need for
+an explicit internal representation.
+Instead it uses continuations to continuations
+to produce the prefix.
+<P>
+In order to model a parser on a grammar,
+it is necessary to design a grammar that is suitable
+for a particular parsing technique.
+For recursive descent one would use the first grammar,
+for what might be called /recursive continuation parsing/
+we shall use the second grammar.
+As the first grammar shows,
+the language can be specified using just one non-terminal,
+but the second grammar uses three:
+=formula=, =rest= and =right-parenthesis=.
+Obviously both grammars can be used for recursive descent,
+but for recursive continuation parsing something like the second grammar is mandatory.
+#+begin_src pascal
+GRAMMAR-1                           GRAMMAR-2
+formula ::=                         formula ::=
+    'a' .. 'z'                          'a' .. 'z'
+  | '-' formula                       | '-' formula
+  | '(' formula                       | '(' formula rest.
+    ('&' | 'v' | '>' | '=')         rest ::=
+    formula ')'.                        ('&' | 'v' | '>' | '=')
+                                        formula
+                                        right_parenthesis.
+                                    right-parenthesis ::=
+                                        ')'.
+#+end_src
+Note that in =GRAMMAR-2=
+the right hand sides of the productions contain several instances
+of two adjacent non-terminals.
+In a recursive continuation parser the first of them becomes
+a call to a parsing procedure,
+and the second one is passed on as a continuation parameter.
+As with recursive descent,
+when the writing of the parser is completed,
+then appropriate further procedures are added for
+the translation.
+The resulting program is this:
+#+begin_src pascal
+PROGRAM infix_to_prefix(input,output);
+
+LABEL 1, 99;
+
+TYPE
+    message = PACKED ARRAY [1..30] OF char;
+
+PROCEDURE starttranslating(PROCEDURE emit_whole_formula);
+BEGIN write('Prefix : '); emit_whole_formula END;
+
+PROCEDURE infix(PROCEDURE cp(PROCEDURE c));
+VAR ch : char;
+
+    PROCEDURE getch;
+    BEGIN (* getch *)
+    REPEAT
+        IF eof THEN GOTO 99;
+        read(ch)
+        UNTIL ch > ' '
+    END; (* getch *)
+
+    PROCEDURE error(mes : message);
+    BEGIN (* error *)
+    writeln('  ERROR : seen "',ch,'" when ',mes);
+    readln;
+    GOTO 1
+    END; (* error *)
+
+    PROCEDURE emit_atomic_formula;
+    BEGIN write(ch) END;
+
+    PROCEDURE savenegation(PROCEDURE emit_negand);
+
+        PROCEDURE emit_negated_formula;
+        BEGIN write('N'); emit_negand END;
+
+    BEGIN cp(emit_negated_formula) END; (* savenegation *)
+
+    PROCEDURE save_first(PROCEDURE emit_first);
+    VAR op : char;
+
+        PROCEDURE check_right_parenthesis(PROCEDURE emit_second);
+
+            PROCEDURE emit_binary_formula;
+            BEGIN write(op); emit_first; emit_second END;
+
+        BEGIN (* check_right_parenthesis *)
+        getch;
+        IF ch &lt;> ')' THEN
+            error('")" expected                  ');
+        cp(emit_binary_formula)
+        END; (* check_right_parenthesis *)
+
+    BEGIN (* save_first *)
+    getch;
+    IF NOT (ch IN ['&','v','>','=']) THEN
+        error('"&","v",">" or "=" expected   ');
+    CASE ch OF
+        '&' : op := 'K';
+        'v' : op := 'A';
+        '>' : op := 'C';
+        '=' : op := 'E'
+        END; (* CASE *)
+    infix(check_right_parenthesis)
+    END; (* save_first *)
+
+BEGIN (* infix *)
+getch;
+CASE ch OF
+    'a'..'z' : cp(emit_atomic_formula);
+    '-'      : infix(savenegation);
+    '('      : infix(save_first);
+    OTHERWISE  error('start of formula expected     ');
+    END (* CASE *)
+END; (* infix *)
+
+BEGIN (* main *)
+1: REPEAT
+    write('Infix  : ');
+    infix(starttranslating);
+    writeln
+    UNTIL false;
+99:
+END.
+#+end_src
+<P>
+Note again that this program manages translation from
+infix to prefix without any explicit intermediate representation.
+* A truth table program
+
+This section contains the design of a still quite short program which also uses third order recursion.  It differs from the previous one in that the grammar of the input language is more complex, and in that the continuation procedures which take the place of an internal code representation are actually called many times.  The program will repeatedly 1) read formulas in propositional logic written in minimally parenthesised infix notation with conventional operator precedences, and 2) for each formula read the program will produce a truth table, consisting of a header line containing the atoms and for each combination of truth values of the atoms a line of the truth values of the atoms and one value for the main formula.  The values of subformulas are not written out; this could be done with conventional techniques and perhaps it could also be done with further continuation passing techniques --- but these are not explored here.
+
+The conventional way of writing a truth table program would be to write a recursive descent parser, augmented to generate an internal representation.  That internal representation would be traversed repeatedly, once for each line of the truth table.  The most likely choice for an internal representation would be postfix code because it is the most efficient to evaluate, but tree code is another possible choice.  But do note that whatever the internal code, it has to be interpreted for each of the operators.  The program to be designed now avoids the need for an internal representation and avoids the need for the decoding of that code.
+
+The design of the program follows the structure of specification given earlier: 1) recursive procedures are to be written for reading formulas and detecting any errors, and 2) the procedures are to be augmented to produce the truth table.  In a normal recursive descent parser, the procedures for reading formulas would have the same structure as the non-terminals of the input grammar.  The same is true for a recursive continuation parser, though the input grammar has to be rewritten somewhat.  The two grammars below give the details; the grammar on the left is most suitable for recursive descent, the grammar on the right is suitable for recursive continuation parsing.
+
+#+begin_src pascal
+GRAMMAR-1                               GRAMMAR-2
+
+ input  ::=                              input  ::=
+    formula '.'                             formula period
+                                        period  ::=
+                                            '.'
+formula  ::=                            formula  ::=
+    expression [ ('=' | '>') formula ]      expression formula2
+                                        formula2  ::=
+                                            { ('=' | '>') formula2 }
+expression  ::=                         expression  ::=
+    term [ 'v' term ]                       term expression2
+                                        expression2  ::=
+                                            { 'v' expression }
+term ::=                                term  ::=
+    factor [ '&' factor ]                   factor term2
+                                        term2  ::=
+                                            { '&' term }
+factor  ::=                             factor  ::=
+    'a' .. 'z'                              'a' .. 'z'
+  | '-' factor                            | '-' factor
+  | '(' formula ')'                       | '(' formula rparen
+                                        rparen  ::=
+                                            ')'
+#+end_src
+
+
+In recursive descent parsers and translators it is essential that each parsing procedure can /see/ any other parsing procedures that it needs to call.  There are two ways of achieving this: 1) by making all parsing procedures global, and giving forward declarations where necessary, or 2) by nesting.  Nesting is often preferred as a matter of style, but for recursive continuation parsing it becomes a necessity.  The visibility requirements are satisfied by the following block structure:
+
+#+begin_src pascal
+PROCEDURE check_period
+PROCEDURE parse_formula
+    PROCEDURE parse_expression
+        PROCEDURE parse_term
+            PROCEDURE parse_factor
+                PROCEDURE check_right_parenthesis
+            PROCEDURE parse_term2
+        PROCEDURE parse_expression2
+    PROCEDURE parse_formula2
+#+end_src
+
+The procedures for parsing formulas, expressions, terms and factors correspond to the non-terminals of the original grammar, and they all take a continuation procedure as a parameter.  The procedures for parsing the second parts of formulas, expressions and terms, and those for checking right parentheses and final period, are local and are passed on as continuations.  Note that the error procedure does not contain an escape =GOTO=, this is possible because all calls to it also prevent the execution of outstanding continuations, and hence any outstanding returns can perform normally --- it just so happens that there is never anything to do upon return.
+
+The program is as follows:
+
+#+begin_src pascal
+PROGRAM truthtable_with_cont(input,output);
+
+LABEL 99;
+
+TYPE
+    message = PACKED ARRAY[1..20] OF char;
+
+VAR
+    ch : char;
+    occurrences, truevars : SET OF 'a'..'z';
+
+PROCEDURE getch;
+BEGIN
+REPEAT
+    IF eof THEN GOTO 99;
+    read(ch)
+    UNTIL ch > ' '
+END; (* getch *)
+
+PROCEDURE error(mes : message);
+BEGIN
+writeln('ERROR: seen "',ch,'" when ',mes);
+readln
+END; (* error *)
+
+PROCEDURE check_period
+    (FUNCTION main_formula : boolean);
+
+    PROCEDURE table(c : char);
+    VAR c0 : char;
+    BEGIN (* table *)
+    WHILE NOT (c IN occurrences) DO c := succ(c);
+    IF c > 'z' THEN
+        BEGIN
+        FOR c0 := 'a' TO 'z' DO
+            IF c0 IN occurrences THEN
+                write(ord(c0 IN truevars):1,' ');
+        writeln('    ',ord(main_formula):1)
+        END
+      ELSE
+        BEGIN
+        truevars := truevars + [c]; table(succ(c));
+        truevars := truevars - [c]; table(succ(c))
+        END
+    END; (* table *)
+
+VAR c : char;
+BEGIN
+IF ch &lt;> '.' THEN error('"." expected        ');
+FOR c := 'a' TO 'z' DO
+    IF c IN occurrences THEN write(c,' ');
+writeln;
+truevars := [];
+table('a')
+END; (* check_period *)
+
+PROCEDURE parse_formula
+    (PROCEDURE cp(FUNCTION val : boolean));
+
+    PROCEDURE parse_expression
+        (PROCEDURE cp(FUNCTION val : boolean));
+
+        PROCEDURE parse_term
+            (PROCEDURE cp(FUNCTION val : boolean));
+
+            PROCEDURE parse_factor
+                (PROCEDURE cp(FUNCTION val : boolean));
+            VAR at : char;
+
+                PROCEDURE check_right_parenthesis
+                    (FUNCTION val : boolean);
+                BEGIN (* check_right_parenthesis *)
+                IF ch &lt;> ')' THEN error('")" expected        ') ELSE
+                    BEGIN getch; cp(val) END
+                END; (* check_right_parenthesis *)
+
+                FUNCTION val_atom : boolean;
+                BEGIN val_atom := at IN truevars END;
+
+                PROCEDURE save_negation
+                    (FUNCTION val : boolean);
+
+                    FUNCTION val_negation : boolean;
+                    BEGIN val_negation := NOT val END;
+
+                BEGIN (* save_negation *)
+                cp(val_negation)
+                END; (* save_negation *)
+
+            BEGIN (* parse_factor *)
+            CASE ch OF
+                'a'..'z' :
+                    BEGIN
+                    at := ch; occurrences := occurrences + [ch];
+                    getch; cp(val_atom)
+                    END;
+                '-' :
+                    BEGIN getch; parse_factor(save_negation) END;
+                '(' :
+                    BEGIN
+                    getch;
+                    parse_formula(check_right_parenthesis)
+                    END;
+                OTHERWISE
+                    error('factor expected     ')
+                END (* CASE *)
+            END; (* parse_factor *)
+
+            PROCEDURE parse_term2
+                (FUNCTION val_left : boolean);
+
+                PROCEDURE save_conj
+                    (FUNCTION val_right : boolean);
+
+                    FUNCTION val_conj : boolean;
+                    BEGIN val_conj := val_left AND val_right END;
+
+                BEGIN (* save_conj *)
+                cp(val_conj)
+                END; (* save_conj *)
+
+            BEGIN (* parse_term2 *)
+            IF ch = '&' THEN
+                BEGIN getch; parse_term(save_conj) END
+            ELSE cp(val_left)
+            END; (* parse_term2 *)
+
+        BEGIN (* parse_term *)
+        parse_factor(parse_term2)
+        END; (* parse_term *)
+
+        PROCEDURE parse_expression2
+            (FUNCTION val_left : boolean);
+
+            PROCEDURE save_disj
+                (FUNCTION val_right : boolean);
+
+                FUNCTION val_disj : boolean;
+                BEGIN val_disj := val_left OR val_right END;
+
+            BEGIN (* save_disj *)
+            cp(val_disj)
+            END; (* save_disj *)
+
+        BEGIN (* parse_expression2 *)
+        IF ch IN ['v','#'] THEN
+            BEGIN getch; parse_expression(save_disj) END
+        ELSE cp(val_left)
+        END; (* parse_expression2 *)
+
+    BEGIN (* parse_expression *)
+    parse_term(parse_expression2)
+    END; (* parse_expression *)
+
+    PROCEDURE parse_formula2
+        (FUNCTION val_left : boolean);
+
+        PROCEDURE save_conditional
+            (FUNCTION val_right : boolean);
+
+            FUNCTION val_conditional : boolean;
+            BEGIN val_conditional := val_left &lt;= val_right END;
+
+        BEGIN (* save_conditional *)
+        cp(val_conditional)
+        END; (* save_conditional *)
+
+        PROCEDURE save_equivalence
+            (FUNCTION val_right : boolean);
+
+            FUNCTION val_equivalence : boolean;
+            BEGIN val_equivalence := val_left = val_right END;
+
+        BEGIN (* save_equivalence *)
+        cp(val_equivalence)
+        END; (* save_equicvalence *)
+
+    BEGIN (* parse_formula2 *)
+    IF ch = '>' THEN
+        BEGIN getch; parse_formula(save_conditional) END
+    ELSE IF ch = '=' THEN
+        BEGIN getch; parse_formula(save_equivalence) END
+    ELSE cp(val_left)
+    END; (* parse_formula2 *)
+
+BEGIN (* parse_formula *)
+parse_expression(parse_formula2)
+END; (* parse_formula *)
+
+BEGIN (* main *)
+REPEAT
+    write('?-  '); occurrences := [succ('z')];  getch;
+    parse_formula(check_period)
+    UNTIL false;
+99:
+writeln(clock:0,' milliseconds')
+END. (* main *)
+#+end_src
+
+The loops inside the =table= procedure can be optimised, by creating a linked list of the variables that actually occur in the formula.  The program is about as long as an equivalent conventional recursive descent program with explicit internal code for the same input grammar.  Both would only be about half as long if the input grammar were for infix without precedences, or for prefix.
+
+* Fourth order recursion
+
+The following program repeatedly reads lines of characters, and for each line of n characters it writes (2^n)-1$ lines, each a non-empty subsequence of the line that has been read.  For example, for the input line =abc= it produces 7 output lines: =abc=, =bc=, =ac=, =c=, =ab=, =b= and =a=.
+
+#+begin_src pascal
+PROGRAM subsequences(input,output);
+
+PROCEDURE call_with_continuation(PROCEDURE cp(PROCEDURE ccp);
+                                 PROCEDURE ccp);
+BEGIN cp(ccp) END;
+
+PROCEDURE oneline(PROCEDURE cp(PROCEDURE ccp(PROCEDURE cccp);
+                               PROCEDURE cccp));
+VAR ch : char;
+
+    PROCEDURE skip;
+    BEGIN END;
+
+    PROCEDURE call(PROCEDURE cp);
+    BEGIN cp END;
+
+    PROCEDURE onechar(PROCEDURE ccp(PROCEDURE cccp);
+                      PROCEDURE cccp);
+
+        PROCEDURE writechar(PROCEDURE cccp);
+        BEGIN write(ch); ccp(cccp) END;
+
+        PROCEDURE endline;
+        BEGIN writeln; cp(ccp,cccp) END;
+
+    BEGIN (* onechar *)
+    cp(writechar,endline)
+    END; (* onechar *)
+
+BEGIN (* oneline *)
+IF eoln THEN cp(call,skip) ELSE
+    BEGIN read(ch); oneline(onechar) END
+END; (* oneline *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN oneline(call_with_continuation); readln END
+END. (* main *)
+#+end_src
+
+* Exercises and reading
+
+** /Truth Table for Prefix/:
+
+One reason why the truth table program given above is so long is that it allows infix notation with many different precedence levels.  If the parser could be made much simpler, the value computing functions could be combined into one in a rather compact way.  Rewrite the program so that it uses prefix notation.
+
+** /Semantic Tableaux 1 --- trunk before branch/:
+
+Third order recursion can be used to implement the /trunk before branch/ optimisation in semantic tableaux recommended by the textbooks.  Rewrite the tableaux generator in any one of the programs you have so that operations that lead to branching are delayed.
+
+** /New operators for regular expressions and grammars/:
+
+One exercise in Chapter 11 invited you to write a program that reads context free grammars and then writes strings in the language generated by that grammar.  The most straightforward way is with second order recursion using the method of continuation procedures as in Chapters 9 and 11.  If you have done that, then you should consider investigating the power of third order recursion in connection with regular expressions and grammars.  You may be able to find at least two new unary operators and at least two new binary operators.  The four operators are independent, and each one increases the power of regular expressions and of context free grammars.  The program is useful for conducting experiments.
+
+** /Semantic Tableaux 2 --- no internal code/:
+
+This exercise contains the design of a non-trivial program which uses fourth order recursion.  The program is to repeatedly 1) read formulas in propositional logic written in minimally parenthesised infix notation with conventional operator precedences, and 2) for each formula read the program is to use the semantic tableaux method to determine whether the formula is a tautology, and if the formula is not a tautology the program is to write the /open paths/, the sets of atoms that have to be made true or false to make the formula false.  The program should use the same input grammar as the truth table program in the previous section.  The object of the exercise is to write the program without any explicit internal code.
+
+The design should be similar to the design of the truth table program: 1) write recursive procedures with continuations to do the parsing, and 2) add procedures to do the semantic tableaux.  The design of the program follows the structure of specification given: 1) recursive procedures are to be written for reading formulas and detecting any errors, and 2) the procedures are to be augmented to execute the semantic tableaux method.
+
+** /Parallelism/:
+
+If =L1= and =L2= are two context free languages, then their union =L ::\equal L1 | L2= is also a context free language.  However, their intersection need not be.  For example, the following language =L3= is not context free: =L3= has as its members, for each positive integer $n$, the strings consisting of a number $n$ of =a=\s, followed by that same number $n$ of =b=\s, followed by that same number $n$ of =c=\s, thus --- =abc=, =aabbcc=, =aaabbbccc= and so on.  The recursion stack of a context free parser can ensure that the number of =a=\s is the same as the number of =b=\s, or it can ensure that the number of =b=\s is the same as the number of =c=\s, but it cannot ensure both.  However, that language is the intersection of two context free languages =L1= and =L2=, where =L1= has as members all strings consisting of an arbitrary number of =a=\s followed by some number $n$ of =b=\s, followed by that same number $n$ of =c=\s, and where =L2= has as members all strings consisting of some number $n$ of =a=\s, followed by that same number $n$ of =b=\s, followed by an arbitrary number of =c=\s. So a parallel combination of parsers of =L1= and =L2= could be used to determine membership of =L3=.  A binary intersection or parallelism operator can clearly be added to the repertoire of grammars or of regular expressions, it strictly increases the power of the former though not of the latter.
+
+Implement such a new operator in either a generator or a parser, either for grammars or for regular expressions.  A promising way to implement parallelism is by turning the continuation procedure of the interpreter into one which itself takes a continuation.  The interpreter itself will take a further continuation as a parameter.  Inside the interpreter, for the atomic case, instead of reading or generating the next character (or symbol), the first continuation is called with the second continuation as a parameter.  For the initial global call of the interpreter, the first actual continuation parameter would be a global procedure which merely calls its continuation, and the second actual continuation parameter would be a global procedure which reads or generates the next character (or symbol).  This will be an example of third order recursion.
+
+** /LOTOS/:
+
+A sophisticated generalisation of the parallelism operator occurs in LOTOS --- Language Of Temporal Ordering Specifications.  The strings of a language are sequences of symbols, so if the symbols denote occurrences of events or actions, a whole string denotes a sequence of actions or a particular evolution of a process.  A very readable exposition of the basic notions is given in Bolognesi and Brinksma (1987, sections 1 and 2).  What in formal language theory is called concatenation is here called sequential composition and is written with an infix symbol, double arrow =>>=.  What in formal language theory is called alternation and written as an infix bar =|= is here called the choice operator, written =[]=.  In addition there are parallelism operators, written =|[a b c ..]|= as binary infix operators.  An expression =P |[a b c ..]| Q= denotes a process composed of processes =P= and =Q= restrained to perform actions in the set =[a b c ..]= synchronously, but not required to perform any other actions synchronously.  Note that the parallelism operator really is ternary, it takes three operands: the two sequences written on the left and the right, and the set of synchronisation actions written inside the operator.  In one special case the set of synchronised actions is empty, this is called pure interleaving, and instead of =|[]|= one writes =|||=.  In the other special case the set of synchronised actions contains all (visible) actions of =P= and of =Q=, for brevity the symbol =||= is used.  This is essentially the intersection operator of the previous paragraph.
+
+As a project, implement some very rudimentary form of these operators.  For parallelism operators, the nodes of the tree will have to contain a left and right field as before, and in addition a set field.  The set contains all the actions on which the two operands have to synchronise.  If you also want to implement the hiding operator, a similar representation should prove useful.  In full LOTOS process definitions have explicit parameters, called gates, at which events or actions are considered to take place.  An implementation of parameters would no longer be rudimentary.  Full LOTOS is a large language, and any implementation of a simulator for more than a small subset is well outside the scope of the projects in this book.
+
+** /An ambitious project/:
+
+If you are fluent in Lisp and are at least aware of the problems of implementing Lisp, you might attempt to implement a small version using the techniques of this chapter to handle /all/ data structures with local variables accessed by procedures as parameters.  A good starting point is probably Henderson's (1980) Lispkit.
+
+** /Reading/:
+
+If you are wondering how procedures as parameters are implemented, see MacLennan (1983, pp 247 - 250).
