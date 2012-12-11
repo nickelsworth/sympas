@@ -1,0 +1,1758 @@
+<HTML>
+<head>
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Chapter 16</TITLE>
+</head>
+<body>
+
+<H1>Datalog - a precursor to Prolog</H1>
+<P>
+In Chapter 11 we considered very special kinds of grammars
+which generate one of two exceptional languages:
+the empty language containing no strings at all,
+or the language containing just one string, the null-string.
+Given a logical interpretation,
+this was Proplog, essentially the propositional part of Prolog.
+In this chapter the propositions of Proplog become predicates,
+they now take parameters which are either individual constants
+or individual variables.
+The resulting language is called Datalog,
+it is suitable for certain database applications.
+<H2>The Datalog language</H2>
+<P>
+Except for the parameters,
+Datalog is just Proplog.
+One can enter facts and rules into the database,
+and one can put <EM>question</EM>s.
+Facts are just atomic formulas,
+rules are atomic formulas followed by a condition ---
+one or more atomic formulas conjoined.
+Explicit disjunctions are not needed.
+A question consists of one or more atomic formulas conjoined.
+<P>
+Atomic formulas consist of a <EM>predicate</EM>,
+optionally followed by a parenthesised list of
+one or more parameters separated by commas.
+Parameters are individual constants --- now called <EM>name</EM>s,
+starting with a lowercase letter,
+or they are individual variables --- or just <EM>variable</EM>s,
+starting with an uppercase letter.
+Names have their obvious meaning,
+whereas variables are either quantified --- in facts and rules,
+or they are to be bound in queries.
+In facts and rules a variable first occurring in the <EM>head</EM>,
+the first atomic formula,
+is implicitly universally quantified.
+In rules a variable first occurring in the <EM>body</EM>, the condition,
+is implicitly existentially quantified.
+In queries any variable is intended to be replaced by whatever
+names will make the formula provable from the facts and rules
+of the database.
+<P>
+The following is a single run of the
+program Datalog.
+Comments are enclosed in <CODE>/*</CODE> and <CODE>*/</CODE>.
+A plus symbol <CODE>+</CODE> indicates that what follows is to be entered
+into the database, as facts or rules.
+A minus symbol <CODE>-</CODE> indicates that what follows is a series
+of questions.
+Responses by the system start with a dieresis <CODE> ...</CODE> and what
+comes then is an answer <CODE>yes</CODE> or <CODE>no</CODE>,
+possibly preceded by a sequence of numbered variable bindings.
+<XMP>
+/* entering */
+ +
+/* some facts: */
+male(grandpaSmith).  male(mrSmith).  male(peterSmith).
+male(johnJones).  male(babyJones).
+female(mrsSmith).  female(maryJones).  female(sallyWilkinson).
+father(grandpaSmith,mrSmith).
+husband_wife(mrSmith,mrsSmith).
+father(mrSmith,peterSmith).  mother(mrsSmith,peterSmith).
+father(mrSmith,maryJones).  mother(mrsSmith,maryJones).
+husband_wife(johnJones,maryJones).
+father(johnJones,babyJones).  mother(maryJones,babyJones).
+loves(peterSmith,sallyWilkinson).
+
+/* some rules: */
+married(H,W) :- husband_wife(H,W).  married(W,H) :- husband_wife(H,W).
+loves(X,Y) :- married(X,Y).
+parent(X,Y) :- father(X,Y).  parent(X,Y) :- mother(X,Y).
+
+/* some questions: */
+ -
+male(mrSmith).
+ ... yes
+
+male(mrsSmith).
+ ... no
+
+female(X).
+1:
+    X  =  mrsSmith
+2:
+    X  =  maryJones
+3:
+    X  =  sallyWilkinson
+ ... yes
+
+loves(X,johnJones).
+1:
+    X  =  maryJones
+ ... yes
+
+loves(X,Y).
+1:
+    X  =  peterSmith
+    Y  =  sallyWilkinson
+2:
+    X  =  mrSmith
+    Y  =  mrsSmith
+3:
+    X  =  johnJones
+    Y  =  maryJones
+4:
+    X  =  mrsSmith
+    Y  =  mrSmith
+5:
+    X  =  maryJones
+    Y  =  johnJones
+ ... yes
+
+parent(PARENT,babyJones).
+1:
+    PARENT  =  johnJones
+2:
+    PARENT  =  maryJones
+ ... yes
+
+/* some consistency checks: */
+father(F,C), female(F).
+ ... no
+mother(M,C), male(M).
+ ... no
+husband_wife(H,W), female(H).
+ ... no
+husband_wife(H,W), male(W).
+ ... no
+
+/* more rules: */
+ +
+ancestor(X,Y) :- parent(X,Y).
+ancestor(X,Z) :- parent(X,Y), ancestor(Y,Z).
+
+/* more questions: */
+ -
+ancestor(grandpaSmith,DESCENDENT).
+1:
+    DESCENDENT  =  mrSmith
+2:
+    DESCENDENT  =  peterSmith
+3:
+    DESCENDENT  =  maryJones
+4:
+    DESCENDENT  =  babyJones
+ ... yes
+
+ancestor(ANCESTOR,DESCENDANT).
+1:
+    ANCESTOR  =  grandpaSmith
+    DESCENDANT  =  mrSmith
+2:
+    ANCESTOR  =  mrSmith
+    DESCENDANT  =  peterSmith
+3:
+    ANCESTOR  =  mrSmith
+    DESCENDANT  =  maryJones
+4:
+    ANCESTOR  =  johnJones
+    DESCENDANT  =  babyJones
+5:
+    ANCESTOR  =  mrsSmith
+    DESCENDANT  =  peterSmith
+6:
+    ANCESTOR  =  mrsSmith
+    DESCENDANT  =  maryJones
+7:
+    ANCESTOR  =  maryJones
+    DESCENDANT  =  babyJones
+8:
+    ANCESTOR  =  grandpaSmith
+    DESCENDANT  =  peterSmith
+9:
+    ANCESTOR  =  grandpaSmith
+    DESCENDANT  =  maryJones
+10:
+    ANCESTOR  =  grandpaSmith
+    DESCENDANT  =  babyJones
+11:
+    ANCESTOR  =  mrSmith
+    DESCENDANT  =  babyJones
+12:
+    ANCESTOR  =  mrsSmith
+    DESCENDANT  =  babyJones
+ ... yes
+
+/* a compound question: */
+male(X), ancestor(X,babyJones).
+1:
+    X  =  grandpaSmith
+2:
+    X  =  mrSmith
+3:
+    X  =  johnJones
+ ... yes
+
+/* testing repeated formals */
+ +
+likes(X,X) :- male(X).
+
+ -
+likes(X,Y).
+1:
+    X  =  grandpaSmith
+    Y  =  grandpaSmith
+2:
+    X  =  mrSmith
+    Y  =  mrSmith
+3:
+    X  =  peterSmith
+    Y  =  peterSmith
+4:
+    X  =  johnJones
+    Y  =  johnJones
+5:
+    X  =  babyJones
+    Y  =  babyJones
+ ... yes
+
+
+/* ZOOLOGICAL DATABASE */
+
+/* Note that this database treats species of animals and also
+   their sizes, colours and so on as individuals. This ploy is
+   philosophically suspect, but computationally convenient.
+*/
+
+ +
+size(mouse,tiny). size(frog,tiny).
+size(rabbit,small). size(fox,small).
+size(wolf,medium). size(goat,medium). size(pig,medium).
+size(bear,big). size(horse,big). size(cow,big).
+size(elephant,huge). size(giraffe,huge).
+size(X,small) :- size(X,tiny).  size(X,big) :- size(X,huge).
+
+colour(mouse,grey). colour(mouse,black). colour(mouse,white).
+colour(frog,green). colour(rabbit,brown). colour(rabbit,white).
+colour(fox,red). colour(wolf,brown). colour(elephant,grey).
+
+feet(horse,hooves). feet(cow,hooves). feet(goat,hooves).
+feet(rabbit,paws). feet(fox,paws). feet(bear,paws).
+
+herbivore(rabbit). herbivore(elephant). herbivore(giraffe).
+herbivore(X) :- feet(X,hooves).
+
+carnivore(fox). carnivore(wolf). carnivore(bear).
+
+bigger(X,Y) :- size(X,small), size(Y,tiny).
+bigger(X,Y) :- size(X,medium), size(Y,small).
+bigger(X,Y) :- size(X,big), size(Y,medium).
+bigger(X,Y) :- size(X,huge), size(Y,big).
+
+eats(X,grass) :- herbivore(X).  eats(X,leaves) :- herbivore(X).
+eats(X,Y) :- carnivore(X), bigger(X,Y).
+
+eaten(X) :- eats(Y,X).
+
+ -
+/* which animal eats another animal of the same colour? */
+eats(EATER,EATEN), colour(EATER,COLOUR), colour(EATEN,COLOUR).
+1:
+    EATER  =  wolf
+    EATEN  =  rabbit
+    COLOUR  =  brown
+ ... yes
+
+/* which tiny animals are eaten? */
+eaten(X), size(X,tiny).
+1:
+    X  =  mouse
+2:
+    X  =  frog
+3:
+    X  =  mouse
+4:
+    X  =  frog
+ ... yes
+
+herbivore(ANIMAL), size(ANIMAL,big), colour(ANIMAL, grey).
+1:
+    ANIMAL  =  elephant
+ ... yes
+
+
+/* A MINIATURE AIRLINE - THEY ONLY HAVE TWO FLIGHTS */
+
+/* illustrating the reduction of n-ary to binary predicates */
+
+ +
+dep_place(f1,melbourne).        arr_place(f1,honolulu).
+dep_day(f1,monday).             arr_day(f1,tuesday).
+dep_time(f1,h20).               arr_time(f1,h08).
+
+dep_place(f2,honolulu).         arr_place(f2,melbourne).
+dep_day(f2,thursday).           arr_day(f2,friday).
+dep_time(f2,h22).               arr_time(f2,h10).
+
+flight(N,D_PLACE,D_DAY,D_TIME,A_PLACE,A_DAY,A_TIME) :-
+        dep_place(N,D_PLACE),           arr_place(N,A_PLACE),
+        dep_day(N,D_DAY),               arr_day(N,A_DAY),
+        dep_time(N,D_TIME),             arr_time(N,A_TIME).
+
+ -
+/* what is the flight departing Honolulu and arriving in Melbourne? */
+
+flight(FLIGHT_NUMBER,honolulu,DEPARTURE_DAY,DEPARTURE_TIME,
+                     melbourne,ARRIVAL_DAY,ARRIVAL_TIME).
+1:
+    FLIGHT_NUMBER  =  f2
+    DEPARTURE_DAY  =  thursday
+    DEPARTURE_TIME  =  h22
+    ARRIVAL_DAY  =  friday
+    ARRIVAL_TIME  =  h10
+ ... yes
+
+/* which flight arrives on a tuesday ? */
+
+flight(FLIGHT_NUMBER,DEPARTURE_PLACE,DEPARTURE_DAY,DEPARTURE_TIME,
+                     ARRIVAL_PLACE,tuesday,ARRIVAL_TIME).
+1:
+    FLIGHT_NUMBER  =  f1
+    DEPARTURE_PLACE  =  melbourne
+    DEPARTURE_DAY  =  monday
+    DEPARTURE_TIME  =  h20
+    ARRIVAL_PLACE  =  honolulu
+    ARRIVAL_TIME  =  h08
+ ... yes
+
+/* which flight arrives on a thursday ? */
+
+flight(FLIGHT_NUMBER,DEPARTURE_PLACE,DEPARTURE_DAY,DEPARTURE_TIME,
+                     ARRIVAL_PLACE,thursday,ARRIVAL_TIME).
+ ... no
+CPU time for this session: 150 milliseconds
+</XMP>
+<P>
+The above sample run did not illustrate error treatment
+and did not show the generated code or any tracing during a run.
+<P>
+If you are familiar with Prolog,
+then you will notice that Datalog is pure Prolog
+but with terms restricted to being either simple variables
+or simple constants;
+there are no function symbols from which to build compound terms.
+\ifnoprogram
+<P>
+This version of the notes does not contain the design of the program.
+\else
+<H2>Designing the implementation</H2>
+<P>
+In order to obtain a short implementation,
+we shall spend some effort in designing the most suitable <EM>grammar</EM>
+for Datalog.
+As in previous projects,
+the next design steps are the parser
+and then, in several steps, the translator
+and the interpreter.
+<H3>A regular grammar for Datalog</H3>
+<P>
+In previous chapters we have generally started by giving a
+ready made grammar and possibly a complete manual.
+Then it became possible to base the implementation on the grammar.
+In this chapter we shall develop the grammar in several stages.
+<XMP>
+input  ::=
+        [   '+'
+          | '-'
+          | atom { ':-' formula } '.'
+          | formula '.' ]
+formula  ::=  atom { ',' formula }
+atom  ::=  predicate { '(' parameterlist ')' }
+parameterlist  ::=  parameter { ',' parameterlist }
+parameter  ::=  variable | name
+predicate  ::=  l-identifier
+name  ::=  l-identifier
+variable  ::=  u-identifier
+l-identifier  ::=  lowercase letter,
+                   followed by further letters, digits and underscores
+u-identifier  ::=  uppercase letter,
+                   followed by further letters, digits and underscores
+</XMP>
+Note that formulas and parameterlists are very similar in structure,
+and that both are recursively defined in terms of themselves.
+There is no other recursion at all.
+If these two recursive definitions could be replaced by
+non-recursive ones, then the entire grammar would be free of recursion.
+Then any occurrences of non-terminals could be replaced by their
+definition,
+and the entire language would be defined by just the first production
+as expanded.
+<P>
+To remove the recursion in the definitions of formulas and parameterlists
+we can replace the option braces by repetition brackets:
+<XMP>
+formula  ::=  atom [ ',' atom ]
+parameterlist  ::=  parameter  [ ',' parameter ]
+</XMP>
+If in the production for formula we now replace the two
+occurrences of atom by its definition we end up with:
+<XMP>
+formula  ::=  predicate { '(' parameterlist ') }
+              [ ',' predicate { '(' parameterlist ')' } ]
+</XMP>
+If we replace the two occurrences of parameterlist
+by its definition,
+then we end up with something even longer.
+Clearly what is needed is a way of defining formulas
+as consisting of one or more atomic formulas separated
+by commas.
+A construct that does this is what is used by
+Digital Equipment Corporation in their help files.
+The dieresis <CODE>...</CODE> is to mean: the previous item.
+Inside repetition brackets it means:
+while there is a comma, repeat the previous item.
+Note that the dieresis can always be eliminated by replacing it textually
+with the previous item.
+Hence no new expressive power is introduced by the device.
+The two productions can now be written like this:
+<XMP>
+formula  ::=  atom [',' ...]
+parameterlist  ::=  parameter  [',' ...]
+</XMP>
+The device has the welcome effect that diereses are not
+non-terminals and hence are not to be expanded.
+We can now expand:
+<XMP>
+parameterlist  ::=  (name | variable) [',' ...]
+atom  ::=  predicate { '(' (name | variable) [',' ...] ')' }
+formula  ::=  ( predicate { '(' (name | variable) [',' ...] ')' } )
+              [',' ...]
+</XMP>
+The entire grammar can now be written as:
+<XMP>
+input  ::=
+  [   '+'
+    | '-'
+    | { l-identifier { '(' (l-identifier | u-identifier) [',' ...] ')' } }
+      { ':-' }
+      { ( l-identifier { '(' (l-identifier | u-identifier) [',' ...] ')' } )
+        [',' ...] }
+      '.' ]
+</XMP>
+The first long line handles the <EM>formal</EM> parameters,
+the second long line handles the <EM>actual</EM> parameters.
+Having the lists of parameters defined twice seems
+wasteful, but it is a small price to pay for the
+elimination of other non-terminals.
+More importantly,
+having them defined twice is in fact helpful
+for the compiler,
+because code generation is very different
+for the formal and actual parameters.
+<P>
+The entire grammar is non-recursive ---
+in the right hand side of the production the only symbols
+are the terminals <CODE>+</CODE>, <CODE>-</CODE>, <CODE>(</CODE>, <CODE>)</CODE>, <CODE>,</CODE>, <CODE>:-</CODE>, <CODE>.</CODE>
+and the two non-terminals l-identifier and u-identifier.
+Even these two non-terminals could be eliminated in favour
+of terminals.
+However,
+the terminals and these two non-terminals will of course
+be handled by the scanner,
+so there is no point in doing this elimination.
+There are no other non-terminals, apart from the start symbol,
+so the entire language is defined by the regular
+expression which is the right hand side of one production.
+Hence it will be possible to write a parser
+which does not use any parsing procedures apart from the main program.
+This is the first time that we have had a non-trivial language
+which could be defined by a regular expression.
+We shall use the opportunity
+to write the entire parser in the main program.
+You should judge yourself
+whether you like this monolithic style
+or whether you prefer to have the parser broken up into
+several procedures.
+<H3>Parsing</H3>
+<P>
+The scanner has to recognise several single character symbols,
+the two character symbol turnstyle <CODE>:-</CODE>, and user introduced identifiers.
+The latter may be predicates or names, both starting with a lowercase
+letter, or they may be variables, starting with an uppercase letter.
+It is best if the scanner distinguishes identifiers beginning with
+a lowercase letter and those beginning with an uppercase letter.
+It does not look up or enter into a symbol table.
+The scanner also has to recognise Prolog- or C-style comments
+enclosed in <CODE>/*</CODE> and <CODE>*/</CODE>.
+These are similar to the Pascal-style
+comments enclosed in <CODE>(*</CODE> and <CODE>*)</CODE> that were first used in Mondef.
+The difference is that <CODE>(</CODE>, the first character of a Pascal-style
+comment,
+when not followed by a <CODE>*</CODE>,
+was also a legal character in Mondef, and, incidentally, in Pascal.
+By contrast, the slash <CODE>/</CODE>,
+the first character of a Prolog- or C-style comment,
+when not followed by a <CODE>*</CODE>,
+is not a legal symbol in Datalog, though it is in Prolog and in C.
+<P>
+Since no parsing procedures are needed,
+the entire parser is contained in the body of the main program.
+It consists of a big <CODE>REPEAT</CODE> loop which examines the current
+input symbol.
+If it is one of the mode switches <CODE>+</CODE> or <CODE>-</CODE>,
+then the mode is set accordingly, for entering or for questioning.
+Otherwise, depending on the mode,
+either a fact or rule is to be entered, or a question is to be put.
+<P>
+In entering mode, a clause is expected.
+The first symbol has to be a lowercase identifier, a predicate,
+and this may be followed by a parenthesised list of parameters
+separated by commas.
+If a left parenthesis is seen,
+then the list of parameters is handled by a <CODE>REPEAT</CODE> loop which
+exits when the next symbol is not a comma.
+Each parameter has to be a lowercase identifier, a constant,
+or an uppercase identifier, a variable.
+The next symbol should then be a right parenthesis.
+After the predicate and perhaps the parameters,
+a turnstyle may occur; if not, a period is expected.
+<P>
+Whatever the mode,
+if the next symbol is not a period,
+a formula is expected,
+consisting of one or more atomic formulas separated by the <EM>and</EM>-commas.
+This is again handled by a <CODE>REPEAT</CODE> loop which on each pass handles
+one atomic formula,
+the loop exits when the next symbol is not an identifier.
+Each atomic formula is handled like the head of a clause
+described in the previous paragraph:
+it has to consist of a lowercase identifier
+possibly followed by a list of parameters handled by a further
+<CODE>REPEAT</CODE> loop.
+<P>
+Whatever the mode, the next symbol must be the terminating period.
+<P>
+This completes the parser.
+Note that the comma-separated lists of formal and actual parameters
+are treated slightly differently
+from the comma-separated lists of atomic formulas.
+Following the method of stepwise refinement used in previous
+chapters,
+we now expand on this basic skeleton.
+If you are writing the program yourself,
+you are strongly urged to write the parser up to this point.
+<P>
+<EM>The symbol tables</EM>:
+During parsing two kinds of identifiers will be encountered by
+the scanner:
+those beginning with a lowercase letter and
+those beginning with an uppercase letter.
+The parser accepts lowercase identifiers in predicate position to the left
+of the turnstyle and to the right of the turnstyle.
+Such predicates have to be recognised later,
+so they are entered into a table of predicates.
+That table will also contain pointers to the code
+of each defined predicate.
+The parser accepts lowercase identifiers
+and uppercase identifiers in parameter positions,
+either as formal parameters to the left of the turnstyle,
+or as actual parameters to the right of the turnstyle.
+Variables play a vital role for identification of values
+inside a clause or a query,
+but their meaning is local to that clause or query.
+Therefore they can be entered into a shortlived and quite small
+table as they are encountered;
+the same space can be used for all clauses and queries.
+On the other hand, lowercase identifiers in parameter positions are names,
+they retain their meaning outside any clause in which they occur,
+so they have to be entered into a permanent table.
+It follows that there are three separate tables:
+for predicates, for variables and for names.
+They are not managed by the scanner
+but each by an independent function which handles
+lookup and, if necessary, new entries.
+All three tables will be consulted for code generation
+to determine various addresses.
+<P>
+There is one more major <CODE>ARRAY</CODE>,
+the code that is generated by the now familiar procedure generate.
+<P>
+If an error occurs, then all three tables should be restored
+to what they were at the start of the clause or query
+in which the error happened.
+In particular,
+any recent entries to any of the tables should be removed,
+by resetting the indices to what they were at the start
+of the clause or query containing the error.
+The resetting is done by the error procedure,
+but it has to know what to reset the indices to.
+So, the main program must set several save-variables
+to the values of the variables to be saved.
+Setting these save-variables has to occur just before
+a clause or query is being read.
+Actually only the indices of the table of predicates
+and the table of names have to be reset by the error procedure,
+since the table of variables will be reset automatically
+for the reading of the next clause or query.
+And while on the topic of resetting,
+in order not to waste space in the code that has been generated,
+the index to the last code should be reset after any error
+or after reading and processing a query.
+<P>
+The utility routines then are:
+a procedure <CODE>getch</CODE>,
+a procedure <CODE>getsym</CODE>,
+three functions for looking up the three tables,
+a procedure for generating code,
+and procedures for reporting normal syntactic errors
+and fatal errors when tables overflow.
+The only other procedure is the interpreter,
+the theorem prover itself.
+<P>
+<EM>Outline of the interpreter</EM>:
+Several of our previous programs have used backtracking;
+they had a global variable to which changes were made
+and later undone.
+For Datalog the global variable will have to be a stack
+containing values of parameters of predicates being called.
+These parameters are either constants or variables.
+The latter may at any one moment be undefined or defined.
+When they become defined, they do not become constants,
+but they become pointers to constants or pointers to pointers
+to constants,
+or pointers to pointers to pointers to constants,
+and so on.
+If two variables directly or indirectly point to a third
+which directly or indirectly points to a fourth,
+then if one of the first two becomes defined
+then so does the other and the third and the fourth.
+This is the way logical variables have to behave.
+In the stack any value that is a pointer value always
+points down into the lower part of the stack.
+Now consider a query with several variables:
+<XMP>
+        p(X,Y), q(Y,Z).
+</XMP>
+The three variables <CODE>X</CODE>, <CODE>Y</CODE> and <CODE>Z</CODE> have to become variables
+at the bottom of the stack,
+so that their values may be printed out later.
+For the call to <CODE>p</CODE>,
+<CODE>X</CODE> and <CODE>Y</CODE> have to be pushed as parameters --- the stack now
+contains five elements.
+Then <CODE>p</CODE> can be called, possibly repeatedly.
+Any one of these calls may give values to the parameters <CODE>X</CODE> and Y
+by giving values to the <CODE>X</CODE> and <CODE>Y</CODE> at the bottom of the stack.
+Each of the calls that succeeds is followed by pushing <CODE>Y</CODE> and <CODE>Z</CODE>
+as parameters for <CODE>q</CODE> --- the stack now contains seven elements ---
+and possibly repeated calls to <CODE>q</CODE>.
+Each successful call to <CODE>q</CODE> is followed by the three bottom values
+<CODE>X</CODE>, <CODE>Y</CODE> and <CODE>Z</CODE> being printed.
+With this much by way of preview of the interpreter,
+we now take a first look at code generation.
+<H3>Code generation: opcodes</H3>
+<P>
+It will be best if we begin with the code generation
+for the formal and the actual parameters.
+<P>
+<EM>Formal Parameters</EM>:
+Formal parameters occur in facts and in heads of rules.
+First, consider formal parameters that are names.
+At runtime a check has to be made that the corresponding actual
+parameters either matches or can be made to match this same name.
+The actual parameter can be a name or a variable pointing
+either directly or indirectly to something further down which
+is either defined or undefined.
+If the actual parameter is the same name as the formal parameters,
+or if the actual parameter is a direct or indirect pointer
+to the same name as the formal parameter,
+then the actual and the formal parameter already match.
+If the actual parameter is a different name
+or a pointer to a different name,
+then the parameters do not match and cannot be made to match.
+If the actual parameter is an undefined variable
+or a pointer to an undefined variable,
+then the actual and the formal parameter can be made to match
+by setting that undefined variable
+to the name which is the formal parameter.
+At compile time it will not be known in general
+which of these cases will occur at run time.
+But at compile time it is only necessary to generate a match
+instruction specifying which name is to be matched to which actual parameter.
+The name to be matched is passed as an address to the table of names.
+The actual parameter to be matched will be an address in the stack,
+but we leave the computation of that address to a further
+refinement step.
+So, when a formal parameter is a name,
+the compiler has to generate an instruction to match a name,
+and one field of the instruction, say the a-field,
+is the address of the name to be matched.
+<P>
+Second, consider formal parameters that are variables.
+The corresponding actual parameters can be a name or a variable.
+But if the formal parameter is a variable,
+this means that no restrictions are placed on the actual parameter.
+Hence no matching need be done,
+and no code has to be generated.
+There is one exception to this,
+when a formal parameter is a variable that has already occurred as
+an earlier formal parameter in the same fact or the same head of a rule.
+In that case the actual parameters corresponding to the first and later
+occurrences have to match or be made to match.
+This has two consequences for the compiler:
+1) the first time that a variable occurs as a formal parameter
+no code is generated but it is recorded in the table of variables
+that it has already occurred.
+2) any second or further time that variable occurs
+as a formal parameter
+an instruction has to be generated to match the later occurrences
+with the first occurrence.
+The computation of the two addresses to be matched is left to a further
+refinement step.
+So, when a formal parameter is a repeated variable,
+the compiler has to generate an instruction to match two
+actual parameters.
+<P>
+<EM>Actual parameters</EM>:
+Actual parameters occur in bodies of rules and in queries.
+First, consider actual parameters that are names.
+At run time they may have to be matched with their corresponding
+formal parameters.
+For this to be possible,
+the actual parameters have to be on the stack at a position
+that will be known when the match is to be made.
+It is easiest to just push the actual parameter onto the stack,
+and to let the match instruction know where that will be.
+So when an actual parameter is a name,
+the compiler has to generate an instruction
+to push an address in the table of names onto the stack.
+<P>
+Second, consider actual parameters that are variables.
+Two cases need to be distinguished,
+depending whether we are in a query or in the body of a rule.
+In both cases a variable has to be pushed onto the stack.
+But the details will be different in queries and in bodies.
+In queries the address has to be an absolute address
+somewhere at the bottom of the stack,
+because this is where any real changes are to be made
+and where the values are located for printout.
+In bodies two subcases need to be distinguished:
+the actual parameter variable is a formal parameter
+of the head of the rule,
+or it is a variable which first occurred in the body.
+In the first subcase what has to be pushed at run time is a pointer
+to that formal parameter,
+so the compiler has to generate an instruction
+which will push an address to that formal parameter.
+But since the absolute address of that formal parameter cannot
+be known at compile time,
+it has to be a relative address,
+an offset from the current top of the stack.
+In the second subcase,
+when the actual parameter is a variable
+which first occurred in the body,
+this variable is to be understood as existentially quantified.
+There may be several occurrences of that same variable in the body.
+For the first occurrence a new location on the stack
+has to be claimed and set to undefined
+in the same way as the undefined values at the bottom
+of the stack in a query.
+Any later occurrences of the same variables
+have to become pointers to that first occurrence.
+So, for the first occurrence the compiler has to generate
+an instruction to push an undefined value.
+For the later occurrences it has to push
+the address of that value;
+this address will be relative to the top of the stack.
+Just as for repeated formal parameters,
+a record has to be kept in the table of variables
+when the instruction for the first occurrence was generated.
+<P>
+This completes the first step of the code generation
+for parameters;
+details of computing addresses are left as a further refinement step.
+<P>
+<EM>Code for a predicate</EM>:
+If a predicate is first used to the right of the turnstyle
+and never defined by a clause,
+then the table for predicates has to record this,
+so that the interpreter will fail and not continue
+with the solution set.
+If a predicate is being defined just once,
+then a pointer to the code for the clause has to be recorded
+in the table of predicates, to be found there by the interpreter.
+If a predicate is being defined a second time,
+then the table already contains a pointer to some code.
+Then this old code has to be disjoined with
+the new code,
+and the table has to be made to point to this new disjunction.
+If a predicate is being defined a third or further time,
+then the table already contains a pointer to a disjunction
+which has to be further disjoined with the new code
+so that the table can now point to the new disjunction.
+If this is done naively,
+then possibly inefficient code will result:
+the code for that predicate becomes a left linear tree
+and to access the code for the first clause
+the interpreter has to call itself recursively
+once for each clause that is does not yet want to execute.
+A right linear tree is preferable,
+it can be produced by remembering in the
+table the last disjunct
+and updating that for each new clause.
+<P>
+At first sight it looks as though for formulas much of the
+code generation and its later interpretation can be similar
+to the AND-OR trees we have seen before.
+In particular, conjunctions would become <EM>and</EM>-nodes,
+the implicit disjunctions of several clauses for the same predicate
+would become or-nodes,
+predicates in call-positions become <EM>call</EM>-nodes.
+In addition,
+there will be various kinds of nodes for both formal and actual
+parameters.
+At first sight lists of formal or of actual parameters
+would be conjoined with <EM>and</EM>-nodes.
+<P>
+If parameters were to be linked by <EM>and</EM>-nodes,
+then for each parameter the interpreter has to execute two
+instructions,
+one for the parameter and one for the AND.
+There is a more efficient method which produces only half
+the code and hence is also faster to execute:
+It depends on the fact that each push or match
+is encoded in just one instruction.
+Parameters are pushed or matched in the order
+in which they occur in the source,
+and the execution can follow this order sequentially
+rather than relying on linkage.
+This implies when a push or a match has been done,
+the interpreter calls itself recursively with the
+textually next instruction.
+<P>
+The idea can be extended to the conjunctions arising
+from the comma separating atomic formulas.
+Again it is possible to let the interpreter handle each
+atomic formula and then the textually next atomic formula.
+A small price has to be paid for the elimination of <EM>and</EM>-nodes:
+now it becomes necessary to terminate the code for
+every formula by a special instruction
+whose execution causes the interpreter to continue
+with whatever caused the execution of the current formula.
+<H3>The interpreter</H3>
+<P>
+The principal component of the interpreter is a recursive
+procedure <EM>solve</EM> which takes two parameters:
+a (pointer to a) tree node and a continuation procedure.
+The nodes consist of an opcode and two integers which are
+addresses of other nodes,
+or of names in the table of names,
+or of predicates in the table of predicates,
+or of items in the run time stack.
+The main global data structure used by the interpreter
+is a stack whose items are either undefined,
+or the addresses of names,
+or of other items in the stack.
+To distinguish the two kinds of addresses,
+the former are stored as positive integers,
+the latter as negative integers;
+a zero value is undefined.
+In the main program,
+when a query has been read, the interpreter has to be initialised.
+For each of the variables that occurred in the query,
+the corresponding position in the runtime stack
+has to be initialised to undefined.
+Then the top of the stack has to be set to the number of such
+variables.
+The interpreting procedure <CODE>solve</CODE> is called with two parameters:
+the first is the address of the first node of the query,
+and the second is a continuation procedure,
+the global procedure to display the contents of the stack
+corresponding to the variables of the query.
+When the call to procedure <CODE>solve</CODE> finally returns,
+either a yes or a no answer has to be given,
+depending on whether <CODE>solve</CODE> ever succeeded in calling its global continuation.
+Finally,
+to enable the space for the code of the query to be re-used,
+the index to the code should be reset to what it was before the query was read.
+<P>
+We now look in some detail at the five different instructions that
+have to be executed by the recursive interpreting procedure <CODE>solve</CODE>.
+<P>
+1. The <EM>call</EM> instruction was generated by an atomic formula
+in either a query or in the body of a definition.
+The instruction contains an address into the table of predicates.
+At the time the instruction was generated,
+there may or may not have been any code associated with the predicate,
+and if not,
+some code may have become associated with it later.
+But at interpretation time whatever code is there has to be executed.
+So, if there is no code associated with the predicate,
+then nothing happens,
+the Datalog call to this predicate fails
+and the Pascal call to procedure <CODE>solve</CODE> merely returns.
+On the other hand,
+if there is some code associated with the predicate,
+then it will be in the form of a right linear tree of or-nodes,
+and the right-most or-node will not contain anything.
+It would be possible to interpret each or-node,
+but this would require two nodes to be interpreted for
+each clause of a predicate.
+However, the or-nodes are only generated for the disjunctions
+of formulas for each predicate.
+Hence it is possible to sidestep their execution entirely:
+the right linear tree of or-nodes is executed by a loop
+which simply executes each of the left parts of a tree.
+This is done by initialising a local variable to the topmost
+or-node, and then using a <CODE>REPEAT</CODE> loop which calls the interpreter
+using the node address of the left part and then resets the
+local variable to the right.
+The loop terminates when the tree has been traversed and the
+variable points to nothing.
+<P>
+It is important that each of the later calls for the tree finds
+the interpreter in the same state as the first did.
+In particular, this means that the stack and the top of stack
+have to be the same for each of the calls.
+The stack itself will be changed and, on backtracking,
+restored by the other instructions;
+but the top of stack is best restored for each cycle of the loop.
+For each of the disjuncts of the left part of the tree,
+procedure <CODE>solve</CODE> calls itself recursively.
+The first parameter is of course the left part of the or-node
+currently in the loop,
+and the second parameter has to be a continuation procedure.
+As always, the continuation procedure will not be called directly,
+but only when the code for the current formula has been executed
+and its terminating return instruction is being executed.
+Now, executing the code for the current formula
+involves pushing and popping the stack and, importantly,
+assigning addresses of names to undefined values down in the stack.
+These assignments have to remain when the current call continues.
+But the top of the stack has to be restored before the next
+conjunct can be executed.
+Therefore the required continuation must be a local procedure
+which restores the top of stack to what it was
+when the current cycle of the loop was entered.
+So, before entering the <CODE>REPEAT</CODE> loop
+the top of stack can be saved in a local variable to be reset
+by the local procedure which then calls the continuation which
+is the parameter.
+Of course it is possible that this local procedure is not called
+at all, so the top of stack has to be reset to the local variable
+independently for each cycle of the <CODE>REPEAT</CODE> loop.
+<P>
+2. The code for each formula is terminated by a <EM>return</EM> instruction.
+Even the code for a clause without a body,
+i.e. a fact, is terminated by such an instruction.
+When the interpreter reaches the return instruction,
+it has to continue with the next conjunct of a formula,
+or with the next return or --- eventually ---
+with the global procedure to display the values
+in the lower parts of the stack.
+Whichever it is will have accumulated in the chain of continuation
+procedures.
+So, for the return instruction the interpreter just has to call
+the continuation parameter.
+(Note that this is the second place where the continuation
+parameters may be called ---
+the other was in the local continuation procedure
+which restores the stack after the call instruction.)
+<P>
+3. The various <EM>push</EM> instructions arise from
+actual parameters in queries and
+in bodies of rules:
+items to be pushed are
+names,
+absolute addresses in the stack,
+new uninitialised values,
+and relative addresses in the stack.
+All four species can be handled by just one instruction.
+The top of the stack has to be incremented.
+Then a value has to be assigned to this new location on the stack.
+For the first three kinds of items
+it is the value of the a-field of the instruction
+that is assigned to the top of the stack.
+For the fourth kind a relative address is obtained by
+taking instead the difference between the a-field
+and the top of stack.
+Then procedure <CODE>solve</CODE> calls itself recursively,
+using as the first parameter the textually next instruction
+and as the second parameter its own continuation.
+When the call returns,
+the stack should be restored to what it was before the call.
+There are two aspects of this:
+1) The top of stack has been incremented
+and should be decremented again.
+This resetting is already done by the call instruction.
+2) The stack itself has been overwritten by the value that was pushed.
+In normal pop operations there is no need to restore to a stack
+a value that was overwritten by a previous push operation.
+However, the situation is more complicated here.
+When a call to a predicate is completed and its return
+is executed,
+there may be further clauses waiting as alternatives.
+These have to  find the stack in the same state
+as the one that was executed and has now returned.
+So, before procedure <CODE>solve</CODE> overwrites the stack
+and then calls itself,
+it must save the top of stack and what is contained there in
+two local variables.
+Then, when the recursive call returns,
+the top item of the stack is restored to what it was before
+the recursive call.
+It is not necessary to decrement the top of stack,
+because this is handled by the call instruction.
+<P>
+4. The <EM>match-name</EM> instruction is generated for formal parameters
+that are names.
+The instruction contains an address in the name table
+and an offset from the current top of stack.
+The instruction should succeed and continue
+just in case the item in the stack
+pointed to directly or indirectly by the item at the offset
+either matches or can be made to match the name addressed in
+the instruction.
+To find the item in the stack that is supposed to match,
+a local variable is initialised to a location given by
+the top of stack and the offset in the b-field of the instruction.
+Then a loop is entered:
+if the item there is merely an address, a negative number,
+then the local variable is set to that address and so on,
+until what is found in the stack is not an address.
+So it must be either a positive number,
+which is now an address into the table of names,
+or it is zero.
+In the first case that address is compared with the address in
+the a-field of the instruction.
+If they are the same,
+then procedure <CODE>solve</CODE> calls itself recursively,
+using the textually next instruction as the first parameter
+and its own continuation parameter as the second.
+On the other hand,
+if what is found at the end of the chain is a zero value,
+then this counts as undefined.
+The situation is familiar from previous programs:
+The undefined value has to be set to the address in the a-field
+of the instruction,
+then <CODE>solve</CODE> calls itself recursively as before,
+then the value has to be set to undefined again.
+Finally, if what is found at the end of the chain
+is an address that is different from the a-field
+of the instruction,
+then the match fails: nothing is done, the call just returns.
+Note that the actual name, a string,
+is never manipulated as such.
+<P>
+5. The <EM>match-var</EM> instruction
+is generated when a formal parameter is repeated.
+The function of the instruction is similar to the match-name
+instruction.
+The difference is that the match-name instruction contains
+the address of the name to be matched,
+whereas the match-var instruction does not.
+Instead it contains two addresses to be matched,
+it should succeed and continue just in case the two items
+in the stack pointed to directly or indirectly
+by the two addresses either match or can be made to match.
+To find the two items,
+two local variables are initialised to the two locations
+given by the top of the stack and the two address fields
+of the instruction.
+Two loops are entered to chain along items in the stack
+until neither is an address in the stack.
+So both are now positive or zero.
+If one of them is zero, i.e. undefined,
+then it is set to the other,
+then <CODE>solve</CODE> calls itself recursively with the textually next
+instruction,
+then it is set back to undefined.
+If none of them is undefined, then <CODE>solve</CODE>
+calls itself recursively just in case the two
+are defined the same,
+otherwise the match fails and the call just returns.
+<H3>Code generation: addresses</H3>
+<P>
+We now look at the remaining details of the code generation,
+in particular the computation of those addresses
+that were left out in the discussion of the generation
+of opcodes for parameters.
+In the parser there are seven places where code for parameters
+is generated, two for formals and five for actuals.
+<P>
+For formal parameters the instructions generated are either
+match-name or match-var instructions.
+When they are being executed by the interpreter,
+the corresponding actual parameters will already be on the stack,
+and hence the addresses used by the two match instructions
+will be relative to the top of the stack.
+During code generation for formal parameters, though,
+it will not be known how many formal parameters there are until the closing
+parenthesis is reached.
+By that time the code for the formals has been generated,
+except that for the match-name instruction the b-field has to be fixed
+and for the match-var instruction both the a-field and the b-field
+have to be fixed.
+<P>
+A simple method of doing this is to keep a count of the actual
+parameters, by a variable which is initialised to zero
+when the predicate is seen and which is incremented for each formal
+parameter encountered.
+Then, when the code is generated for the formals,
+this count is used in the b-field of both instructions.
+For variables on their first occurrence the count is saved in the the
+table of variables,
+and for later occurrences the saved count is used for the a-field when
+code is generated for the repeated variable.
+When the closing right parenthesis is reached,
+the addresses in the b-fields
+and for the match-var instructions also the addresses in the a-field
+are exactly the inverses of what they should be:
+for example for b-fields of the last of n parameters
+it will have the value n when it should be zero.
+So, when the closing parenthesis is reached
+and hence the total number of formals is known,
+these addresses must be fixed up.
+The instructions to be fixed are all those following the or-node
+that had been generated for the predicate.
+The fix up consists of replacing the value in the field
+by the difference between the count of formals and the value in the field.
+Of course for the match-name instruction the a-field is not changed
+because this contains the absolute address of the name in the table
+of names.
+<P>
+For actual parameters all instructions generated will be
+push instructions.
+Again it will be necessary to keep a count of the actuals, initialised to
+zero and incremented for each actual parameter encountered in
+a formula which is the body of a rule.
+Syntactically formulas that are queries are treated just like
+formulas that are bodies,
+but it so happens that for queries the count of actuals is not needed.
+<P>
+There are five different places where push instructions
+are generated for actual parameters.
+The first occurs when an actual parameter is a name.
+In that case the a-field is the address of the name in the table
+of names;
+that address is delivered by the function that looks up and possibly updates
+the table of names.
+In all other cases the actual parameter is a variable,
+the function for looking up and possibly updating the table
+of variables is called and the address returned is saved
+in a variable.
+What to do with that address depends on several factors.
+<P>
+In questioning mode what has to be pushed is the absolute address
+of the variable,
+but being an address into the stack
+it has to be a negative value.
+So the a-field is the negative of the address,
+and since it is absolute and not relative to the top of stack,
+the b-field is set to zero.
+<P>
+In entering mode, the address of the variable may be less than
+or equal to the number of formal parameters, or it may be greater.
+If the address is equal to or less than the number of formals,
+then the variable has already occurred as a formal parameter.
+The required address has to be relative to what at run time is the
+top of stack,
+and this is indicated by setting the b-field to one.
+The required absolute value of this relative address
+is increased by each of the actual parameters there are so far,
+because each of them increases the distance from the top of stack.
+The required value is also increased by each intervening formal
+parameter, and the number of these is given by the difference
+between the number of formals and the
+address of the variable.
+Adding the number of actuals and  this difference
+gives the required value for the a-field.
+<P>
+If the address of the variable is greater than the number of
+formal parameters,
+then the variable is local and understood to be existentially quantified.
+The table of variables already records
+whether this is the first or a later occurrence.
+If it is the first occurrence,
+then the interpreter has to push a new undefined item,
+so the push instruction has a zero in the a-field.
+Since this value has to be pushed absolutely,
+the b-field is also set to zero.
+It is also necessary to record in the table
+of variables the ordinal number of this first occurrence.
+<P>
+If there are further occurrences of this local variable,
+then the interpreter will have to be able to access
+this initially undefined item.
+What has to be pushed is a relative address,
+so the b-field is one.
+The required value of the relative address is the difference
+between the ordinal number of the first
+occurrence as recorded in the table and the current occurrence
+of this actual parameter.
+
+<H2>The program</H2>
+<P>
+The following is the standard Pascal source program for Datalog:
+<XMP>
+PROGRAM datalog(input,output);
+
+LABEL 1,99;
+
+CONST
+    debugging = true; echo = true;
+    alfalength = 16;
+    maxpreds = 50; maxvars = 10; maxnames = 100; maxcode = 1000;
+    maxstack = 30;
+
+TYPE
+    alfa = PACKED ARRAY [1..alfalength] OF char;
+    message = PACKED ARRAY [1..30] OF char;
+    pointer = 0..maxcode;
+    symbol = (badchar,plus,minus,l_ident,u_ident,
+              turnstyle,lpar,rpar,comma,period,query);
+    operator = (push,match_const,match_var,cal_,return_,or_);
+VAR
+    ch,lastch : char; sym : symbol; al,nullalfa : alfa;
+
+    predtab : ARRAY [0 .. maxpreds] OF
+        RECORD name : alfa; start,finish : integer END;
+    lastpredtab,save_lastpredtab,ploc : integer;
+
+    vartab : ARRAY [0 ..maxvars] OF
+        RECORD name : alfa; adr : integer END;
+    lastvartab,vloc : integer;
+
+    nametab : ARRAY [0 ..maxnames] OF alfa;
+    lastnametab,save_lastnametab : integer;
+
+    code : ARRAY [1..maxcode] OF
+        RECORD op : operator; a,b : integer END;
+    lastcode,save_lastcode : pointer;
+
+    num_formals,num_actuals : integer;
+    tracing : boolean;
+    i : integer;
+    mode : (entering, questioning);
+
+    num_successes : integer;
+    runstack : ARRAY [1..maxstack] OF integer;
+    top : integer;
+
+(* - - - - -   U T I L I T I E S   - - - - - *)
+
+PROCEDURE getch;
+BEGIN
+IF eof THEN GOTO 99;
+IF eoln THEN BEGIN readln; IF echo THEN writeln; ch := ' ' END
+        ELSE BEGIN read(ch); IF echo THEN write(ch) END
+END;
+
+PROCEDURE point(mes : message);
+BEGIN
+write('error: seen "');
+IF sym IN [l_ident,u_ident] THEN write(al) ELSE write(lastch);
+writeln('" when ',mes);
+END; (* point *)
+
+PROCEDURE error(mes : message);
+BEGIN
+WHILE not eoln DO getch; readln; IF echo THEN writeln;
+point(mes);
+lastpredtab := save_lastpredtab; lastcode := save_lastcode;
+lastnametab := save_lastnametab;
+WHILE NOT eoln DO getch; readln; GOTO 1
+END (* error *);
+
+PROCEDURE fatal(mes : message);
+BEGIN
+IF echo THEN writeln;
+write('fatal '); point(mes); GOTO 99
+END; (* fatal *)
+
+PROCEDURE getsym;
+LABEL 1;
+VAR k : integer;
+BEGIN
+1: WHILE ch &lt;= ' ' DO getch;
+IF ch IN ['A'..'Z','a'..'z'] THEN
+    BEGIN (* identifier *)
+    IF ch IN ['a'..'z'] THEN sym := l_ident ELSE sym := u_ident;
+    k := 0; al := nullalfa;
+    REPEAT
+        IF k < alfalength THEN
+            BEGIN k := k + 1; al[k] := ch END;
+        getch
+        UNTIL NOT (ch IN ['A'..'Z','a'..'z','0'..'9','_'])
+    END (* identifier *)
+ELSE
+    BEGIN
+    lastch := ch; getch; sym := badchar; (* for errors *)
+    CASE lastch OF
+        '+' : sym := plus;
+        '-' : sym := minus;
+        '(' : sym := lpar;
+        ')' : sym := rpar;
+        ',' : sym := comma;
+        '.' : sym := period;
+        '?' : sym := query;
+        ':' :
+            BEGIN
+            IF ch = '-' THEN getch ELSE
+                error('":-" intended ?               ');
+            sym := turnstyle
+            END;
+        '/' :
+            BEGIN
+            IF ch = '*' THEN getch ELSE
+                error('"/*" intended ?               ');
+            REPEAT
+                WHILE ch &lt;> '*' DO getch;
+                getch
+                UNTIL ch = '/';
+            getch; GOTO 1
+            END;
+        OTHERWISE
+            error('this character is illegal     ');
+        END (* CASE *)
+    END (* ELSE *)
+END;  (* getsym *)
+
+FUNCTION predloc : integer;
+VAR loc : integer;
+BEGIN (* predloc *)
+predtab[0].name := al; loc := lastpredtab;
+WHILE predtab[loc].name &lt;> al DO loc := loc - 1;
+IF loc = 0 THEN
+    BEGIN
+    IF lastpredtab = maxpreds THEN
+        fatal('too many predicates in program');
+    lastpredtab := lastpredtab + 1;
+    WITH predtab[lastpredtab] DO
+        BEGIN name := al; start := 0 END;
+    loc := lastpredtab
+    END;
+predloc := loc
+END; (* predloc *)
+
+FUNCTION varloc : integer;
+VAR loc : integer;
+BEGIN (* varloc *)
+vartab[0].name := al; loc := lastvartab;
+WHILE vartab[loc].name &lt;> al DO loc := loc - 1;
+IF loc = 0 THEN
+    BEGIN
+    IF lastvartab = maxvars THEN
+        fatal('too many variables in program ');
+    lastvartab := lastvartab + 1;
+    WITH vartab[lastvartab]DO
+        BEGIN name := al; adr := 0 END;
+    loc := lastvartab
+    END;
+varloc := loc
+END; (* varloc *)
+
+FUNCTION nameloc : integer;
+VAR loc : integer;
+BEGIN (* nameloc *)
+nametab[0] := al; loc := lastnametab;
+WHILE nametab[loc] &lt;> al DO loc := loc - 1;
+IF loc = 0 THEN
+    BEGIN
+    IF lastnametab = maxnames THEN
+        fatal('too many names in program     ');
+    lastnametab := lastnametab + 1;
+    nametab[lastnametab] := al;
+    loc := lastnametab
+    END;
+nameloc := loc
+END; (* nameloc *)
+
+PROCEDURE generate(o : operator; x,y : integer);
+BEGIN (* generate *)
+IF lastcode = maxcode THEN
+        fatal('program is too big            ');
+lastcode := lastcode + 1;
+WITH code[lastcode] DO
+    BEGIN op := o; a := x; b := y END
+END; (* generate *)
+
+(* - - - - -   I N T E R P R E T E R    - - - - - *)
+
+PROCEDURE show;
+VAR i,j : integer;
+BEGIN (* show *)
+num_successes := num_successes + 1;
+IF lastvartab > 0 THEN
+    BEGIN
+    writeln(num_successes:0,':');
+    FOR i := 1 TO lastvartab DO
+        BEGIN
+        write('    ',vartab[i].name,'  =  ');
+        j := runstack[i];
+        IF debugging THEN IF tracing THEN
+            write('[',j:0,']  ');
+        WHILE j < 0 DO j := runstack[-j];
+        IF j > 0 THEN write(nametab[j]);
+        writeln
+        END
+    END
+END; (* show *)
+
+PROCEDURE solve(t : integer; PROCEDURE cp);
+VAR i,j : integer;
+
+    PROCEDURE solvenext;
+    BEGIN top := i; solve(t+1,cp) END;
+
+BEGIN (* solve *)
+WITH code[t] DO
+    BEGIN
+    IF tracing THEN
+        BEGIN
+        write('[',top:3,' : ');
+        IF top > 0 THEN write(runstack[top]:5)
+                   ELSE write(' ':5);
+        writeln(']      ',t,op,a,b)
+        END;
+    CASE op OF
+        cal_ :
+            WITH predtab[a] DO
+                IF start > 0 THEN
+                    BEGIN
+                    j := start; i := top;
+                    REPEAT
+                        IF debugging THEN IF tracing THEN
+                            writeln('from node ',t:0,' call to "',
+                                name,'" top = ',top:0);
+                        solve(code[j].a,solvenext);
+                        top := i; j := code[j].b;
+                        UNTIL j = 0
+                    END;
+        return_ :
+            cp;
+        push :
+            BEGIN
+            IF top = maxstack THEN
+                BEGIN writeln('stack overflow'); GOTO 99 END;
+            top := top + 1;
+            i := top; j := runstack[top]; (* save these *)
+            runstack[top] := a - b * top;
+            solve(t+1,cp);
+            IF debugging THEN IF tracing THEN
+                writeln('restoring stack[',i:0,'] to ',j:0);
+            runstack[i] := j (* restore *)
+            END;
+        match_const :
+            BEGIN
+            i := top - b;
+            WHILE runstack[i] < 0 DO i := -  runstack[i];
+            IF debugging THEN IF tracing THEN
+                 writeln('matching at i = ',i:0,
+                         ' where = ',runstack[i]:0);
+            IF runstack[i] = a THEN solve(t+1,cp)
+            ELSE IF runstack[i] = 0 THEN
+                BEGIN
+                runstack[i] := a;
+                solve(t+1,cp);
+                IF debugging THEN IF tracing THEN
+                    writeln('setting stack[',i:0,'] from ',
+                        runstack[i]:0,' to undefined');
+                runstack[i] := 0
+                END
+            END;
+        match_var :
+            BEGIN
+            i := top - a;
+            WHILE runstack[i] < 0 DO i := - runstack[i];
+            j := top - b;
+            WHILE runstack[j] < 0 DO j := - runstack[j];
+            IF runstack[i] = 0 THEN
+                BEGIN
+                runstack[i] := -j; solve(t+1,cp); runstack[i] := 0
+                END
+              ELSE IF runstack[j] = 0 THEN
+                BEGIN
+                runstack[j] := -i; solve(t+1,cp); runstack[j] := 0
+                END
+              ELSE IF runstack[i] = runstack[j] THEN solve(t+1,cp)
+            END
+        END (* CASE *)
+    END (* WITH *)
+END; (* solve *)
+
+(* - - - - -   M A I N   - - - - - *)
+
+BEGIN (* main *)
+FOR i := 1 TO alfalength DO nullalfa[i] := chr(0);
+lastcode := 0; lastpredtab := 0;lastnametab := 0;
+ch := ' '; mode := entering;
+1: REPEAT
+    getsym;
+    IF sym = plus THEN mode := entering
+    ELSE IF sym = minus THEN mode := questioning
+    ELSE
+        BEGIN (* enter facts or rules, or question *)
+        IF sym &lt;> query THEN tracing := false ELSE
+            BEGIN tracing := true; getsym END;
+        save_lastpredtab := lastpredtab; save_lastcode := lastcode;
+        save_lastnametab := lastnametab;
+        lastvartab := 0;
+
+        IF mode = entering THEN
+            BEGIN (* fact or head of rule *)
+            IF sym &lt;> l_ident THEN
+                error('predicate expected            ');
+            WITH predtab[predloc] DO
+                BEGIN
+                generate(or_,lastcode+2,0);
+                IF start = 0
+                    THEN start := lastcode
+                    ELSE code[finish].b := lastcode;
+                finish := lastcode
+                END;
+            getsym; num_formals := 0;
+            IF sym = lpar THEN
+                BEGIN (* formal parameters *)
+                REPEAT
+                    num_formals := num_formals + 1; getsym;
+                    IF sym = l_ident THEN (* name *)
+                        generate(match_const,nameloc,num_formals)
+                    ELSE IF sym = u_ident THEN
+                        BEGIN (* variable *)
+                        vloc := varloc;
+                        WITH vartab[vloc] DO
+                            IF adr = 0 THEN adr := num_formals ELSE
+                                generate(match_var,adr,num_formals)
+                        END (* variable *)
+                    ELSE
+                        error('name or variable expected     ');
+                    getsym
+                    UNTIL sym &lt;> comma;
+                IF sym = rpar THEN getsym ELSE
+                    error('"," or ")" expected           ');
+                FOR i  := save_lastcode + 2 TO lastcode DO
+                    WITH code[i] DO
+                        BEGIN
+                        b := num_formals - b;
+                        IF op = match_var THEN a := num_formals - a
+                        END
+                END; (* formal parameters *)
+            IF sym &lt;> period THEN (* rule *)
+                IF sym = turnstyle THEN getsym ELSE
+                    error('":-" or "." expected          ')
+            END; (* fact or head of rule *)
+
+        IF sym &lt;> period THEN
+            BEGIN (* formula, for body or query *)
+            num_actuals := 0;
+            REPEAT
+                IF sym &lt;> l_ident THEN
+                    error('predicate expected            ');
+                ploc := predloc; getsym;
+                IF sym = lpar THEN
+                    BEGIN (* actual parameters *)
+                    REPEAT
+                        num_actuals := num_actuals + 1; getsym;
+                        IF sym = l_ident THEN
+                            generate(push,nameloc,0)
+                        ELSE IF sym = u_ident THEN
+                            BEGIN (* variable *)
+                            vloc := varloc;
+                            IF mode = questioning THEN
+                                generate(push,-vloc,0)
+                            ELSE IF vloc &lt;= num_formals THEN
+                                generate(push,
+                                 num_actuals + num_formals - vloc,1)
+                            ELSE WITH vartab[vloc] DO
+                                IF adr = 0 THEN
+                                    BEGIN
+                                    generate(push,0,0);
+                                    adr := num_actuals
+                                    END
+                                  ELSE
+                                    generate(push,
+                                        num_actuals - adr,1)
+                            END (* variable *)
+                        ELSE error('name or variable expected     ');
+                        getsym
+                        UNTIL sym &lt;> comma;
+                    IF sym = rpar THEN getsym ELSE
+                        error('"," or ")" expected           ')
+                    END; (* actual parameters *)
+                IF NOT (sym IN [comma,period]) THEN
+                    error('"," or "." expected           ');
+                generate(cal_,ploc,0);
+                IF sym = comma THEN getsym
+                UNTIL NOT (sym IN [l_ident,u_ident])
+            END; (* formula, for body or query *)
+
+        IF sym &lt;> period THEN
+            error('"." expected                  ');
+        generate(return_,0,0);
+        IF tracing THEN
+            FOR i := save_lastcode + 1 TO lastcode DO
+                WITH code[i] DO writeln(i:3,'  ',op,a,b);
+
+        IF mode = questioning THEN
+            BEGIN
+            FOR i := 1 TO lastvartab DO runstack[i] := 0;
+            top := lastvartab; num_successes := 0;
+            solve(save_lastcode + 1,show);
+            IF num_successes > 0
+                THEN writeln(' ... yes')
+                ELSE writeln(' ... no');
+            lastcode := save_lastcode
+            END
+
+        END (* ELSE, enter facts or rules, or question *)
+    UNTIL false;
+99: writeln('CPU time for this session: ',clock:0,' milliseconds')
+END.
+</XMP>
+<H2>Exercises and reading</H2>
+<P>
+<BF>Manual</BF>:
+Write a manual for Datalog.
+You may assume that your reader is familiar with
+some version of Prolog
+or with some other form of logic programming language.
+But you should not make any too specific assumptions.
+You may also assume that your reader is familiar with
+the syntax of some form of predicate logic.
+However, you should be aware that understanding
+the semantics of predicate logic is of no help in understanding
+the semantics of Datalog (or of Prolog).
+<P>
+<BF>Tutorial</BF>:
+Write a tutorial for Datalog.
+You should assume that your reader does not know about Prolog
+and does not know about predicate logic.
+Readers who have studied your tutorial should then be able
+to understand your manual.
+<P>
+<BF>Recapitulation</BF>:
+Why wasn't sequential execution used in
+the program for expanding regular expressions in Chapter~9,
+or in the program for semantic tableaux in Chapter~10,
+or the program for context free grammars in Chapter~11
+or the program for monadic logic in Chapter~15?
+<P>
+<BF>Explicit disjunctions</BF>:
+In Datalog all disjunctions are implicit,
+by way of multiple definitions of predicates.
+For any disjunctive query it is necessary
+to first give a multiple definition
+of some suitable and possibly contrived predicate,
+and this can be annoying.
+Implement explicit disjunctions for queries,
+and with no extra effort, for bodies of clauses.
+As usual, conjunctions should have greater precedence
+than disjunctions;
+so you should also allow parentheses for overriding precedences.
+Most of the parser will have to be rewritten completely,
+because the grammar will now be recursive.
+<P>
+<BF>Control of solutions</BF>:
+As implemented, Datalog will spew forth all solutions it can find.
+Implementations of Prolog stop after each group of solutions
+and then let the user indicate whether more are wanted.
+Implement such a feature in Datalog.
+<P>
+<BF>Non-identity</BF>:
+In Datalog and in Prolog there is no need for an identity relation.
+Different names always denote different individuals anyhow,
+so an identity statement using different names will always be false.
+Identity statements using a name and a variable are not needed
+because one can use the name instead of the variable
+throughout the clause or query.
+Identity statements using two different variables
+are not needed because one can use the same variable
+throughout the clause or query.
+<P>
+On the other hand,
+it is sometimes useful to have negated identity statements,
+or non-identity statements,
+but only if one of the two terms used is a variable.
+For example,
+one might want to define <CODE>X</CODE> and <CODE>Y</CODE> to be full siblings if
+they have two parents <CODE>P1</CODE> and <CODE>P2</CODE> in common.
+It is essential that <CODE>P1</CODE> and <CODE>P2</CODE> are not identical.
+Using, say <CODE>#</CODE> as the symbol for non-identity,
+the new atomic formula <CODE>P1 # P2</CODE>
+would be part of the definition for full siblinghood:
+\begin{verbatim}
+full_siblings(X,Y)  :-
+    parent(P1,X), parent(P1,Y), parent(P2,X), parent(P2,Y), P1 # P2.
+\end{verbatim}
+(One might argue that another condition is needed: <CODE>X # Y</CODE>.)
+Implement non-identity in Datalog.
+Beware of some difficulties:
+how would you handle the case where the non-identity statement
+is not the last conjunct in the definition,
+but the third, or the second, or even the first?
+<P>
+<BF>Sets of solutions</BF>:
+Prolog and Datalog will produce the same solution of variable
+bindings several times if there are several ways of proving them.
+For some applications this is exactly what is wanted,
+for some it is at least acceptable,
+but for others it is positively annoying.
+Modify the program so that each solution is printed only once.
+A similar exercise was already suggested for semantic tableaux in Chapter~10.
+When a solution is found,
+it will be necessary to check whether the same solution has been found
+before --- if not it has to be added.
+The solutions can be printed as soon as they have been found
+and been seen to be new,
+or they can be printed at the end when the entire set of solutions
+has been completed.
+Duplicate solutions are eliminated in
+the Logical Data Language LDL
+described in Naqvi and Tsur (1989).
+<P>
+<BF>Negation</BF>:
+Implement either a Prolog-like form of negation
+or a full classical negation.
+For the latter,
+a negated atom <CODE>not p(X)</CODE>
+with a variable as the actual parameter
+should return all those bindings of <CODE>X</CODE> for which
+the un-negated atom fails.
+The bindings are obtained by searching the table of names of individuals,
+hence it is assumed that there are no individuals other than
+those mentioned in one way or another.
+Note that such a classical form of negation only makes sense
+in Datalog, though not in full Prolog.
+<P>
+<BF>Cut</BF>:
+Study the cut primitive of Prolog and implement it in Datalog.
+<P>
+<BF>Informal input language</BF>:
+Design a different syntax for Datalog,
+closer to natural language,
+somewhat along the lines of Mondef in Chapter~15.
+A new syntax for facts and rules and questions should be designed.
+Then rewrite Datalog for this new syntax.
+<P>
+<BF>Reading</BF>:
+Maier and Warren (1988) describe a sequence of implementations
+of Proplog, Datalog and Prolog.
+Kluzniak and Szpakiwics (1985) is said to contain
+a diskette with the Pascal source of a simple Prolog system.
+Campbell (1984) contains many articles on the implementation
+of full Prolog.
+Spivey (1996) contains an introduction to Prolog
+and the design and final source code for a Prolog implementation
+in Pascal.
+
+</body>
+</HTML>

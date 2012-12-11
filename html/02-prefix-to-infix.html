@@ -1,0 +1,483 @@
+<HTML>
+<head>
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Chapter 2</TITLE>
+</head>
+
+<body>
+
+<H1>Chapter 2: PREFIX TO INFIX TRANSLATOR</H1>
+<P>
+In this chapter we shall design a very small translator
+from one simple language to another simple language.
+The two languages chosen are for the propositional calculus in logic.
+The reason for choosing logic languages is that
+every symbol needed is a single character.
+This makes the processing of languages particularly easy.
+<H2>INFIX AND PREFIX NOTATION</H2>
+<P>
+We begin by giving a definition of FORMULA in infix notation:
+<PRE>
+1) A lower case letter, i.e. 'a', 'b' .. 'z' is a formula.
+2) If p is a formula, then the following is  also a formula:
+	-p			- negation
+3) If p and q are formulas, then the following are also formulas:
+	(p & q)			- conjunction
+	(p v q)			- disjunction
+	(p > q)			- conditional
+	(p = q)			- equivalence
+</PRE>
+Nothing else is a formula.
+For our purposes it was not necessary to specify
+compound formulas as negations, conjunctions and so on,
+since in this chapter we are not concerned with meaning.
+Note that we have used the common convention
+of using p and q as variables ranging over arbitrary formulas,
+even though they are also real formulas.
+An alternative way of describing formulas is:
+<PRE>
+A formula is either
+	a lower case letter, or
+	the symbol '-'
+	  followed by a formula, or
+	the symbol '('
+	  followed by a formula
+	  followed by one of the symbols '&', 'v' '>' or '='
+	  followed by a formula
+	  followed by the symbol ')'
+</PRE>
+<P>
+Parentheses serve to indicate which subformulas belong to
+which infix operator.
+It is possible to eliminate the need for parentheses
+completely by the following technique:
+Replace the left parenthesis by the operator,
+delete the operator in its infix position,
+and also delete the right parenthesis.
+Then every operator, whether unary or binary,
+has to be followed by the appropriate number of
+subformulas, namely one or two.
+Because the operators
+always precede their operands,
+this notation is called prefix notation.
+The device was invented by Polish logicians in the 1930's
+and is often called Polish notation.
+We shall follow their tradition by using
+capital letters for the operators:
+one unary operator 'N' which means negation,
+and four binary operators 'K', 'A', 'C' and 'E'
+which mean conjunction, alternation (=disjunction),
+conditional and equivalence.
+A semi-formal grammar thus is:
+<PRE>
+A formula is either
+	a lower case letter, or
+	the symbol 'N'
+	  followed by a formula, or
+	one of the symbols 'K', 'A', 'C' or 'E'
+	  followed by two formulas
+</PRE>
+<P>
+We now have two notations for propositional logic,
+and we intend to write a program
+which can translate from prefix notation to infix notation.
+The reason we choose this particular translation
+is none other than that it is very easy to write the program.
+But first we have to specify
+the translation from prefix to infix.
+One way to do so is by a translation grammar:
+<PRE>
+A prefix formula is either
+    'a' or 'b' or .. or 'z'	
+	and its infix translation is itself, or
+    'N' F
+	    where F is a prefix formula,
+	and its infix translation is:  '-' G
+	    where G is the infix translation of F, or
+    'A' F1 F2
+	    where F1 and F2 are prefix formulas,
+	and its infix translation is:  '(' G1 'v' G2 ')'
+	    where G1 and G2 are infix translations of F1 and F2, or
+    'C' F1 F2
+	    where F1 and F2 are prefix formulas,
+	and its infix translation is:  '(' G1 '>' G2 ')'
+	    where G1 and G2 are infix translations of F1 and F2, or
+    'E' F1 F2
+	    where F1 and F2 are prefix formulas,
+	and its infix translation is:  '(' G1 '=' G2 ')'
+	    where G1 and G2 are infix translations of F1 and F2, or
+    'K' F1 F2
+	    where F1 and F2 are prefix formulas,
+	and its infix translation is:  '(' G1 '&' G2 ')'
+	    where G1 and G2 are infix translations of F1 and F2.
+</PRE>
+<P>
+In the official manual to follow,
+the input language and the output language
+are specified by a grammar written in what is called BNF notation.
+Such a grammar consists of one or more "productions".
+A production consists of a "non-terminal" symbol,
+followed by the three characters "::=",
+which may be read as "is",
+followed by an "expression".
+An expression is built from terminal symbols (which are quoted)
+and non-terminal symbols by means of two operations:
+1) concatenation, which means "followed by",
+and 
+2) the infix alternation operator "|",
+which means "or".
+Concatenation takes precedence over alternation,
+and parentheses may be used to override these precedences.
+We also use the ellipsis ".." for material to be
+interpolated in some obvious way.
+You should compare the BNF grammars in the manual
+with the equivalent informal grammars given earlier.
+<H2>USER MANUAL</H2>
+<P>
+The program PREINF translates logical formulas in
+prefix notation
+to formulas in infix notation.
+In the standard interpretations of the two notations,
+an output formula is logically equivalent to its input formula.
+<P>
+The BNF grammar for the input formulas in prefix notation
+is as follows:
+<PRE>
+formula  ::=
+	'a' | 'b' | .. | 'z' |
+	'N' formula |
+	( 'A' | 'C' | 'E' | 'K' ) formula formula
+</PRE>
+The program indicates its readiness to read a prefix formula
+with the prompt "Formula :".
+When reading it ignores white space such as blanks and tabs,
+for readability it is
+often desirable to include white space inside longer formulas.
+The program also treats new lines as white space and ignores
+them.
+However, it is better not to break a formula over several lines
+because part of the translation of the previous line will
+appear as soon as that line is terminated,
+and thus interfere with the next input line.
+<P>
+The BNF grammar for the output in fully parenthesised infix
+notation is as follows:
+<PRE>
+formula  ::=
+	'a' | 'b' | .. | 'z' |
+	'-' formula |
+	'(' formula ( 'v' | '&' | '>' | '=' ) formula ')'
+</PRE>
+For readability, the program surrounds the infix operators
+with spaces.
+Atomic formulas 'a', 'b' .. 'z' are translated as themselves.
+Compound formulas built from one or two subformulas
+are translated by translating the subformulas and building
+an infix formula from the translations of the subformulas.
+The translation of the operators is given by the following table:
+<PRE>
+Prefix Operator:	N   A   C   E   K
+Infix  Operator:	-   v   >   =   &
+</PRE>
+Some sample translations are:
+<PRE>
+	Prefix:			Infix:
+	p			p
+	Nq			-q
+	K Np q			(-p & q)
+	A N K Np q r		(-(-p & q) v r)
+	C E p q C Nq p		((p = q) > (-q > p))
+</PRE>
+If during the reading of a formula a printing character is detected
+which cannot be the beginning of a legal formula in prefix,
+then an error message is produced and the rest of the input line
+is ignored.
+For example, when the offending character is X, the error message will be:
+<PRE>
+Error : seen "X" when "a".."z","N","A","C","E" or "K" expected
+</PRE>
+The program terminates when the end of the input file is reached.
+If this occurs halfway through a formula, then no error is signalled.
+
+<H2>DESIGNING THE IMPLEMENTATION</H2>
+<P>
+To be able to write this program, you should know
+about variables, flow of control (including procedure calls),
+reading characters and writing strings of characters.
+You should also know about arrays.
+You need not know about recursion -
+this may well be the first recursive program you have seen.
+Probably this is quite a good first example problem
+which is best solved recursively.
+If you have understood the translation grammar,
+you are well on the way.
+<P>
+One way of specifying which character is the translation
+of a given prefix operator is by means of a table,
+best implemented as an array.
+Since this never changes,
+the program begins by initialising the translation table
+at the few capital letters that are actually used as
+prefix operators, the values assigned are the characters
+which serve as the corresponding operators for the infix
+notation.
+<P>
+Then the program enters a REPEAT loop.
+There it writes a new line;
+this is to terminate the previous translation, if any.
+Then it writes the prompt on a line.
+Then it calls a procedure which we call <EM>prefix</EM>,
+because it has essentially the structure of the grammar
+for prefix formulas.
+This procedure will read a formula in prefix and translate it to infix.
+Then it writes a new line.
+The REPEAT loop goes nominally forever.
+<P>
+The procedure <EM>prefix</EM> has a local variable
+which is generally the last printing character that has been read.
+The body of the procedure has to first read the next
+printing character, and then
+take some action depending on what the character was.
+<P>
+To read the first printing character,
+the procedure enters a loop:
+first it tests whether the end of the input file has been reached,
+if so the procedure jumps to the end of the program and exits.
+If not, the procedure reads the next character from the
+input file and puts it into the the local variable.
+This is repeated until the last character read was indeed
+a printing character, and not white space.
+If during this loop the end of the input file is reached,
+the procedure jumps to the end of the program.
+<P>
+At this point the character will be a printing character.
+Now a choice has to made by the procedure:
+1) If the character is a lower case letter,
+then it just has to write it out again.
+2) If the character is the letter 'N',
+then it writes the translation of 'N' (which is '-')
+and then the procedure calls itself recursively once
+in order to translate the negand.
+3) If the character is one of the binary operators 'A', 'C', 'E' or 'K',
+then it writes the required opening parenthesis,
+then it calls itself recursively to translate the first subformula,
+then it writes the character which is the translation
+of the binary operator that is seen,
+but surrounding it with one space to the left and one to the right,
+then it calls itself recursively to translate the second subformula,
+and finally it writes the closing parenthesis.
+4) However, if the character is none of the above,
+then the procedure writes the error message,
+skips the rest of the input line
+and jumps to the beginning of the REPEAT loop of the main program.
+The choice is best made by a CASE statement.
+All of this follows the translation grammar quite closely.
+<P>
+In later chapters the descriptions of programs given
+will be at the level of detail of the preceding description.
+However, since this may well be the first PASCAL program
+that you see or write,
+we now give a version in what is called pseudo-code:
+it is neither PASCAL nor English, but something somewhere in between.
+<PRE>
+PROGRAM to translate from prefix to infix;
+Declare a translation table for the operators;
+PROCEDURE prefix;
+read the next printing character from the input
+	(but if end of file is reached, jump to end of program)
+CASE this character OF
+	a lower case letter:
+	    write the character to the output;
+	the letter 'N':
+	    write the translation of 'N'
+	    CALL PROCEDURE prefix
+	one of the letters 'A', 'C', 'E', 'K':
+	    write '('
+	    CALL PROCEDURE prefix
+	    write the translation of the character
+	    CALL PROCEDURE prefix
+	    write ')'
+	anything else:
+	    write an error message, ignore rest of line
+	    jump to prompt writing in main program
+END of prefix;
+BEGIN main program
+initialise the translation table -	A C E K N    (prefix)
+					v > = & -    (infix)
+REPEATEDLY
+	write a prompt 'Formula :'
+	CALL PROCEDURE prefix (to read and translate a formula)
+END main program
+</PRE>
+<H2>THE PROGRAM</H2>
+<P>
+Here is the complete program:
+<P>
+<PRE>
+PROGRAM prefix_to_infix(input,output);
+
+LABEL 1, 99;
+
+VAR t : ARRAY[char] OF char;
+
+PROCEDURE prefix;
+VAR ch : char;
+BEGIN (* prefix *)
+REPEAT
+    IF eof THEN GOTO 99;
+    read(ch)
+    UNTIL ch > ' ';
+CASE ch OF
+    'a','b','c','d','e','f','g','h','i','j','k','l','m',
+    'n','o','p','q','r','s','t','u','v','w','x','y','z' :
+        write(ch);
+    'N' :
+        BEGIN
+        write(t[ch]); prefix
+        END;
+    'A','C','E','K' :
+        BEGIN
+        write('(');
+        prefix; write(' ',t[ch],' '); prefix;
+        write(')')
+        END;
+    OTHERWISE
+        BEGIN
+        writeln;
+        writeln('Error : seen "',ch,
+            '" when "a".."z","N","A","C","E" or "K" expected.');
+        readln;
+        GOTO 1
+        END;
+    END (* CASE *)
+END; (* prefix *)
+
+BEGIN (* main *)
+t['A']:='v'; t['C']:='>'; t['E']:='='; t['K']:='&'; t['N']:='-';
+1:
+REPEAT
+    writeln;
+    writeln('Formula :');
+    prefix;
+    writeln;
+    UNTIL false;
+99:
+END.
+</PRE>
+<H2>EXERCISES AND READING</H2>
+<P>
+<EM>OTHERWISE</EM>:
+In standard PASCAL there is no OTHERWISE in CASE statements.
+It is always possible to rewrite a CASE statement without the OTHERWISE,
+by wrapping it inside an IF-THEN-ELSE:
+<PRE>
+	IF we have a normal case THEN
+	    CASE
+		...
+	  ELSE here the otherwise statement
+</PRE>
+Rewrite procedure <EM>prefix</EM> in this manner.
+<P>
+<EM>Statistics</EM>:
+Modify the program so that it keeps a count of the total
+number of formulas that it has translated, and also a count
+of the total number of errors encountered.
+Before the program exits, it should then print these statistics.
+<P>
+<EM>Postfix</EM>:
+Give a grammar for postfix notation,
+which is like prefix notation except that the operators
+are written after the subformulas.
+Write a translation grammar from prefix to postfix.
+Modify the manual, and modify the program so that it translates into postfix.
+<P>
+<EM>No outermost parentheses</EM>:
+Modify the original prefix to infix translator
+so that it does not write the outermost parentheses if any.
+So "Kpq" should be translated as "p & q",
+"C N A a b c" as "-(a v b) > c".
+But you should also write an informal or formal
+grammar for this infix notation,
+and a translation grammar.
+This is probably harder than just fixing the program.
+<P>
+<EM>Further minimisation of parentheses</EM>:
+By giving the infix operators a precedence it is possible
+to further reduce the need for parentheses.
+One possibility is to let "&" take precedence over "v"
+which takes precedence over "_>" and "=" which have the same
+precedence.
+Thus "a & b v c & d" will be understood as "(a & b) v (c & d)".
+Rewrite the translator so that it uses precedences in the
+infix notation.
+Rewrite the manual, too.
+<P>
+<EM>Multi-line input</EM>:
+Modify the program (and the manual) so that
+input formulas written over several lines are treated better.
+<P>
+<EM>Elimination of recursion</EM>:
+When one has a recursive problem,
+in general the best way to solve it is to use a recursive solution.
+In our case we were dealing with formulas
+which were defined recursively,
+and the simplest way to parse and translate them was to
+use the recursion facility provided by PASCAL.
+Rewrite either the original program
+or one of the later versions without using any
+recursive procedures.
+<P>
+<EM>Proof reading</EM>:
+Read the Manual with extreme care and determine whether
+it correctly describes a) the intention of the designer,
+and b) the actual translation program.
+Also, compare the informal style in which
+the translation was specified in the manual with the
+formal translation grammar given earlier.
+Assuming that users are already familiar with the two notations,
+which style of specifying the translation is better?
+Which style is more helpful for writing the program?
+<P>
+<EM>Cambridge notation</EM>:
+This is a prefix notation in which at least conjunction and disjunction
+(the associative operators) can have more than two operands.
+Parentheses are used before the operator and after the last operand.
+Implement a Cambridge to infix translator.
+To make the notation more like LISP,
+you could use AND and OR; for other operators use NOT, IMP and IFF.
+An input formula might then look like this:
+<PRE>
+    (AND (OR a b c) (NOT (OR d e (NOT f))) (OR g h (AND i j k l)))
+</PRE>
+Does it make sense to allow conjunctions and disjunctions with only
+one operand?
+Does it make sense to allow implication and equivalence to take
+more than two operands?
+Does it make sense to allow negation to have more than one operand?
+Can one make sense of operators with zero operands?
+Discuss these questions, and then implement your views in
+a Cambridge to infix translator.
+<P>
+<EM>More difficult translations</EM>:
+Why is there no exercise to translate from infix to prefix,
+or from postfix to infix, or from postfix to prefix?
+All of these translations involve shifting
+an operator from the middle or the right
+forward to the front or the middle.
+Describe some of the problems that you would expect to encounter
+with the programming skills that you have now.
+<P>
+<EM>Eliminate GOTO</EM>:
+It is at least cumbersome and probably quite difficult
+to rewrite the program without GOTO.
+Do try it, but ensure that your program
+behaves either like the original
+or as described in the manual (in case there is a difference!).
+<P>
+<EM>Reading</EM>: If you had problems with understanding the PASCAL program,
+then you should consult any one of
+the many and often very good introductory books on PASCAL.
+If you had problems getting your program into the computer,
+read the manual for your editor.
+
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!-- X-URL: http://www.latrobe.edu.au/phimvt/sympas/s00syn.html -->
+<!-- Date: Fri, 24 Aug 2012 09:32:58 GMT -->
+<BASE HREF="http://www.latrobe.edu.au/phimvt/sympas/s00syn.html">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+
+<HTML>
+<head>
+
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Detailed Synopsis</TITLE>
+<!-- begin css.php -->
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/includes.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/base.css" />
+<link rel="stylesheet" type="text/css" media="print" href="/ltu_assets/css/print.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/legacy.css" />
+<!--[if lte IE 6]>
+<link href="/ltu_assets/css/ielegacy.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+<!--[if IE 7]>
+<link href="/ltu_assets/css/ie7.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+ 
+<!-- end css.php -->
+</head>
+
+<body>
+<!-- begin nav_top.php -->
+<!--  U T I L I T Y  N A V I G A T I O N  -->
+<div id="utilityNav">
+  <p>Global Utilities</p>
+  <ul>
+    <li><a href="#content">Skip to content</a></li>
+    <li><a href="/sitemap/">Site map</a></li>
+  </ul>
+  <form action="http://search.latrobe.edu.au/search/index.cgi" method="get">
+    <div id="search">
+      <label for="query">Search: </label>
+      <input type="text" name="query" id="query" size="27" value="" class="fieldcellInput" accesskey="q" />
+      <input type="hidden" name="collection" value="Latrobe" />
+      <input type="submit" class="button" value="SEARCH" />
+    </div>
+  </form>
+</div>
+<!--  G L O B A L  N A V I G A T I O N  -->
+<div id="globalNav">
+  <p>Global Navigation</p>
+  <ul>
+    <li><a href="/">La Trobe Home</a></li>
+    <li><a href="/about">About La Trobe</a></li>
+    <li><a href="/courses/">Courses</a></li>
+    <li><a href="/campuses">Campuses</a></li>
+    <li><a href="/faculties">Faculties</a></li>
+    <li><a href="/research">Research</a></li>
+    <li><a href="/contact">Contacts</a></li>
+  </ul>
+</div>
+<!-- end nav_top.php -->
+
+<H1>Detailed Synopsis of Chapters</H1>
+<P>
+The projects in Part One introduce
+translations from one notation to another
+using recursive and non-recursive techniques,
+evaluations of expressions
+using recursive and non-recursive techniques,
+and definitions and use of user defined notions.
+The first chapter is just an introduction
+to the kind of programming done in the rest of the book.
+I have found it necessary to include this because
+even students with a background in computing
+have struggled trying to write a clean solution.
+The second project is a recursive descent translator from
+Polish prefix notation of propositional logic
+to fully parenthesised infix notation or propositional logic.
+The third project is a recursive descent evaluator of
+formulas of propositional logic in fully parenthesised
+infix notation using the two logical constants as atoms.
+In the fourth project there is a facility for first defining
+and then using definitions of text macros.
+The most complex program of Part One is a program which reads
+formulas of propositional logic in minimally parenthesised
+infix notation and then generates their truth table.
+Though less complex,
+the two programs in the last chapter are more demanding,
+they are table driven bottom up translators
+from infix to postfix notation.
+<P>
+The projects in Part Two consolidate material from Part One,
+in particular mutual recursion,
+and introduce a second order form of recursion
+which is used in many backtracking programs in the book.
+The first project consists of a compiler
+and a (recursive) interpreter
+for a very small imperative programming language.
+The next chapter introduces procedures as parameters
+to other procedures.
+When these procedures are recursive,
+this second order form of recursion
+can produce a flow of control that is
+well beyond what can be done with ordinary recursion.
+This technique is then used in
+the next chapters,
+for programs dealing with
+regular expressions,
+semantic tableaux and context free grammars.
+The three programs all require backtracking,
+and this is implemented with continuation parameters, using
+recursive procedures which
+call themselves with global or local procedures
+as parameters.
+The first of these programs
+reads regular expressions
+and generates all strings in the language defined
+by the expressions, provided these strings
+do not exceed a maximum length.
+The next program
+reads formulas in propositional logic
+and uses the semantic tableau method to determine
+whether the formula is a tautology
+or whether it has countermodels.
+The third program
+reads context free grammars
+and then it reads strings to determine
+whether they are in the language defined by the grammar.
+In the same chapter the relation between context free grammars
+and the propositional fragment of the language PROLOG
+is explained.
+<P>
+The projects in Part Three are substantially longer than
+those in Part Two,
+althought they deal with similar material.
+The first chapter introduces third and fourth order
+recursion;
+one possible use is for interpreters
+which do not rely on any internal code.
+The next chapter provides a low level,
+recursion free general parser
+for deterministic context free grammars;
+one aim of this chapter
+is to explain how recursion is implemented.
+The next chapter
+implements a compiler and (non-recursive) interpreter
+for an imperative programming language
+which is quite different from Wirth's PLZERO
+but of about the same difficulty level.
+The remaining three chapters of this part
+elaborate on the techniques first used in
+Chapters 9, 10 and 11 in Part Two.
+In the first of these chapters
+a program is written which expands the semantic tableau
+method of Chapter 10 to implement
+a theorem prover for monadic logic.
+The last chapter
+expands the context free parser of Chapter 11
+for a miniature version of DATALOG, a precursor to PROLOG.
+<P>
+The projects in Part Four are the first for which a common set of utilities
+becomes useful.
+The first chapter gives the design and implementation
+of utilities for scanning, compiler directives,
+error reporting and producing a listing file.
+In the next chapter, the first project to use these
+utilities is a very small implementation of a potentially quite large
+functional language called JOY.
+The second project to use them is
+an implementation of a database language,
+very different from PROLOG,
+along the lines of classical logic.
+The third project expands the methods of Chapter 11
+in an entirely different way
+for a verifier for Petri nets.
+Finally, the last chapter
+is the only one in this book in which the implementation language
+is not PASCAL.
+Instead, the programs are four
+(self-compiling) compilers written in their own language.
+The target code is DEC's "editor for grown-ups",
+TECO, a powerful string processing language.
+<P>
+Most chapters have exercises at the end,
+and there is a long appendix with solutions
+to various exercises in earlier chapters.
+There is another appendix with bibliographical references
+and with an index.
+<P>
+<EM>Acknowledgements</EM>:
+Thanks are due to a number of people.
+First and foremost,
+I am immensely grateful to Kym Horsell
+for many years of discussion
+in which he has taught
+me so much about programming;
+in particular, I owe him the technique
+of procedures as parameters for implementing backtracking.
+But I should also like to thank the students
+who have endured my lectures
+in various courses on compilers,
+and the students
+of my LLC course who have endured earlier versions of most of the programs
+in Parts One and Two.
+Bernard Knichala has kindly proofread
+an early version of most of the text.
+I also wish to thank Ping Li and Man Chung Wong
+for discussions on Chapter 20.
+<P>
+Much of the later work on this book
+was done in 1990 and 1991 while I was allowed
+to reduce my teaching load.
+This support by La Trobe University is gratefully acknowledged.
+<P>
+<UL>
+<LI>
+<A HREF="s00toc.html">Table of Contents</A>.
+<LI>
+Back to
+<A HREF="S00bok.html">Symbolic Processing in Pascal</A>
+</UL>
+<!-- Begin nav_bottom.php -->
+<!--  G L O B A L  F O O T E R  -->
+<div id="globalFooter">
+  <ul id="policies">
+    <li><a href="http://www.latrobe.edu.au/statements/accessibility">Accessibility</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/privacy">Privacy</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/copyright">Copyright and disclaimer</a></li>
+  </ul>
+  <ul id="copyright">
+    <li>CRICOS provider number: 00115M</li>
+    <!-- <li>CRICOS Provider Numbers: Bundoora, Albury-Wodonga 00115M; Bendigo 00119G</li>-->
+    <li>&copy; La Trobe University 2011</li>
+  </ul>
+</div>
+<!-- Begin Webstat Code -->
+<noscript>
+<div><img src="//webstat.latrobe.edu.au/i.latrobe" alt="" /></div>
+</noscript>
+<script type="text/javascript" src="//webstat.latrobe.edu.au/jscripts/latrobe.js"></script>
+<!-- End Webstat Code -->
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4495795-1']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+<!-- End nav_bottom.php -->
+</body>
+
+</HTML>

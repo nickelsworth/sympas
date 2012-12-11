@@ -1,0 +1,1546 @@
+<!-- X-URL: http://www.latrobe.edu.au/phimvt/sympas/s99app-1.html -->
+<!-- Date: Fri, 24 Aug 2012 09:12:40 GMT -->
+<BASE HREF="http://www.latrobe.edu.au/phimvt/sympas/s99app-1.html">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+
+<HTML>
+<head>
+
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Appendix Part 1</TITLE>
+<!-- begin css.php -->
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/includes.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/base.css" />
+<link rel="stylesheet" type="text/css" media="print" href="/ltu_assets/css/print.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/legacy.css" />
+<!--[if lte IE 6]>
+<link href="/ltu_assets/css/ielegacy.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+<!--[if IE 7]>
+<link href="/ltu_assets/css/ie7.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+ 
+<!-- end css.php -->
+</head>
+
+<body>
+<!-- begin nav_top.php -->
+<!--  U T I L I T Y  N A V I G A T I O N  -->
+<div id="utilityNav">
+  <p>Global Utilities</p>
+  <ul>
+    <li><a href="#content">Skip to content</a></li>
+    <li><a href="/sitemap/">Site map</a></li>
+  </ul>
+  <form action="http://search.latrobe.edu.au/search/index.cgi" method="get">
+    <div id="search">
+      <label for="query">Search: </label>
+      <input type="text" name="query" id="query" size="27" value="" class="fieldcellInput" accesskey="q" />
+      <input type="hidden" name="collection" value="Latrobe" />
+      <input type="submit" class="button" value="SEARCH" />
+    </div>
+  </form>
+</div>
+<!--  G L O B A L  N A V I G A T I O N  -->
+<div id="globalNav">
+  <p>Global Navigation</p>
+  <ul>
+    <li><a href="/">La Trobe Home</a></li>
+    <li><a href="/about">About La Trobe</a></li>
+    <li><a href="/courses/">Courses</a></li>
+    <li><a href="/campuses">Campuses</a></li>
+    <li><a href="/faculties">Faculties</a></li>
+    <li><a href="/research">Research</a></li>
+    <li><a href="/contact">Contacts</a></li>
+  </ul>
+</div>
+<!-- end nav_top.php -->
+
+<H1>Answers to some Exercises</H1>
+All programs in this appendix are solutions to exercises
+set in the earlier parts of the book.
+Almost all programs are based on the programs described in those chapters.
+The sections do not follow the order of the chapters,
+instead they are ordered on the basis of increasing difficulty.
+<H2>The marriage puzzle</H2>
+<P>
+The marriage puzzle given in Chapter 1
+is representative of a number of puzzles
+which are readily solved by exhaustive search,
+and truth tables really belong in this category, too.
+In puzzles of this kind,
+there are several variables which each can take one of several
+values.
+What is wanted is an assignment of values to the variables
+which will make a given condition true.
+In the case of truth tables there are several variables
+but only two possible values.
+In the marriage puzzle we can take the women to be variables
+and the men to be the values --- so in this puzzle
+there are as many variables as there are possible values.
+Furthermore, in this puzzle for each value
+there is to be only one variable that takes that value.
+<P>
+The program given below will solve the problem
+using exhaustive search.
+First an enumeration type is defined which
+has as its values the four men.
+Then four variables are declared that are of that type.
+The body of the program consists of four nested <CODE>FOR</CODE> loops,
+one for each of the variables,
+and since each <CODE>FOR</CODE> loop will give four values,
+the body will be executed 4^4 = 256 times.
+In only one of these executions will all the variables
+have values satisfying the restrictions.
+The first restriction requires the women to marry different men,
+this will rule out any valuations in which two variables
+have the same value.
+The second restriction requires the five given clues to be satisfied;
+each clue is readily expressed as a Boolean expression
+about variables having certain values.
+If the two restrictions are satisfied,
+then the names of the variables and their values are written out,
+exactly one solution is produced.
+The following program solves the puzzle:
+<XMP>
+PROGRAM marriage_puzzle(output);
+
+TYPE men = (a,b,c,d);
+VAR e,f,g,h : men;
+
+BEGIN
+FOR e := a TO d DO
+    FOR f := a TO d DO
+        FOR g := a TO d DO
+            FOR h := a TO d DO
+                IF (* all the women are distinct *)
+                    (e &lt;> f) AND (e &lt;> g) AND (e &lt;> h) AND
+                    (f &lt;> g) AND (f &lt;> h) AND
+                    (g &lt;> h)
+                THEN IF (* now the five clues *)
+                    ((f &lt;> a) &lt;= (g &lt;> c)) AND
+                    ((g = b) OR (h = b) &lt;= (a = f)) AND
+                    ((c &lt;> e) &lt;= (b = h)) AND
+                    ((g = d) &lt;= (b &lt;> f)) AND
+                    ((d &lt;> f) &lt;= (f = b))
+                THEN
+                    writeln(
+                        'E marries ',e:1,', ',
+                        'F marries ',f:1,', ',
+                        'G marries ',g:1,' and ',
+                        'H marries ',h:1,'.')
+END.
+</XMP>
+The program produces the following output:
+<XMP>
+E marries C, F marries B, G marries A and H marries D.
+</XMP>
+<P>
+If one removes the first restriction,
+the implicit monogamy restriction that no two women
+marry the same man,
+then a total of nine solutions is produced.
+<H2>Prefix to minimally parenthesised infix</H2>
+<P>
+This program solves some of the exercises given at the end of
+Chapter 2.
+The program translates propositional logic formulas from prefix notation
+to minimally parenthesised infix notation,
+using <CODE>NOT</CODE>, <CODE>AND</CODE>, <CODE>OR</CODE>, <CODE>IMP</CODE> and <CODE>IFF</CODE>
+as infix operators.
+The input formulas may be written over several lines,
+and output is only given when the whole input formula has been read.
+If the input formula contains an error,
+a message is given but no translation is given as output.
+There are three separate problems that need to be solved:
+1) omitting parentheses except when needed,
+2) buffering the translation, and
+3) writing the multi-letter operators.
+<P>
+<EM>Omitting unnecessary parentheses</EM>:
+When are parentheses needed around a given infix formula
+containing an infix operator?
+This depends entirely on the larger formula of which the given one
+is a subformula.
+If the larger formula contains an operator which
+has higher precedence than the infix operator of the larger formula,
+then parentheses need to be written before and after the subformula.
+So, for any formula to be translated,
+the operator of the larger formula has to be known ---
+it is best passed as a parameter to the translation procedure <CODE>prefix</CODE>.
+For formulas beginning with a binary prefix operator
+the parameter is compared with the current operator.
+The comparison is a large but straight-forward condition,
+and since there are two places where the parentheses
+might have to be written,
+the result of the comparison is best stored in a local Boolean variable.
+A minor complication arises for conditionals ---
+in the antecedent any contained conditionals need parenthesising,
+just as if the antecedent were a disjunct.
+So for the call to prefix for the antecedent,
+the parameter to be passed is <CODE>A</CODE> and not <CODE>C</CODE>.
+In the main program the global call to procedure <CODE>prefix</CODE>
+uses as a parameter a character which is not an operator ---
+a blank will do.
+<P>
+<EM>Buffering the translation</EM>:
+Instead of writing the translation to the output file,
+procedure <CODE>prefix</CODE> puts an intermediate translation into a buffer,
+a string of characters.
+Associated with the buffer is an integer variable representing
+the current number of characters in the buffer.
+This variable is set to zero before the initial call in the main
+program.
+In procedure <CODE>prefix</CODE>,
+all atoms, operators and parentheses are put into the buffer
+by calls to a procedure with one character parameter.
+This procedure increments the global variable representing
+the size of the buffer,
+and places its parameter into the buffer at the new size position.
+Since the buffer only contains an intermediate translation,
+any operators are stored in the buffer in infix position
+but using the prefix spelling.
+<P>
+<EM>Writing the translation</EM>:
+When a complete input formula has been read and translated into
+intermediate form,
+the main program then uses a <CODE>FOR</CODE> loop to step through the buffer.
+If the character in the buffer is one of the operators,
+then it writes the longer multi-letter version surrounded
+as appropriate by spaces.
+All other characters in the buffer are written as they are.
+If an error was detected during the reading of the formula,
+this <CODE>FOR</CODE> loop is not executed
+because the error case causes a jump to the beginning
+of the main program.
+<P>
+The source is as follows:
+<XMP>
+PROGRAM prefix_to_infix(input,output);
+(* from prefix to minimally parenthesised infix,
+   using NOT AND OR IMP IFF as infix operators,
+   no translation on error *)
+
+LABEL 1, 99;
+
+CONST
+    maxbuffer = 100;
+
+VAR
+    outbuffer : ARRAY[1..maxbuffer] OF char;
+    index,i : integer;
+
+PROCEDURE prefix(super : char);
+VAR ch : char; needparen : boolean;
+
+    PROCEDURE gen(c : char);
+    BEGIN
+    index := index + 1;
+    outbuffer[index] := c
+    END;
+
+BEGIN (* prefix(ch) *)
+REPEAT
+    IF eof THEN GOTO 99;
+    read(ch)
+    UNTIL ch > ' ';
+CASE ch OF
+    'a','b','c','d','e','f','g','h','i','j','k','l','m',
+    'n','o','p','q','r','s','t','u','v','w','x','y','z' :
+        gen(ch);
+    'N' :
+        BEGIN
+        gen('N'); prefix('N')
+        END;
+    'K','A','E' :
+        BEGIN
+        needparen :=
+            (ch = 'K') AND (super IN ['N']) OR
+            (ch = 'A') AND (super IN ['N','K']) OR
+            (ch = 'E') AND (super IN ['N','K','A','C']);
+        IF needparen THEN gen('(');
+        prefix(ch); gen(ch); prefix(ch);
+        IF needparen THEN gen(')')
+        END;
+    'C' :
+        BEGIN
+        needparen := super IN ['N','K','A','E'];
+        IF needparen THEN gen('(');
+        prefix('A'(* sic *)); gen(ch); prefix('C');
+        IF needparen THEN gen(')')
+        END;
+    OTHERWISE
+        BEGIN
+        writeln('Error : seen "',ch,
+            '" when "a".."z","N","A","C","E" or "K" expected.');
+        readln;
+        GOTO 1
+        END;
+    END (* CASE *)
+END; (* prefix *)
+
+BEGIN (* main *)
+1:
+REPEAT
+    writeln;
+    writeln('Formula :');
+    index := 0;
+    prefix(' '); (* no outer parenthesis, whatever the operator *)
+    FOR i := 1 TO index DO
+        CASE outbuffer[i] OF
+            'N' : write('NOT ');
+            'K' : write(' AND ');
+            'A' : write(' OR ');
+            'C' : write(' IMP ');
+            'E' : write(' IFF ');
+            OTHERWISE write(outbuffer[i])
+            END;
+    writeln
+    UNTIL false;
+99:
+END.
+</XMP>
+<P>
+An interactive run would look like this:
+<XMP>
+$ RUN 11preinx.exe
+
+Formula :
+A A A A Kab Kcd Kef Kgh Kij
+a AND b OR c AND d OR e AND f OR g AND h OR i AND j
+
+Formula :
+K K K K Aab Acd Aef Agh Aij
+(a OR b) AND (c OR d) AND (e OR f) AND (g OR h) AND (i OR j)
+
+Formula :
+K Aab K Acd K Aef K Agh Aij
+(a OR b) AND (c OR d) AND (e OR f) AND (g OR h) AND (i OR j)
+
+Formula :
+C C C C C C a b c d e f g
+(((((a IMP b) IMP c) IMP d) IMP e) IMP f) IMP g
+
+Formula :
+C a C b C c C d C e C f g
+a IMP b IMP c IMP d IMP e IMP f IMP g
+
+Formula :
+C  A Kab KNcNd  A  KNeNf Kgh
+a AND b OR NOT c AND NOT d IMP NOT e AND NOT f OR g AND h
+
+Formula :
+NK  A Cab  Ecd  NA Eef NCgh
+NOT (((a IMP b) OR (c IFF d)) AND NOT ((e IFF f) OR NOT (g IMP h)))
+
+Formula :
+C Kab Xcd
+Error : seen "X" when "a".."z","N","A","C","E" or "K" expected.
+
+Formula :
+N A C E K a b c d $ e f g h i j k
+Error : seen "$" when "a".."z","N","A","C","E" or "K" expected.
+
+Formula :
+</XMP>
+<H2>A simple goal stack machine</H2>
+<P>
+This section contains a translator from prefix notation
+to fully parenthesised infix notation,
+it uses the method of a stack of goals described
+in Chapter 10.
+The program is a non-recursive implementation
+of the original prefix to infix translator.
+The parsing and translating is done on a stack of
+goals for translating formulas and for writing single characters.
+Initially the stack contains one goal, to translate
+a single formula.
+The stack machine works by repeatedly
+examining the goal on top of the stack
+until the stack is empty.
+If the goal is to translate a formula,
+it behaves much like the original recursive procedure;
+but instead of calling itself to translate,
+it pushes other goals.
+If the goal is to write a translation character, it does that.
+<P>
+The source is as follows:
+<XMP>
+PROGRAM prefix_to_infix_non_recursive(input,output);
+
+LABEL 99;
+
+CONST maxstack = 100;
+
+VAR t : ARRAY[char] OF char;
+    ch : char;
+    s : ARRAY[1..maxstack] OF char;
+    p : integer;
+
+BEGIN (* main *)
+t['A']:='v'; t['C']:='>'; t['E']:='='; t['K']:='&'; t['N']:='-';
+REPEAT
+    writeln;
+    writeln('Formula :');
+    p := 1; s[p] := 'F';
+    REPEAT
+        IF s[p] = 'F' THEN
+            BEGIN
+            REPEAT
+                IF eof THEN GOTO 99;
+                read(ch)
+                UNTIL ch > ' ';
+            CASE ch OF
+                'a' .. 'z':
+                    BEGIN write(ch); p := p - 1 END;
+                'N' :
+                    write(t[ch]);
+                'A','C','E','K' :
+                    BEGIN
+                    write('('); s[p] := ')';
+		    p := p + 1; s[p] := 'F';
+		    p := p + 1; s[p] := t[ch];
+		    p := p + 1; s[p] := 'F'
+                    END;
+                OTHERWISE
+                    BEGIN
+                    writeln;
+                    writeln('Error : seen "',ch,
+                        '" when "a".."z",',
+                        '"N","A","C","E" or "K" expected.');
+                    readln;
+                    p := 0 (* instead of GOTO *)
+                    END
+                END (* CASE *)
+            END (* IF *)
+          ELSE
+            BEGIN
+            IF s[p] = ')'
+                THEN write(')')
+                ELSE write(' ',s[p],' ');
+            p := p - 1
+            END
+        UNTIL p = 0;
+    writeln;
+    UNTIL false;
+99:
+END.
+</XMP>
+<H2>An ATN translator</H2>
+<P>
+The next program translates from minimally parenthesised
+infix notation of the kind first used in the truth table program
+in Chapter 5.
+It translates into the same postfix notation that was used in that
+chapter.
+It works by mimicking the actions of a recursive descent translator
+somewhat more closely than the goal stack machine did.
+It uses a method known as augmented transition network or ATN.
+In detail, to each of four non-terminals of the input grammar
+there correspond several states of the parser.
+These states encode which part of the right hand side of the
+production for a non-terminal has been reached during parsing.
+Because the grammar is recursive,
+these states are actually arranged on a stack.
+When a new non-terminal is called,
+the next state for the current non-terminal is installed
+in the current top element of the stack,
+and a new state for the new non-terminal is pushed.
+When the right hand side of a production is finished,
+the stack is popped and the state of the previous stack top
+becomes active again.
+Some of the states serve to output translations.
+For the two operators <CODE>=</CODE> and <CODE>></CODE>
+which are handled in formulas,
+stack elements also contain a character variable
+to remember which of the two operators had been seen.
+<P>
+The source is as follows:
+<XMP>
+PROGRAM recursive_ATN_translator(input,output);
+
+LABEL 1, 99;
+
+CONST
+    maxstack = 100;
+    maxcode = 200;
+TYPE
+    states =
+        (formula1,formula2,formula3,
+         expression1,expression2,expression3,
+         term1,term2,term3,
+         factor1,factor2,factor3);
+    message = PACKED ARRAY [1..30] OF char;
+VAR
+    ch : char;
+    stack : ARRAY [1..maxstack] OF
+                RECORD s : states; c : char END;
+    top : integer;
+    code : ARRAY [1..maxcode] OF char;
+    codeindex : integer;
+    i : integer;
+
+PROCEDURE error(mes : message);
+BEGIN (* error *)
+writeln;
+writeln('ERROR: seen "',ch,'" when ',mes);
+readln;
+GOTO 1
+END; (* error *)
+
+PROCEDURE getch;
+BEGIN (* getch *)
+REPEAT
+    IF eof THEN goto 99;
+    read(ch);
+    write(ch)   (* for batch use *)
+    UNTIL ch > ' '
+END; (* getch *)
+
+PROCEDURE push(st : states);
+BEGIN top := top + 1; stack[top].s := st END;
+
+PROCEDURE pop;
+BEGIN top := top - 1 END;
+
+PROCEDURE gen(o : char);
+BEGIN codeindex  :=  codeindex + 1; code[codeindex] := o END;
+
+BEGIN (* main *)
+1:
+REPEAT
+    write('? '); getch;
+    IF ch = '.' THEN GOTO 99;
+    codeindex := 0; top := 1; stack[top].s := formula1;
+    REPEAT
+        WITH stack[top] DO
+            CASE s OF
+                formula1 :
+                    BEGIN s := formula2; push(expression1) END;
+                formula2 :
+                    IF ch IN ['=','>'] THEN
+                        BEGIN
+                        IF ch = '=' THEN c := 'E' ELSE c := 'C';
+                        getch; s := formula3; push(formula1)
+                        END
+                      ELSE pop;
+                formula3 :
+                    BEGIN gen(c); pop END;
+                expression1 :
+                    BEGIN s := expression2; push(term1) END;
+                expression2 :
+                    IF ch = 'v' THEN
+                        BEGIN getch; s := expression3; push(term1) END
+                      ELSE pop;
+                expression3 :
+                    BEGIN gen('A'); s := expression2 END;
+                term1 :
+                    BEGIN s := term2; push(factor1) END;
+                term2 :
+                    IF ch = '&' THEN
+                        BEGIN getch; s := term3; push(factor1) END
+                      ELSE pop;
+                term3 :
+                    BEGIN gen('K'); s := term2 END;
+                factor1 :
+                    CASE ch OF
+                      'a'..'z' :
+                        BEGIN gen(ch); getch; pop END;
+                      '-' :
+                        BEGIN getch; s := factor2; push(factor1) END;
+                      '(' :
+                        BEGIN getch; s := factor3; push(formula1) END;
+                      OTHERWISE
+                        error('factor expected               ');
+                      END; (* CASE *)
+                factor2 :
+                    BEGIN gen('N'); pop END;
+                factor3  :
+                    IF ch = ')' THEN BEGIN getch; pop END ELSE
+                        error('")" expected                  ');
+                END (* CASE *)
+        UNTIL top < 1;
+    IF NOT (ch IN ['.','?']) THEN
+        error('"." expected                  ');
+    writeln;
+    write('POSTFIX: ');
+    FOR i := 1 TO codeindex DO write(code[i]);
+    writeln;
+    UNTIL false;
+99:
+END.
+</XMP>
+<H2>Displaying values of subformulas</H2>
+<P>
+This program solves some of the exercises given at the end
+of Chapter 3.
+The program reads formulas of propositional logic in fully
+parenthesised infix notation,
+using 0 and 1 as the only atoms,
+and writes the values of all subformulas
+under the operators of the infix formula.
+If the input formulas were written in postfix notation,
+then it would be possible to write values of subformulas
+under their operator as soon as the subformula
+has been evaluated.
+But for prefix and infix notation this is not possible,
+because the operators occurring before a subformula have to be
+evaluated after the subformula is evaluated,
+but the resulting value for the operator
+has to be written before the value of the subformula.
+It follows that as a formula is being evaluated,
+the values of subformulas have to be saved in an output buffer
+which is written out when the evaluation is complete.
+Also, as an answer to some exercises in Chapters 2 and 3,
+this implementation does not use any <CODE>GOTO</CODE>;
+you should judge for yourself whether you like
+such a purged version better.
+<P>
+<EM>Creating an output buffer</EM>:
+Because the positions of the values of the subformulas
+have to coincide with the positions of the operators
+in the input formula,
+the output buffer has to bear a structural resemblance
+to the formula itself.
+In particular,
+if the input formula contains tabs rather than spaces,
+these tabs should be put into the output buffer
+as the input formula is being read.
+This is best handled by the familiar procedure <CODE>getch</CODE>
+which repeatedly reads characters until a printing character
+is found.
+Inside that <CODE>REPEAT</CODE> loop an index is incremented
+for every printing or non-printing character encountered.
+If it was a printing character,
+then a blank is put into the buffer,
+otherwise the character --- blank or tab ---
+is put into the buffer.
+When the loop terminates after reading a printing character,
+both the character and the current index are made available
+to the evaluation procedure infix.
+<P>
+<EM>Writing to the output buffer</EM>:
+In procedure infix the cases for the operators have to place the value
+of the subformula into the output buffer.
+The required position in the output buffer is known at the time
+the operator is seen by getch,
+but the required value is not known at this time.
+So,
+after reading the operator character,
+its index from getch is saved in a local variable.
+Then, when the subformula has been evaluated,
+the value is stored as a character, either <CODE>0</CODE> or <CODE>1</CODE>,
+in the output buffer at the saved position.
+<P>
+<EM>Main operator</EM>:
+It is desirable that not only the values of all subformulas
+be produced,
+but also an indication is given as to where the main operator is
+and hence what the value of the whole formula is.
+For this purpose we can give procedure infix an additional VAR
+parameter which will be assigned the index of the operator
+or operand of the formula it has evaluated.
+This integer value will only be used in the main program
+to indicate the main operator.
+<P>
+<EM>Miscellaneous</EM>:
+Before procedure infix is called globally,
+the global index variable is set to zero,
+and after it has returned the buffer is written out.
+To ensure alignment of the formula and the buffer,
+care has to be taken that the prompt for the formula
+is matched by an equally long string before the buffer is written.
+Finally,
+to indicate the main operator,
+the buffer is used to write as many blanks or tabs
+as there were blanks or printing characters or tabs
+in the buffer up to the position of the main operator,
+here an up-arrow is written.
+Again, to ensure alignment,
+a suitable blank string has to be written before all this.
+As an extra,
+the program checks that there are no further printing characters
+on the line;
+if there are then an error is reported.
+<P>
+<EM>Elimination of GOTO</EM>:
+The original program used two <CODE>LABEL</CODE>s, <CODE>1</CODE> and <CODE>99</CODE>,
+at the beginning and the end of the program,
+and several GOTOs, all dealing with error conditions.
+The version here eliminates all these,
+but at some cost:
+Firstly, it is necessary to introduce a global boolean variable <CODE>ok</CODE>
+which takes the place of the <CODE>LABEL 1</CODE>.
+Since parsing and evaluation of a subformula
+can lead to an error,
+the error condition is transmitted to the calling procedure
+by means of this variable.
+Some authors might have preferred to pass the condition back as
+a <CODE>VAR</CODE> parameter.
+Secondly notice how the structure of the parsing procedure for infix
+is now destroyed --- it no longer reflects the grammmar so closely
+as it did in the original version.
+In particular,
+the case for parenthesised infix operators
+looks much more complicated.
+You should judge for yourself whether you agree
+with the categorical rejection of GOTOs
+as recommended by many authors.
+<P>
+The source is as follows:
+<XMP>
+PROGRAM infix_evaluator(input,output);
+(* displays values of subformulas, no GOTO *)
+
+CONST
+    echo = true; (* = false for interactive use *)
+    maxbuffer = 50;
+
+TYPE
+    message = PACKED ARRAY [1..30] OF char;
+
+VAR
+    ok : boolean;
+    value : boolean;
+    mainposition : integer;
+    outbuffer : ARRAY [1..maxbuffer] OF char;
+    index,i : integer; (* into outbuffer *)
+    junkchar : char;
+
+PROCEDURE error(c : char; mes : message);
+VAR ch :char; (* only to echo rest of line *)
+BEGIN (* error *)
+IF echo THEN
+    BEGIN
+    WHILE NOT eoln DO
+        BEGIN read(ch); write(ch) END;
+    writeln
+    END;
+write('ERROR   : ');
+IF c &lt;> ' ' THEN write('seen "',c,'" when ');
+writeln(mes);
+readln;
+ok := false
+END; (* error *)
+
+PROCEDURE infix(VAR x : boolean; VAR xposition : integer);
+VAR ch,oper : char; y : boolean; yposition : integer;
+
+    PROCEDURE getch;
+    BEGIN (* getch *)
+    REPEAT
+        IF eof THEN
+            error(' ','unexpected end of file        ')
+          ELSE
+            IF eoln THEN
+                error(' ','incomplete formula on line    ')
+              ELSE
+                BEGIN
+                read(ch); IF echo THEN write(ch); index := index + 1;
+                IF ch > ' '
+                    THEN outbuffer[index] := ' '
+                    ELSE outbuffer[index] := ch
+                END
+        UNTIL (ch > ' ') OR NOT ok
+    END; (* getch *)
+
+BEGIN (* infix *)
+getch;
+IF ok THEN
+    CASE ch OF
+        '0','1' :
+            BEGIN
+            x := ch = '1';
+            xposition := index
+            END;
+        '-' :
+            BEGIN
+            xposition := index;
+            infix(y,yposition);
+            IF ok THEN
+                BEGIN
+                x := NOT y;
+                outbuffer[xposition] := chr(ord('0') + ord(x))
+                END
+            END;
+        '(' :
+            BEGIN
+            infix(x,xposition);
+            IF ok THEN
+                BEGIN
+                getch;
+                IF NOT (ch IN ['&','v','>','=']) THEN
+                    error(ch,'"&","v",">" or "=" expected   ')
+                  ELSE
+                    BEGIN
+                    oper := ch; xposition := index;
+                    infix(y,yposition);
+                    IF ok THEN
+                        BEGIN
+                        getch;
+                        IF ch &lt;> ')' THEN
+                            error(ch,'")" expected                  ')
+                          ELSE
+                            BEGIN
+                            CASE oper OF
+                                '&' : x := x AND y;
+                                'v' : x := x OR y;
+                                '>' : x := x &lt;= y;
+                                '=' : x := x = y;
+                                END; (* CASE *)
+                            outbuffer[xposition] :=
+                                chr(ord('0') + ord(x))
+                            END
+                        END
+                    END
+                END
+            END;
+        OTHERWISE
+            error(ch,'"0","1","-" or "(" expected   ');
+        END (* CASE *)
+END; (* infix *)
+
+BEGIN (* main *)
+REPEAT
+    write('Formula : '); ok := true;
+    index := 0; infix(value,mainposition);
+    IF echo THEN writeln;
+    IF ok THEN
+        BEGIN
+        IF outbuffer[mainposition] > ' ' THEN
+            BEGIN
+            write('          ');
+            FOR i := 1 TO index DO write(outbuffer[i]);
+            writeln
+            END;
+        write('Value   : ');
+        FOR i := 1 TO mainposition - 1 DO
+            IF outbuffer[i] > ' '
+                THEN write(' ')
+                ELSE write(outbuffer[i]);
+        writeln('^');
+        IF NOT eoln THEN
+            BEGIN
+            REPEAT
+                read(junkchar)
+                UNTIL eoln OR (junkchar > ' ');
+            IF junkchar > ' ' THEN
+                error(junkchar,'junk at end of line           ')
+            END;
+        readln
+        END (* IF ok *)
+    UNTIL eof
+END.
+</XMP>
+<P>
+An interactive session would look like this:
+<XMP>
+Formula : 1
+Value   : ^
+Formula :    0
+Value   :    ^
+Formula : (1 & 0)
+             0
+Value   :    ^
+Formula : (1 & - 0)
+             1 1
+Value   :    ^
+Formula :       (  (1 > 0) v (0 = 1) )
+                      0    0    0
+Value   :                  ^
+Formula : ( ( (0 = 1) & (1 > 0) ) > ( (1 v 1) v (0 = 1) ) )
+                 0    0    0      1      1    1    0
+Value   :                         ^
+Formula : (a & b)
+ERROR   : seen "a" when "0","1","-" or "(" expected
+
+Formula : ( (1 > 0) (0 = 1) )
+ERROR   : seen "(" when "&","v",">" or "=" expected
+
+Formula : ( ( (0 v 0) & (1 > 1) ] )
+ERROR   : seen "]" when ")" expected
+
+Formula : (0 &
+ERROR   : incomplete formula on line
+
+</XMP>
+<H2>A small APL interpreter</H2>
+<P>
+This section contains the design of a small calculator
+for an APL-like language,
+as suggested in one of the exercises in Chapter 3.
+For an evaluator of expressions it is normally possible to use
+a <CODE>VAR</CODE> parameter of a procedure or to use the return value
+of a function to hold the value of a given expression.
+But this will not be possible if the values are whole arrays,
+especially since the arrays will be of variable sizes
+only known at run time.
+The solution adopted here is to have an explicit stack
+which contains all values,
+so that an array of N values is represented as N consecutive items
+on the stack.
+<P>
+A binary operation such as addition expects two arrays of the same
+size on the stack, and it has to replace the lower array by the
+result of adding corresponding elements of the two arrays.
+The program has to check that the two arrays are of the same size,
+and it has to determine to which two items on the stack
+an operation is to be applied.
+For this to be possible,
+it is necessary that the sizes of the arrays be known at all times.
+But since sizes are just small integers,
+they can be returned conveniently as <CODE>VAR</CODE> parameters
+of the evaluating procedures without ever being stored on the explicit stack.
+The binary operation can all be handled in more or less the same way.
+The ones provided here are the usual five arithmetic operators
+<CODE>+</CODE> <CODE>-</CODE> <CODE>*</CODE> <CODE>/</CODE>
+and <CODE>MOD</CODE>,
+the usual six arithmetic relations
+<CODE>=</CODE> <CODE>&lt;></CODE> <CODE><</CODE> <CODE>&lt;=</CODE> <CODE>></CODE> <CODE>>=</CODE>
+which are here taken to yield integer values 0 and1,
+and the two operations <CODE>AND</CODE> and <CODE>OR</CODE> also yielding integers.
+Following APL, all binary operators have the same precedence
+and they are right-associative:
+an expression such as 10 - 5 - 1 is taken to be parenthesised
+as 10 - (5 - 1) and hence evaluates to 6.
+Apart from the binary operations there are several unary operations
+which take only one array as operand.
+Two of these, <CODE>SUM</CODE> and <CODE>PRODUCT</CODE>, produce single numbers as values.
+The others, <CODE>NEGATIVE</CODE>, <CODE>NOT</CODE> and <CODE>SIGNUM</CODE>,
+produce arrays, respectively the negative,
+the complement against one, and the signs -1, 0 and +1,
+depending on whether the operand
+is negative, zero or positive.
+<P>
+In addition to handling integers,
+this version also handles real numbers.
+Integers and reals can be mixed in arrays,
+and hence the stack has to be able to hold integers or reals,
+and any cell of the stack has to indicate what it is that it is holding.
+Hence the stack consists of records containing
+a Boolean to indicate what the remainder of the record is holding.
+For mixed mode operations the integers have to be converted to reals
+when required.
+Most of this work is done by a function
+which determines whether two cells on the stack contain reals,
+and as a side effect the function converts one of the cells to real
+just in case the other one is real.
+The scanner, procedure <CODE>getsym</CODE>,
+has to be able to recognise real numbers by the decimal point.
+It also keeps track of the maximum number of places after the decimal point
+that were used in the input.
+All output uses one more place after the decimal point
+than the maximum used for the input.
+Other conventions are possible,
+but short of adding a facility allowing users
+to specify the output precision required,
+no simple inbuilt convention is likely to satisfy all users.
+<P>
+A sample session looks like this:
+<XMP>
+
+-1 0 1 2 3 4   +   0 1 2 3 4 5 .
+-1 1 3 5 7 9
+
+10 10 10 - 5 5 5 - 1 2 3 .
+6 7 8
+
+(10 10 10 - 5 5 5) - 1 2 3 .
+4 3 2
+
+PRODUCT 1 2 3 4 .
+24
+
+SUM  10.1  20.2  30.3001 .
+60.60010
+
+(SUM 1 2 3) (SUM 2 3 4)  + 100 200 .
+106 209
+
+SUM (10 * 10 * 10 * 2) (10 * 10 * 3) (10 * 4) (1 * 5) .
+2345
+
+SIGNUM (5 5 5 5 5 - 3 4 5 6 7) .
+1 1 0 -1 -1
+
+11.11   +   22.22   +   33.33 .
+66.660
+
+10.0   20.0   30.0   40.0   +
+ 1.1    2.2    3.3    4.4   +
+ 0.01   0.02   0.03   0.04  .
+11.110 22.220 33.330 44.440
+
+1000 1000.01  1000.02   +
+1000 1000     1000.01   .
+2000 2000.010 2000.030
+
+0.0000011  + 0.0000022  .
+0.00000330
+
+12 10 8  /  4 5 2 .
+3 2 4
+
+( 1 + 2 + 3 ]
+error : seen "]" when unknown key word
+
+12 10 8  /  4 5 0 .
+error : division by 0
+</XMP>
+<P>
+The source is as follows:
+<XMP>
+PROGRAM pico_apl(input,output);
+LABEL 10, 99;
+
+CONST
+    emptyalfa = '          ';
+    alfalength = 10;
+    firstresword = 1;
+    maxreswords = 50;
+    maxstack = 1000;
+
+TYPE
+    alfa     = PACKED ARRAY [1..alfalength] OF char;
+    string20 = PACKED ARRAY [1..20] OF char;
+    symbol = (add,sub,mul,dvd,mdl,eql,neq,gtr,geq,lss,leq,and_,or_,
+              loadimmed,sum,product,neg,signum,not_,noop,
+              inumber, rnumber, commasym, periodsym, shrieksym,
+              lpar, rparsym);
+
+VAR
+    echo : boolean;
+    ch : char;
+    al : alfa;
+    sym : symbol;
+    inum : integer;
+    rnum : real;
+    precision : integer;
+
+    reswords : ARRAY [firstresword..maxreswords] OF
+        RECORD alf : alfa; symb : symbol; END;
+    lastresword : integer;
+    size : integer;
+    startaddress : integer;
+    lastdata : integer;
+    i : integer;
+    s : ARRAY[1..maxstack] OF
+            RECORD CASE int : boolean OF
+                true : (ival : integer);
+                false: (rval : real)
+                END; (* RECORD *)
+    t : integer; (* top of stack *)
+
+PROCEDURE initialise;
+
+    PROCEDURE ent(a:alfa; s:symbol);
+    BEGIN
+    lastresword := lastresword + 1;
+    WITH reswords[lastresword] DO
+        BEGIN alf := a; symb := s END
+    END; (* ent *)
+
+BEGIN (* initialise *)
+lastresword := 0;
+ent('!         ', shrieksym);
+ent('(         ', lpar);
+ent(')         ', rparsym);
+ent('*         ', mul);
+ent('+         ', add);
+ent('-         ', sub);
+ent('.         ', periodsym);
+ent('/         ', dvd);
+ent(';         ', noop);
+ent('<         ', lss);
+ent('&lt;=        ', leq);
+ent('&lt;>        ', neq);
+ent('=         ', eql);
+ent('>         ', gtr);
+ent('>=        ', geq);
+ent('AND       ', and_);
+ent('MOD       ', mdl);
+ent('NEGATIVE  ', neg);
+ent('NOT       ', not_);
+ent('OR        ', or_);
+ent('PRODUCT   ', product);
+ent('SIGNUM    ', signum);
+ent('SUM       ', sum);
+END; (* initialise *)
+
+PROCEDURE error(compile_error : boolean;message : string20);
+VAR i : integer; c : char;
+BEGIN (* error *)
+writeln; write('error : ');
+IF compile_error THEN
+    BEGIN
+    write('seen "');
+    i := 1;
+    WHILE i &lt;= alfalength DO
+        BEGIN
+        c := al[i];
+        IF c &lt;> ' ' THEN write(c) ELSE i := alfalength;
+        i := i + 1
+        END;
+    write('" when ')
+    END;
+writeln(message); readln; GOTO 10
+END; (* error *)
+
+PROCEDURE getch;
+BEGIN (* getch *)
+IF eoln THEN BEGIN readln; IF echo THEN writeln; ch := ' ' END
+  ELSE BEGIN read(ch); IF echo THEN write(ch) END
+END; (* getch*)
+
+PROCEDURE getsym;
+LABEL 9;
+VAR i,j,k : integer; negated : boolean; prec : integer;
+BEGIN (* getsym *)
+WHILE ch &lt;= ' ' DO getch;
+IF ch IN ['-','0'..'9'] THEN
+    BEGIN
+    negated := false;
+    IF ch = '-' THEN
+        BEGIN
+        getch;
+        IF ch in ['0'..'9'] THEN negated := true ELSE
+            BEGIN sym := sub; GOTO 9 END;
+        END;
+    sym := inumber; inum := 0;
+    REPEAT
+        inum := 10 * inum + (ord(ch) - ord('0'));
+        getch
+        UNTIL NOT (ch in ['0'..'9']);
+    IF ch = '.' THEN
+        BEGIN
+        prec := 1;
+        getch; sym := rnumber; rnum := inum;
+        inum := 0; i := 1; (* base *)
+        WHILE ch IN ['0'..'9'] DO
+            BEGIN
+            prec := prec + 1;
+            inum := 10 * inum + (ord(ch) - ord('0'));
+            i := 10 * i; getch
+            END;
+        rnum := rnum + inum / i;
+        precision := max(prec,precision)
+        END; (* IF decimal *)
+    IF negated THEN
+        IF sym = inumber THEN inum := - inum
+                         ELSE rnum := - rnum
+    END (* numeric *)
+  ELSE
+    BEGIN (* ident or specials *)
+    k := 0; al := emptyalfa;
+    IF ch IN ['A'..'Z'] THEN
+        REPEAT
+            IF k < alfalength THEN
+                BEGIN k := k + 1; al[k] := ch END;
+            getch
+            UNTIL NOT (ch IN ['A'..'Z'])
+      ELSE (* specials *)
+        REPEAT
+            IF k < alfalength THEN
+                BEGIN k := k + 1; al[k] := ch END;
+            getch
+            UNTIL NOT (ch IN ['=','>']);
+    i := firstresword; j := lastresword;
+    REPEAT (* binary search *)
+        k := (i + j) div 2;
+        IF al &lt;= reswords[k].alf THEN j := k - 1;
+        IF al >= reswords[k].alf THEN i := k + 1
+        UNTIL i > j;
+    IF i - 1 > j THEN sym := reswords[k].symb
+        ELSE error(true,'unknown key word    ')
+    END; (* ident or specials *)
+9:
+END; (* getsym *)
+
+
+PROCEDURE expression(VAR size : integer);
+VAR savedsymbol : symbol; rightsize : integer;
+
+    FUNCTION converted(i,j : integer) : boolean;
+    BEGIN
+    IF s[i].int AND s[j].int THEN converted := false ELSE
+        BEGIN (* NOTE SIDE EFFECTS ! ! ! *)
+        WITH s[i] DO BEGIN IF int THEN rval := ival; int := false END;
+        WITH s[j] DO IF int THEN rval := ival;
+        converted := true
+        END
+    END; (* convert *)
+
+    PROCEDURE factor(VAR size : integer);
+    VAR savedsymbol : symbol; localsize : integer;
+    BEGIN (* factor *)
+    size := 0;
+    REPEAT
+        CASE sym OF
+            inumber :
+                BEGIN
+                t := t + 1;
+                WITH s[t] DO BEGIN int := true; ival := inum END;
+                getsym; size := size + 1
+                END;
+            rnumber :
+                BEGIN
+                t := t + 1;
+                WITH s[t] DO BEGIN int := false; rval := rnum END;
+                getsym; size := size + 1
+                END;
+            lpar :
+                BEGIN
+                getsym;
+                expression(localsize);
+                IF sym = rparsym THEN getsym ELSE
+                    error(true,'")" expected        ');
+                size := size + localsize
+                END;
+            sum, product :
+                BEGIN
+                savedsymbol := sym; getsym; factor(localsize);
+                t := t - (localsize - 1);
+                FOR i := t + 1 TO t + (localsize - 1) DO
+                    CASE savedsymbol OF
+                      sum :
+                        IF converted(t,i)
+                          THEN s[t].rval := s[t].rval + s[i].rval
+                          ELSE s[t].ival := s[t].ival + s[i].ival;
+                      product :
+                        IF converted(t,i)
+                          THEN s[t].rval := s[t].rval * s[i].rval
+                          ELSE s[t].ival := s[t].ival * s[i].ival
+                        END; (* CASE *)
+                size := size + 1
+                END;
+            neg,signum,not_ :
+                BEGIN
+                savedsymbol := sym; getsym; factor(localsize);
+                FOR i := t - localsize + 1 TO t DO
+                    CASE savedsymbol OF
+                      signum :
+                        WITH s[i] DO
+                          BEGIN
+                          IF int THEN
+                            ival := -ord(ival < 0) + ord(ival > 0)
+                           ELSE
+                            ival := -ord(rval < 0) + ord(rval > 0);
+                          int := true
+                          END;
+                      neg :
+                        IF s[i].int
+                          THEN s[i].ival := -s[i].ival
+                          ELSE s[i].rval := -s[i].rval;
+                      not_ :
+                        WITH s[i] DO
+                          IF int
+                            THEN ival := 1 - ival
+                            ELSE rval := 1 - rval;
+                  END; (* CASE *)
+                size := size + localsize
+                END;
+            OTHERWISE
+                error(true,'factor expected     ')
+            END (* CASE *)
+        UNTIL NOT (sym IN
+           [inumber,rnumber,lpar,sum,product,neg,signum,not_])
+    END; (* factor *)
+
+BEGIN (* expression *)
+factor(size);
+IF sym < loadimmed THEN
+    BEGIN
+    savedsymbol := sym; getsym; expression(rightsize);
+    IF size &lt;> rightsize THEN
+        error(true,'different sizes     ');
+     FOR i  :=  t - 2 * size + 1  TO  t - size  DO
+        BEGIN
+        CASE savedsymbol OF
+            add :
+              IF converted(i,i+size)
+                THEN s[i].rval := s[i].rval + s[i+size].rval
+                ELSE s[i].ival := s[i].ival + s[i+size].ival;
+            sub :
+              IF converted(i,i+size)
+                THEN s[i].rval := s[i].rval - s[i+size].rval
+                ELSE s[i].ival := s[i].ival - s[i+size].ival;
+            mul :
+              IF converted(i,i+size)
+                THEN s[i].rval := s[i].rval * s[i+size].rval
+                ELSE s[i].ival := s[i].ival * s[i+size].ival;
+            dvd :
+              IF converted(i,i+size) THEN
+                IF s[i+size].rval = 0
+                  THEN error(false,'division by 0       ')
+                  ELSE s[i].rval := s[i].rval / s[i+size].rval
+               ELSE
+                IF s[i+size].ival = 0
+                  THEN error(false,'division by 0       ')
+                  ELSE s[i].ival := s[i].ival DIV s[i+size].ival;
+            mdl :
+              IF s[i].int AND s[i+size].int
+                THEN s[i].ival := s[i].ival MOD s[i+size].ival
+                ELSE error(false,'MOD on real numbers ');
+            eql :
+              IF converted(i,i+size)
+                THEN s[i].ival := ord(s[i].rval = s[i+size].rval)
+                ELSE s[i].ival := ord(s[i].ival = s[i+size].ival);
+            neq :
+              IF converted(i,i+size)
+                THEN s[i].ival := ord(s[i].rval &lt;> s[i+size].rval)
+                ELSE s[i].ival := ord(s[i].ival &lt;> s[i+size].ival);
+            gtr :
+              IF converted(i,i+size)
+                THEN s[i].ival := ord(s[i].rval > s[i+size].rval)
+                ELSE s[i].ival := ord(s[i].ival > s[i+size].ival);
+            geq :
+              IF converted(i,i+size)
+                THEN s[i].ival := ord(s[i].rval >= s[i+size].rval)
+                ELSE s[i].ival := ord(s[i].ival >= s[i+size].ival);
+            lss :
+              IF converted(i,i+size)
+                THEN s[i].ival := ord(s[i].rval < s[i+size].rval)
+                ELSE s[i].ival := ord(s[i].ival < s[i+size].ival);
+            leq :
+              IF converted(i,i+size)
+                THEN s[i].ival := ord(s[i].rval &lt;= s[i+size].rval)
+                ELSE s[i].ival := ord(s[i].ival &lt;= s[i+size].ival);
+            and_ :
+              IF converted(i,i+size)
+                THEN s[i].ival :=
+                        ord((s[i].rval > 0) AND (s[i+size].rval > 0))
+                ELSE s[i].ival :=
+                        ord((s[i].ival > 0) AND (s[i+size].ival > 0));
+            or_ :
+                IF converted(i,i+size)
+                THEN s[i].ival :=
+                        ord((s[i].rval > 0) OR (s[i+size].rval > 0))
+                ELSE s[i].ival :=
+                        ord((s[i].ival > 0) OR (s[i+size].ival > 0));
+            END; (* CASE *)
+        IF savedsymbol IN [eql..or_] THEN s[i].int := true
+        END; (* FOR *)
+    t := t - size
+    END (* IF *)
+END; (* expression *)
+
+BEGIN (* main *)
+initialise; echo := false;
+10:
+REPEAT
+    precision := 0; (* for reals only *)
+    getsym;
+    IF sym = shrieksym THEN
+        BEGIN echo := NOT echo; getsym END;
+    t := 0; expression(size); writeln;
+    FOR i := 1 TO size DO
+        WITH s[i] DO
+            IF int THEN write(ival:0,' ')
+                 ELSE write(rval:0:precision,' ');
+    UNTIL false;
+99:
+END. (* main *)
+</XMP>
+<H2>Cartesian product</H2>
+<P>
+This program solves the exercise for computing the Cartesian product
+that was given in Chapter 5.
+The program repeatedly reads an expression denoting a product of sets
+of characters and writes out the members of the set.
+<P>
+Clearly the main program has to consist of a <CODE>REPEAT</CODE> loop.
+Inside this loop it writes a prompt,
+reads an expression and writes the result.
+An expression consists of one or more factors denoting sets,
+the factors are separated by <CODE>*</CODE>.
+Since expressions are not recursive,
+the reading of the expression can be done inside the main loop.
+<P>
+Expressions consist of one or more factors,
+another <CODE>REPEAT</CODE> loop can be made to read the factors.
+This minor loop terminates when there is no further <CODE>*</CODE>,
+and then it expects a period <CODE>.</CODE>.
+Inside the minor loop the program checks for the opening brace <CODE>{</CODE>
+and for the closing brace <CODE>}</CODE>.
+Between the two it accepts any lower case characters
+The characters are collected into a set which is initially empty.
+For each factor there is a separate set.
+The sets of all the factors are collected into an array
+with an integer variable which records the total number of factors.
+When the entire expression has been read,
+this array of sets is expanded to produce the result.
+This is done by writing an opening <CODE>{</CODE>, a closing <CODE>}</CODE>,
+and between the two a procedure is called which does the actual expansion.
+<P>
+The expansion procedure is very similar to the truth table procedure
+in Chapter 5
+which assigns truth values to atoms.
+The big difference is that now there are not just two values
+to select, but as many as recorded in a set.
+In order to know which set to choose,
+the procedure takes an integer parameter
+which on the initial global call is set to 1.
+The expansion procedure is recursive:
+If the parameter is no greater than the number of factors,
+then a <CODE>FOR</CODE> loop is entered.
+For each character in the factor set given by the parameter integer
+it places the character into a special place beside the factor set
+of the array,
+and then it calls the expansion procedure recursively
+with the parameter integer incremented.
+On the other hand,
+if its parameter is greater than the number of factors in the original
+expression,
+then recursion ceases and another tuple is written out,
+enclosed in <CODE><</CODE> and <CODE>></CODE>.
+The writing out of the tuple is another <CODE>FOR</CODE> loop
+which steps through the array, picking up the characters that were
+deposited there.
+<P>
+Because the number of tuples to be written can be quite large,
+it is best not to have one tuple per line,
+but to have as many as will fit.
+Hence, before a tuple is written out,
+a check is made whether it will fit,
+by comparing the number of characters so far in the line,
+plus the number of characters which a tuple needs,
+with the allowed linelength.
+If the current tuple would not fit,
+a new line is started,
+and the count of characters so far is set to 0.
+The writing of a character, including the <CODE><</CODE> and <CODE>></CODE>,
+is now best done by a separate procedure which also
+increments the counter every time it is called.
+<P>
+For the input expression
+<XMP>
+{abcde} * {pqrs} * {wxyz}.
+</XMP>
+the program produces the output
+<XMP>
+{<apw><apx><apy><apz><aqw><aqx><aqy><aqz><arw><arx><ary><arz>
+ <asw><asx><asy><asz><bpw><bpx><bpy><bpz><bqw><bqx><bqy><bqz>
+ <brw><brx><bry><brz><bsw><bsx><bsy><bsz><cpw><cpx><cpy><cpz>
+ <cqw><cqx><cqy><cqz><crw><crx><cry><crz><csw><csx><csy><csz>
+ <dpw><dpx><dpy><dpz><dqw><dqx><dqy><dqz><drw><drx><dry><drz>
+ <dsw><dsx><dsy><dsz><epw><epx><epy><epz><eqw><eqx><eqy><eqz>
+ <erw><erx><ery><erz><esw><esx><esy><esz>}
+</XMP>
+<P>
+The source is as follows:
+<XMP>
+program cartesian_product(input,output);
+
+LABEL 1,99;
+CONST
+   maxproducts = 10;
+   linelength = 64;
+TYPE
+   message = PACKED ARRAY [1..30] OF char;
+VAR
+    ch : char;
+    prod : ARRAY [1..maxproducts] OF
+             RECORD factor : SET OF 'a'..'z'; c : char END;
+    num_products : integer;
+    column : integer;
+
+PROCEDURE error(mes : message);
+BEGIN (* error *)
+writeln('error: seen "',ch,'" when ',mes);
+GOTO 1
+END; (* error *)
+
+PROCEDURE getch;
+BEGIN (* getch *)
+REPEAT
+    IF eof THEN GOTO 99;
+    read(ch)
+    UNTIL ch > ' '
+END; (* getch *)
+
+PROCEDURE putch(c : char);
+BEGIN (* putch *)
+write(c); column := column + 1
+END; (* putch *)
+
+PROCEDURE expand(n : integer);
+VAR c0 : char; i : integer;
+BEGIN (* expand *)
+IF n > num_products THEN
+    BEGIN
+    IF column + num_products + 3 > linelength THEN
+        BEGIN writeln; column := 0; putch(' ') END;
+    putch('<');
+    FOR i := 1 TO num_products DO putch(prod[i].c);
+    putch('>')
+    END
+  ELSE
+    FOR c0 := 'a' TO 'z' DO
+        WITH prod[n] DO
+            IF c0 IN factor THEN
+                BEGIN c := c0; expand(n+1) END
+END; (* expand *)
+
+BEGIN (* main *)
+1:
+REPEAT
+    num_products := 0;
+    REPEAT
+        getch;
+        IF ch &lt;> '{' THEN error('"{" expected                  ');
+        getch; num_products := num_products + 1;
+        WITH prod[num_products] DO
+            BEGIN
+            factor := [];
+            WHILE ch IN ['a'..'z'] DO
+                BEGIN factor := factor + [ch]; getch END;
+            END; (* WITH *)
+        IF ch &lt;> '}' THEN error('"}" expected                  ');
+        getch
+        UNTIL ch &lt;> '*';
+    IF ch &lt;> '.' THEN error('"." expected                  ');
+    column := 0; putch('{'); expand(1); putch('}'); writeln
+    UNTIL false;
+99:
+END. (* main *)
+</XMP>
+<!-- Begin nav_bottom.php -->
+<!--  G L O B A L  F O O T E R  -->
+<div id="globalFooter">
+  <ul id="policies">
+    <li><a href="http://www.latrobe.edu.au/statements/accessibility">Accessibility</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/privacy">Privacy</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/copyright">Copyright and disclaimer</a></li>
+  </ul>
+  <ul id="copyright">
+    <li>CRICOS provider number: 00115M</li>
+    <!-- <li>CRICOS Provider Numbers: Bundoora, Albury-Wodonga 00115M; Bendigo 00119G</li>-->
+    <li>&copy; La Trobe University 2011</li>
+  </ul>
+</div>
+<!-- Begin Webstat Code -->
+<noscript>
+<div><img src="//webstat.latrobe.edu.au/i.latrobe" alt="" /></div>
+</noscript>
+<script type="text/javascript" src="//webstat.latrobe.edu.au/jscripts/latrobe.js"></script>
+<!-- End Webstat Code -->
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4495795-1']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+<!-- End nav_bottom.php -->
+</body>
+
+</HTML>
+

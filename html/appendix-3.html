@@ -1,0 +1,818 @@
+<!-- X-URL: http://www.latrobe.edu.au/phimvt/sympas/s99app-3.html -->
+<!-- Date: Fri, 24 Aug 2012 09:13:05 GMT -->
+<BASE HREF="http://www.latrobe.edu.au/phimvt/sympas/s99app-3.html">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+
+<HTML>
+<head>
+
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Appendix - Part 3</TITLE>
+<!-- begin css.php -->
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/includes.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/base.css" />
+<link rel="stylesheet" type="text/css" media="print" href="/ltu_assets/css/print.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/legacy.css" />
+<!--[if lte IE 6]>
+<link href="/ltu_assets/css/ielegacy.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+<!--[if IE 7]>
+<link href="/ltu_assets/css/ie7.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+ 
+<!-- end css.php -->
+</head>
+
+<body>
+<!-- begin nav_top.php -->
+<!--  U T I L I T Y  N A V I G A T I O N  -->
+<div id="utilityNav">
+  <p>Global Utilities</p>
+  <ul>
+    <li><a href="#content">Skip to content</a></li>
+    <li><a href="/sitemap/">Site map</a></li>
+  </ul>
+  <form action="http://search.latrobe.edu.au/search/index.cgi" method="get">
+    <div id="search">
+      <label for="query">Search: </label>
+      <input type="text" name="query" id="query" size="27" value="" class="fieldcellInput" accesskey="q" />
+      <input type="hidden" name="collection" value="Latrobe" />
+      <input type="submit" class="button" value="SEARCH" />
+    </div>
+  </form>
+</div>
+<!--  G L O B A L  N A V I G A T I O N  -->
+<div id="globalNav">
+  <p>Global Navigation</p>
+  <ul>
+    <li><a href="/">La Trobe Home</a></li>
+    <li><a href="/about">About La Trobe</a></li>
+    <li><a href="/courses/">Courses</a></li>
+    <li><a href="/campuses">Campuses</a></li>
+    <li><a href="/faculties">Faculties</a></li>
+    <li><a href="/research">Research</a></li>
+    <li><a href="/contact">Contacts</a></li>
+  </ul>
+</div>
+<!-- end nav_top.php -->
+
+<H2>The identity calculus</H2>
+<P>
+This program solves another exercise in Chapter 10.
+It implements the semantic tableau for the identity calculus.
+The propositional connectives are multi-letter symbols in capitals,
+the propositional atoms and the individual constants
+are lower case multi-letter identifiers.
+<P>
+The following are an input file and the output produced by the program.
+The input file states the puzzle given at the end of Chapter 11.
+The first seven lines express the assumptions which are
+implicit in the puzzle.
+The last four lines are essentially a transcription of the clues
+that had been given.
+Since the program always tries to show that a formula is not
+a logical truth,
+the formula expressing the puzzle is negated.
+If the program finds a countermodel to the negated formula,
+this model will make the assumptions and the clues true ---
+in other words the model constitutes a solution.
+The following is the input:
+<XMP>
+NOT( dog # cat AND dog # canary AND cat # canary AND
+    (dog = brutus OR dog = sylvestre OR dog = tweety) AND
+    (cat = brutus OR cat = sylvestre OR cat = tweety) AND
+    (canary = brutus OR canary = sylvestre OR canary = tweety) AND
+    (brutus = young OR brutus = middling OR brutus = old) AND
+    (sylvestre = young OR sylvestre = middling OR sylvestre = old) AND
+    (tweety = young OR tweety = middling OR tweety = old) AND
+
+    dog # brutus AND brutus # old AND old # cat AND
+    cat # sylvestre AND sylvestre # young AND young # canary AND
+    canary # tweety AND tweety # middling AND middling # dog AND
+    dog # old).
+</XMP>
+The following is the output:
+<XMP>
+?-   not logical truth, countermodel(s) -
+model 1:
+1    dog  tweety  young
+2    cat  brutus  middling
+3    canary  sylvestre  old
+
+?-
+</XMP>
+<P>
+The implementation given here again uses the simplest and cleanest
+parsing and translation method: recursive descent.
+<P>
+The scanner, procedure <CODE>getsym</CODE>,
+has to be able to recognise symbols starting with letters
+or symbols consisting of a single non-letter character.
+Some parts of the procedure are similar to corresponding
+parts in the scanning procedure used in Chapter ?
+for the program to process context free grammars.
+For symbols starting with a letter any further letters or digits
+are collected into a string.
+If the first letter was uppercase,
+then it should be one of the five operators,
+otherwise an error is reported.
+If the first letter was lowercase,
+then a linear sentinel search is conducted through
+a table of identifiers.
+If it is not found there, it is entered
+and marked as undefined.
+In any case the scanner reports back where the identifier is located.
+For symbols that are just single non-letter characters
+a  <CODE>CASE</CODE> statement can be made to handle these.
+<P>
+The parser uses recursive descent in an entirely conventional manner.
+The only part that deserves comment is procedure <CODE>factor</CODE>
+in the case dealing with identifiers.
+There are two alternatives:
+either after the identifier
+the next symbol is one of the relations,
+<CODE>=</CODE> or <CODE>#</CODE> for identity or diversity,
+and then the identifier is an individual constant,
+or the next symbol is something else,
+and the identifier is a proposition.
+So what the identifier should be can only be determined
+by inspection of the next symbol,
+and hence, when the identifier is seen,
+its location in the table has to be saved in a local variable.
+When the next symbol has been seen,
+one or the other action is taken.
+If the next symbol is one of the two relations,
+<CODE>=</CODE> or <CODE>#</CODE>,
+then the previous identifier,
+whose location was saved locally,
+has to be an individual constant.
+This checking is done by a separate local procedure
+which makes the identifier into an individual constant
+in case it was new.
+After the relation,
+another individual constant is expected,
+and this is checked by another call to the same procedure.
+On the other hand,
+if the symbol following the first identifier in the factor
+is not one of the two relations,
+then the identifier has to be checked to be a proposition.
+The three possibilities,
+the relations <CODE>a = b</CODE> or <CODE>a # b</CODE>
+and atomic propositions, generate three different kinds of tree code.
+The other parts of procedure <CODE>factor</CODE>,
+and all of the procedures <CODE>term</CODE>, <CODE>expression</CODE> and <CODE>formula</CODE>,
+are entirely conventional.
+<P>
+<EM>Tableau generator</EM>:
+The other changes are to the procedure for making formulas
+true or false,
+and to the procedure for showing the countermodels
+that have been constructed.
+Both access the table of identifiers
+which at run time have to have an extension:
+propositions have a truth value,
+individual constants have an individual 1, 2, and so on.
+<P>
+The procedure for making formulas true or false has familiar cases
+for the boolean operators <CODE>not</CODE>, <CODE>and</CODE>, <CODE>imp</CODE> and <CODE>iff</CODE>,
+and for the operands <CODE>true</CODE> and <CODE>false</CODE>.
+The case for propositional atoms is also essentially familiar,
+except that the truth value is now recorded in the table.
+The only case that needs extensive discussion is the case
+for the relations <CODE>=</CODE> and <CODE>#</CODE>.
+The goal can be to make a formula true or to make it false.
+To make <CODE>a = b</CODE> true, and to make <CODE>a # b</CODE> false,
+really amount to the same thing,
+and similarly for making <CODE>a = b</CODE> false
+and for making <CODE>a # b</CODE> true.
+But for each of these two possibilities
+there are further variations to consider,
+depending on whether the two individual constants <CODE>a</CODE>
+and <CODE>b</CODE> have individuals assigned to them or not.
+Hence there are a total of eight subcases to consider.
+One way to do so is to have a branching fan of <CODE>IF-THEN-ELSE</CODE>
+statements three levels deep to implement the eight subcases.
+Another way is to compute one of eight numbers,
+0 to 7,
+from the possible variations,
+and to let a <CODE>CASE</CODE> statement branch on the computed value.
+This is the method used here.
+<P>
+The two simplest cases arise when the two individual constants
+both have individuals assigned to them.
+If the two individuals assigned are identical or different
+as required, then the continuation procedure is called,
+otherwise nothing happens.
+Then there are two cases
+where an identity has to be made true
+and one of the two individual constants has an individual
+assigned to it but the other does not.
+In these two cases a local procedure with two parameters is called;
+what it does is to assign the individual given by the one parameter
+to the individual constants given by the other, undefined parameter,
+call the continuation, and then set the previously undefined
+individual constant back to undefined.
+The remaining four cases have more in common than might be supposed
+at first.
+Some of them require identities to be made true,
+others require identities to be made false.
+Some have one of the two individual constants instantiated,
+others have none instantiated.
+What they have in common is that some uninstantiated
+individual constant will have to be assigned an individual,
+either an old one or a new one,
+to make the relational formula true or false as required.
+In these cases a local procedure will be called which takes
+only one parameter.
+What it does is to assign either an old or a new individual
+to the individual constant which is given as a parameter.
+In detail, this works as follows:
+First a <CODE>FOR</CODE> loop is used to step through all the individuals
+in the current domain;
+for each individual it uses the other previously mentioned
+procedure to assign that individual to the parameter that was given.
+Second, a new individual is created,
+the other procedure is used to assign this new individual
+to the parameter,
+and on return the new individual is destroyed.
+<P>
+The procedure for showing countermodels
+first deals with atomic propositions and then with individual constants.
+For both it has to step through the table repeatedly.
+For the propositions it writes,
+for each of the two truth values,
+all the propositions having that truth value it can find in the table.
+For the individual constants it does much the same ---
+for each individual it writes out
+the individual constants having that individual as their extension
+it can find in the table.
+It would have been possible
+to make do with only one pass through the table,
+writing out the proposition or the individual constant
+and their extensions, if any, in the order in which
+they occur in the table.
+This method would be more efficient on the computer,
+but somewhat more tedious for the human reader.
+<P>
+I am still using this program in a course.
+The source will be made available towards the end of 2003.
+<H2>Propositional Prolog</H2>
+<P>
+This program is an implementation of
+the exercise on Proplog in Chapter 11.
+Recall that <CODE>+</CODE> switches the system into a mode for adding
+information to a database,
+and that <CODE>-</CODE> switches it into querying mode.
+Here is a demonstration of the program,
+including negation:
+<XMP>
++
+raining.    windy.
+weather_is_nice :- not (raining ; windy ; cold).
+there_is_hope :- not (raining, windy, cold).
+john_is_sad.    mary_is_sad.
+john_is_happy :- not john_is_sad.  mary_is_happy :- not mary_is_sad.
+-
+not john_is_happy.
+ ... yes
+mary_is_happy ; john_is_happy.
+ ... no
+weather_is_nice.
+ ... no
+there_is_hope.
+ ... yes
++
+cold.
+-
+there_is_hope.
+ ... no
+</XMP>
+<P>
+The implementation is modelled as far as possible on
+the general parser for context free grammars in Chapter 11.
+This was done mainly to illustrate the closeness between grammars
+and the Proplog language.
+<P>
+The main program clearly has to consist of a <CODE>REPEAT</CODE> loop which reads
+the first symbol of the input.
+If it is one of <CODE>+</CODE> or <CODE>-</CODE>,
+a variable indicating the current mode is set to entering or to questioning.
+Otherwise, depending on what the current mode is,
+a question is to be read or a fact or rule is to be entered.
+In the first case,
+an expression is to be read and the interpreter then
+determines whether it generates the language <CODE>{0}</CODE> or the language <CODE>{}</CODE>.
+Alternatively we can say that the interpreter either succeeds or fails
+in proving the expression from its current database.
+In the second case a new fact or rule is to be entered.
+For both of these the current symbol must be an atom
+which the scanner may or may not have seen before.
+If the next symbol is a period <CODE>.</CODE>,
+then what is being entered is a fact,
+and the symbol table entry for that atom has to be given a code entry
+that make later attempts to prove it succeed.
+If the next symbol is not a <CODE>.</CODE>,
+then it should be a <CODE>:-</CODE> turnstyle followed by an expression.
+Then the symbol table entry for the atom
+should be given the code generated by the expression,
+so that attempting to prove the atom later results
+in attempting to prove the expression.
+<P>
+Expressions have to be processed by a procedure <CODE>expression</CODE>
+for questions being read or for rules
+being entered.
+In either case internal code is generated in the form of a binary tree.
+The program again uses recursive descent,
+with subsidiary procedures <CODE>term</CODE> and <CODE>factor</CODE>,
+all three modelled on the corresponding procedures
+in the parser for context free grammars.
+One minor difference is that <CODE>expression</CODE> and <CODE>term</CODE> deal with infix
+operators <CODE>;</CODE> and <CODE>,</CODE>,
+to be interpreted as <EM>or</EM> and <EM>and</EM>.
+A more important differences occurs in <CODE>factor</CODE>:
+there are no terminals, only non-terminals, and here they are called atoms.
+Also, there is a case for a unary negation operator,
+and of course another for parentheses.
+<P>
+The scanner, procedure <CODE>getsym</CODE>, contains no surprises.
+After skipping blanks it enters one or another branch
+depending on whether the first printing character is a letter.
+If it is, then the letter and any further letters and digits
+are collected into a string.
+If that happens to be the string <CODE>not</CODE>,
+the only reserved word,
+then it is passed to the parsing procedure as the negation symbol.
+All other strings count as atoms,
+and a symbol table has to be searched to determine whether
+they have been seen before.
+If they have not been seen before,
+they are entered as new and are given a code entry
+that will make attempts to prove them fail.
+Such an entry may later be overridden
+by the main program when facts or rules are being entered.
+If the first printing character is not a letter,
+then it should be one of a small number of special characters
+which are either single character symbols
+or the two character symbol <CODE>:-</CODE>, the turnstyle.
+If the first printing character is not one of these,
+then an error is reported.
+<P>
+The interpreter, called by main in questioning mode,
+is of course very similar to the procedure <CODE>parse</CODE>
+of the context free grammar parser.
+One difference is that the global procedure that is used as the
+initial continuation does not result in any printout;
+essentially because there is nothing to print out
+except perhaps {0},
+the language containing just the null string.
+On the logical interpretation this would indicate
+that the formulas has been proved.
+So, instead of printing, the procedure sets a global
+success flag to true.
+This flag is initially set to false in main before the interpreter
+is called,
+and its value on return determines whether main will write
+<CODE>yes</CODE> or <CODE>no</CODE>.
+The body of the interpreter dispatches a <CODE>CASE</CODE> statement
+on the operator part of the tree code.
+A call-instruction,
+resulting from an atom,
+causes the table to be consulted.
+If the code found there is a special success code for facts,
+then the continuation is called.
+If the code found is for an expression,
+the interpreter calls itself recursively.
+An and-instruction is handled in a now familiar manner,
+with a local procedure as a continuation.
+An or-instruction results in the left disjunct being attempted
+as before, but the right disjunct is attempted only
+if the left disjunct failed to set the success flag.
+A not-instruction leads to a recursive call with the negand
+but without the continuation that had been passed as the parameter.
+Instead the global procedure for setting the success flag is used
+as a continuation.
+Then upon return of the recursive call,
+if the flag is still false,
+indicating failure of the negand and hence success of the negation,
+then the continuation parameter is called,
+otherwise the success flag is set to false.
+<P>
+The following is the standard Pascal source program
+for the Proplog program.
+<XMP>
+PROGRAM proplog(input,output);
+
+LABEL 1,99;
+
+CONST
+    alfalength = 16; emptyalfa = '                '; (* 16 blanks *)
+    maxatoms = 50;
+    failcode = 0; truecode = 1; firstcode = 2; maxcode = 1000;
+TYPE
+    alfa = PACKED ARRAY [1..alfalength] OF char;
+    message = PACKED ARRAY [1..30] OF char;
+    pointer = 0..maxcode;
+    symbol = (badchar,plus,minus,atom,neg,
+              turnstyle,lpar,rpar,semcol,comma,period);
+    operator = (cal_,or_,and_,not_);
+VAR
+    ch,lastch : char;
+    sym : symbol;
+    al : alfa;
+    table : ARRAY [0 .. maxatoms] OF
+        RECORD name : alfa; adr : integer END;
+    lasttable,location : integer;
+    code : ARRAY [firstcode..maxcode] OF
+        RECORD op : operator; a,b : integer END;
+    lastcode : pointer;
+    save_lasttable,save_lastcode : integer;
+
+    i : integer;
+    mode : (entering, questioning);
+    success : boolean;
+
+(* - - - - -   R E A D E R   - - - - - *)
+
+PROCEDURE getch;
+BEGIN
+IF eof THEN GOTO 99;
+IF eoln THEN BEGIN readln; writeln; ch := ' ' END
+        ELSE BEGIN read(ch); write(ch) END
+END;
+
+PROCEDURE error(mes : message);
+BEGIN
+write('error: seen "');
+IF sym IN [atom,neg] THEN write(al) ELSE write(lastch);
+writeln('" when ',mes);
+lasttable := save_lasttable; lastcode := save_lastcode;
+readln;
+GOTO 1
+END (* error *);
+
+PROCEDURE getsym;
+VAR k : integer;
+BEGIN
+WHILE ch &lt;= ' ' DO getch;
+IF ch IN ['A'..'Z','a'..'z'] THEN
+    BEGIN (* identifier *)
+    k := 0; al := emptyalfa;
+    REPEAT
+        IF k < alfalength  THEN
+            BEGIN k := k + 1; al[k] := ch  END;
+        getch
+        UNTIL NOT (ch IN ['A'..'Z','a'..'z','0'..'9','_']);
+    IF al = 'not             ' THEN sym := neg ELSE
+        BEGIN (* search *)
+        sym := atom; table[0].name := al; location := lasttable;
+        WHILE table[location].name &lt;> al
+            DO location := location - 1;
+        IF location = 0 THEN
+            BEGIN
+            lasttable := lasttable + 1;
+            WITH table[lasttable] DO
+                BEGIN name := al; adr := failcode END;
+            location := lasttable
+            END
+        END (* search *)
+    END (* identifier *)
+ELSE
+    BEGIN
+    lastch := ch; getch;
+    CASE lastch OF
+        '+' : sym := plus;
+        '-' : sym := minus;
+        '(' : sym := lpar;
+        ')' : sym := rpar;
+        ';' : sym := semcol;
+        ',' : sym := comma;
+        '.' : sym := period;
+        ':' :
+            BEGIN
+            IF ch = '-' THEN getch ELSE
+                error('":-" intended ?               ');
+            sym := turnstyle;
+            END;
+        OTHERWISE
+            BEGIN
+            sym := badchar;
+            error('this character is illegal     ')
+            END
+        END (* CASE *)
+    END (* ELSE *)
+END  (* getsym *);
+
+PROCEDURE generate(o : operator; x,y : integer);
+BEGIN
+lastcode := lastcode + 1;
+IF lastcode > maxcode THEN error('program too big               ');
+WITH code[lastcode] DO
+    BEGIN op := o; a := x; b := y END
+END; (* generate *)
+
+PROCEDURE expression;
+VAR left : pointer;
+
+    PROCEDURE term;
+    VAR left : pointer;
+
+        PROCEDURE factor;
+        BEGIN (* factor *)
+        CASE sym OF
+            atom :
+                BEGIN
+                generate(cal_,location,0); getsym
+                END;
+            neg :
+                BEGIN
+                getsym; factor; generate(not_,0,lastcode)
+                END;
+            lpar :
+                BEGIN
+                getsym; expression;
+                IF sym = rpar THEN getsym ELSE
+                    error('")" expected                  ')
+                END;
+            OTHERWISE
+                error('beginning of factor expected  ')
+            END (* CASE *)
+        END; (* factor *)
+
+    BEGIN (* term *)
+    factor;
+    IF sym = comma THEN
+        BEGIN
+        getsym; left := lastcode; term;
+        generate(and_,left,lastcode)
+        END
+    END (* term *);
+
+BEGIN (* expression *)
+term;
+IF sym = semcol THEN
+    BEGIN
+    getsym; left := lastcode; expression;
+    generate(or_,left,lastcode)
+    END
+END (* expression *);
+
+(* - - - - -   I N T E R P R E T E R    - - - - - *)
+
+PROCEDURE set_success;
+BEGIN success := true END;
+
+PROCEDURE prove(t : integer; PROCEDURE cp);
+
+    PROCEDURE alsoright;
+    BEGIN prove(code[t].b,cp) END;
+
+BEGIN (* prove *)
+WITH code[t] DO
+    CASE op OF
+        cal_ :
+            WITH table[a] DO
+                IF adr > failcode THEN
+                    IF adr = truecode THEN cp
+                                      ELSE prove(adr,cp);
+        and_ :
+            prove(a,alsoright);
+        or_ :
+            BEGIN
+            prove(a,cp);
+            IF NOT success THEN prove(b,cp)
+            END;
+        not_ :
+            BEGIN
+            prove(b,set_success);
+            IF NOT success THEN cp ELSE success := false
+            END;
+        END (* CASE *)
+END; (* prove *)
+
+(* - - - - -   M A I N   - - - - - *)
+
+BEGIN (* main *)
+lastcode := truecode; lasttable := 0; ch := ' '; mode := entering;
+1:
+REPEAT
+    getsym;
+    IF sym = plus THEN mode := entering ELSE
+    If sym = minus THEN mode := questioning ELSE
+        BEGIN
+        save_lasttable := lasttable; save_lastcode := lastcode;
+        IF mode = questioning THEN
+            BEGIN
+            expression; success := false; prove(lastcode,set_success);
+            IF success THEN writeln(' ... yes')
+                       ELSE writeln(' ... no')
+            END
+          ELSE
+            BEGIN (* mode = entering *)
+            IF sym &lt;> atom THEN
+                error('atom expected                 ');
+            i := location; getsym;
+            IF sym = period THEN (* fact *)
+                table[i].adr := truecode
+              ELSE
+                BEGIN (* rule *)
+                IF sym = turnstyle THEN getsym ELSE
+                    error('":-" or "." expected          ');
+                expression; table[i].adr := lastcode
+                END; (* rule *)
+            IF sym &lt;> period THEN
+                error('"." expected                  ')
+            END (* entering *)
+        END (* ELSE questioning or entering *)
+    UNTIL false;
+99:
+END.
+</XMP>
+<H2>A translation machine</H2>
+<P>
+This sections describes a solution to the last exercise
+in Chapter 13,
+to design a simple translation machine.
+All instructions have an operator field.
+Additionally some also have either an address field
+for calls, gotos and matches,
+or a character or string field for write instructions,
+and a character set field for matches.
+There is an array to contain whatever number of instructions
+are required.
+For the interpretation a stack of integers is provided
+which contains return address and (<CODE>ord</CODE>-values of) local character
+variables.
+The interpreter at the end of the program has the usual structure,
+note that it is quite independent of the input and output languages.
+<P>
+The input and output languages are determined by the program
+that will be run.
+The method adopted here was to use the first of the three ways
+mentioned at the end of the exercise:
+A program for translating from prefix to fully parenthesised
+infix was written in the language which the interpreter understands.
+This program was then easily translated into a series of assignments
+to various fields of an <CODE>ARRAY</CODE> <CODE>p</CODE>.
+These assignment statements constitute the rather ugly initialisation section.
+The <CODE>ARRAY</CODE> now contains a program that
+will be run by the translation machine in the <CODE>REPEAT</CODE> loop.
+The method works --- but it is not recommended for anything but
+the smallest demonstration programs because the style
+makes the programs just about unmaintainable.
+For anything larger one would want to use either
+the second or the third way mentioned.
+<P>
+The program uses two optimisations:
+For formulas starting with a binary operator
+the program does not jump over the error section
+to the end of the procedure where one might expect
+a return instruction.
+Instead the return instruction is executed immediately
+after the formula containing the binary operator has been completed.
+For formulas beginning with a negation
+it even uses what is known as "tail recursion":
+Instead of calling another formula,
+it simply gotos to the beginning of the code for formulas.
+This is possible in the special case where after returning
+from a negated formulas there is nothing further to do
+at the point of return.
+For errors it is necessary to clear the stack again,
+so instead of returning, flow of control
+goes right back to the beginning.
+<P>
+The method of putting the string message into the instructions
+has the effect that all instructions need that much space.
+In any but a toy program this would be an intolerable waste,
+and the few message instructions should really use an
+index into an array of messages.
+However, this does make the machine just marginally more complex.
+<P>
+The following is the standard Pascal source
+for the general translator.
+<XMP>
+PROGRAM prefix_to_infix_assembler(input,output);
+
+CONST maxstack = 100;
+TYPE
+    operator =
+        (clear_,call_,return_,goto_,
+         readlocal_,translocal_,writelocal_,testlocal_,
+         message_,writechar_,readln_);
+VAR
+    tr : ARRAY [char] OF char;
+    p : ARRAY [1..30] OF
+            RECORD CASE o : operator OF
+                call_,goto_ : (a : integer);
+                testlocal_ : (q : SET OF char; b : integer);
+                writechar_ : (c : char);
+                message_ : (m : PACKED ARRAY [1..25] OF char)
+                END; (* CASE, RECORD *)
+    pc : integer;
+    s : ARRAY[1..maxstack] OF integer;
+    t : integer;
+    ch : char;
+
+BEGIN (* main *)
+tr['A']:='v'; tr['C']:='>'; tr['E']:='='; tr['K']:='&'; tr['N']:='-';
+
+                                                    (* "MAIN" *)
+p[ 1].o := clear_;
+p[ 2].o := message_;    p[ 2].m := 'Formula :                ';
+p[ 3].o := call_;       p[ 3].a := 5;
+p[ 4].o := goto_;       p[ 4].a := 2;
+                                                    (* "FORMULA" *)
+p[ 5].o := readlocal_;
+p[ 6].o := testlocal_;  p[ 6].b := 9;   p[ 6].q := ['a'..'z'];
+p[ 7].o := writelocal_;
+p[ 8].o := return_;
+p[ 9].o := testlocal_;  p[ 9].b := 13;  p[ 9].q := ['N'];
+p[10].o := translocal_;
+p[11].o := writelocal_;
+p[12].o := goto_;       p[12].a := 5;   (* tail recursion *)
+p[13].o := testlocal_;  p[13].b := 23;  p[13].q := ['A','E','C','K'];
+p[14].o := writechar_;  p[14].c := '(';
+p[15].o := call_;       p[15].a := 5;
+p[16].o := writechar_;  p[16].c := ' ';
+p[17].o := translocal_;
+p[18].o := writelocal_;
+p[19].o := writechar_;  p[19].c := ' ';
+p[20].o := call_;       p[20].a := 5;
+p[21].o := writechar_;  p[21].c := ')';
+p[22].o := return_;
+p[23].o := message_;    p[23].m := 'a..z A C E K N expected  ';
+p[24].o := readln_;
+p[25].o := goto_;       p[25].a := 1;
+                                                (* interpreter *)
+pc := 1;
+REPEAT
+    WITH p[pc] DO
+        BEGIN
+        pc := pc + 1;
+        CASE o OF
+            clear_      : t := 0;
+            call_       : BEGIN s[t+1] := pc; t := t+2; pc := a END;
+            return_     : BEGIN pc := s[t-1]; t := t-2 END;
+            goto_       : pc := a;
+            translocal_ : s[t] := ord(tr[chr(s[t])]);
+            writelocal_ : write(chr(s[t]));
+            testlocal_  : IF NOT (chr(s[t]) IN q) THEN pc := b;
+            message_    : BEGIN writeln; writeln(m) END;
+            writechar_  : write(c);
+            readln_     : readln;
+            readlocal_  : BEGIN
+                          REPEAT
+                            IF eof THEN pc := 0 ELSE read(ch)
+                            UNTIL (pc = 0) OR (ch > ' ');
+                          s[t] := ord(ch)
+                          END;
+            END (* CASE *)
+        END (* WITH *)
+    UNTIL pc = 0
+END.
+</XMP>
+<P>
+Note that this collection of parsing primitives
+will only work for languages without lookahead ---
+such as prefix notation or fully parenthesised infix notation.
+For minimally parenthesised infix notation it is necessary
+to have a one symbol lookahead in a global variable
+and a <CODE>getch</CODE> instruction.
+<!-- Begin nav_bottom.php -->
+<!--  G L O B A L  F O O T E R  -->
+<div id="globalFooter">
+  <ul id="policies">
+    <li><a href="http://www.latrobe.edu.au/statements/accessibility">Accessibility</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/privacy">Privacy</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/copyright">Copyright and disclaimer</a></li>
+  </ul>
+  <ul id="copyright">
+    <li>CRICOS provider number: 00115M</li>
+    <!-- <li>CRICOS Provider Numbers: Bundoora, Albury-Wodonga 00115M; Bendigo 00119G</li>-->
+    <li>&copy; La Trobe University 2011</li>
+  </ul>
+</div>
+<!-- Begin Webstat Code -->
+<noscript>
+<div><img src="//webstat.latrobe.edu.au/i.latrobe" alt="" /></div>
+</noscript>
+<script type="text/javascript" src="//webstat.latrobe.edu.au/jscripts/latrobe.js"></script>
+<!-- End Webstat Code -->
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4495795-1']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+<!-- End nav_bottom.php -->
+</body>
+
+</HTML>

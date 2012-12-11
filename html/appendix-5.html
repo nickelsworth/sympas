@@ -1,0 +1,1186 @@
+<!-- X-URL: http://www.latrobe.edu.au/phimvt/sympas/s99app-5.html -->
+<!-- Date: Fri, 24 Aug 2012 09:13:26 GMT -->
+<BASE HREF="http://www.latrobe.edu.au/phimvt/sympas/s99app-5.html">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+
+<HTML>
+<head>
+
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Appendix Part 5</TITLE>
+<!-- begin css.php -->
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/includes.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/base.css" />
+<link rel="stylesheet" type="text/css" media="print" href="/ltu_assets/css/print.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/legacy.css" />
+<!--[if lte IE 6]>
+<link href="/ltu_assets/css/ielegacy.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+<!--[if IE 7]>
+<link href="/ltu_assets/css/ie7.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+ 
+<!-- end css.php -->
+</head>
+
+<body>
+<!-- begin nav_top.php -->
+<!--  U T I L I T Y  N A V I G A T I O N  -->
+<div id="utilityNav">
+  <p>Global Utilities</p>
+  <ul>
+    <li><a href="#content">Skip to content</a></li>
+    <li><a href="/sitemap/">Site map</a></li>
+  </ul>
+  <form action="http://search.latrobe.edu.au/search/index.cgi" method="get">
+    <div id="search">
+      <label for="query">Search: </label>
+      <input type="text" name="query" id="query" size="27" value="" class="fieldcellInput" accesskey="q" />
+      <input type="hidden" name="collection" value="Latrobe" />
+      <input type="submit" class="button" value="SEARCH" />
+    </div>
+  </form>
+</div>
+<!--  G L O B A L  N A V I G A T I O N  -->
+<div id="globalNav">
+  <p>Global Navigation</p>
+  <ul>
+    <li><a href="/">La Trobe Home</a></li>
+    <li><a href="/about">About La Trobe</a></li>
+    <li><a href="/courses/">Courses</a></li>
+    <li><a href="/campuses">Campuses</a></li>
+    <li><a href="/faculties">Faculties</a></li>
+    <li><a href="/research">Research</a></li>
+    <li><a href="/contact">Contacts</a></li>
+  </ul>
+</div>
+<!-- end nav_top.php -->
+
+<H2>Error treatment in a small procedural language</H2>
+<P>
+This section describes part of a solution given
+as an exercise in Chapter 17:
+to design and implement a small procedural
+language with three types --- Boolean, char and integer ---
+and procedures and functions with parameters and local variables.
+The language designed here was made as close to Pascal
+as possible.
+In particular this meant that the types and some procedures,
+some functions and the Boolean constants are not reserved words
+but are inbuilt
+identifiers  and hence do not occur in the context free part of
+the language definition.
+The grammar is as follows:
+<XMP>
+(* Lexicon: *)
+
+reserved word  ::=
+        any of the strings in double quotes in the grammar below
+identifier  ::=
+        a letter followed by further letters, digits and underscores,
+        but excluding the reserved words
+number  ::=
+        an optional '-' followed by one or more digits
+character_constant  ::=
+        any character enclosed in single quotes
+
+(* Context-free grammar, with 12 non-terminals : *)
+
+programme  ::=
+        "PROGRAM" "(" identifier { "," identifier } ")" ";"
+        var_declaration
+        [   ( "PROCEDURE" | "FUNCTION" ) identifier
+            { "(" declaration_sequence ")" } { ":" identifier } ";"
+            var_declaration body ";" ]
+        body "."
+var_declaration  ::=
+        { "VAR" declaration_sequence }
+declaration_sequence  ::=
+        var_par_typing [ ";" var_par_typing ]
+var_par_typing  ::=
+        { identifier [ "," identifier ] ":" identifier }
+body  ::=
+        "BEGIN" statement_sequence "END
+statement_sequence  ::=
+        statement [ ";" statement ]
+statement  ::=
+        identifier ( { ":=" expression } | actual_parameters )
+      | "BEGIN" statement_sequence "END"
+      | "IF" expression "THEN" statement {"ELSE" statement}
+      | "WHILE" expression "DO" statement
+actual_parameters  ::=
+        { "(" expression [ "," expression ] ")" }
+expression  ::=
+        simple_expression
+        { ("<" | "&lt;=" | "&lt;>" | "=" | ">" | ">=") simple_expression }
+simple_expression  ::=
+        term [ ("+" | "-" | "OR") term ]
+term  ::=
+        factor [ ("*" | "/" | "MOD" | "AND") factor ]
+factor  ::=
+        identifier actual_parameters
+      | number
+      | character_constant
+      | "NOT" factor
+      | "(" expression ")"
+</XMP>
+<P>
+Note that since there are no <CODE>VAR</CODE> parameters,
+a sequence of parameter declarations is
+identical to a sequence of variable declarations.
+To make this workable
+the semicolon had to be made a separator in both cases,
+and what it separates is either empty
+or a comma-separated list of parameters or variables,
+followed by a colon and a type.
+<P>
+Transforming the grammar into a recursive descent parser
+is entirely mechanical.
+Two kinds of occurrences of identifiers have to be distinguished:
+those in which the identifier is one of several alternatives,
+and those in which the identifier is compulsory.
+For the latter kind a single procedure checks for
+compulsory identifiers.
+Note that at this point
+no checks at all are made about identifiers,
+there is no symbol table yet.
+Adding a simple error recovery mechanism
+is quite straightforward.
+<P>
+The following is a listing of a run of a
+program with many context free errors:
+<XMP>
+   1    %LISTING 1
+   2
+   3    (* PROGRAM WITH ERRORS,
+   4       ALL CONTEXT-FREE ERRORS TO BE DETECTED *)
+   5
+   6    PROGRAM myprog(input,output;
+****                               ^
+%MINPAS-E  ")" expected
+   7
+   8    VAR
+   9      alpha, beta, gamma : integer;
+  10      peter, paul  char;
+****                      ^
+%MINPAS-E  ":" expected
+  11      mary : boolean;
+  12
+  13    PROCEDURE someprocedure;
+  14    VAR local : integer;
+  15    WHILE alpha > betta DO
+****        ^
+%MINPAS-E  "BEGIN" expected
+  16        local := alpha + beta * gamma;
+  17    IF local > 100 DO
+****                    ^
+%MINPAS-E  "THEN" expected
+  18        BEGIN alfa := betta; gama := gama - 123 END;
+  19    write(locul;
+****               ^
+%MINPAS-E  ")" expected
+  20    writeln
+  21    END;
+  22
+  23    PROCEDURE anotherproc(a,b : integger; c : bullion);
+  24    BEGIN
+  25    IF 123 a &lt;= b THEN
+****           ^
+%MINPAS-E  illegal symbol after factor
+  26        WHILE alfer > 0 THEN
+****                           ^
+%MINPAS-E  "DO" expected
+  27            BEGIN alphu := alphu - b; p END
+  28      ELSE
+  29        BEGIN write(a/c); write(a MOD d); writeln END
+  30    END;
+  31
+  32    FUNCTION foo(x,y : char; z : BEGIN ( VAR ) : booleun
+****                                     ^
+%MINPAS-E  identifier expected
+  32    FUNCTION foo(x,y : char; z : BEGIN ( VAR ) : booleun
+****                                     ^
+%MINPAS-E  illegal subsequent symbol
+  32    FUNCTION foo(x,y : char; z : BEGIN ( VAR ) : booleun
+****                                             ^
+%MINPAS-I  skipped symbols to here
+  33    BEGIN
+****        ^
+%MINPAS-E  ";" expected
+  34    WHILE x < 'A' DO
+  35        BEGIN  write(x); x := succ(x) END;
+  36    someprocedure(a,b,c,d,e,f,g,h);
+  37    foo := y > 'Z'
+  38    END;
+  39
+  40
+  41    BEGIN (* main *)
+  42    foo;
+  43    IF a < b + (x * y - z(1,2,3)) THEN bar;
+  44    IF NOT (a AND OR b) THEN c ELSE d;
+****                   ^
+%MINPAS-E  start of factor expected
+  45    WHILE x + y >= 123 DO BEGIN a; b; c PROCEDURE VAR IF END;
+****                                                ^
+%MINPAS-E  illegal symbol after statement
+  45    WHILE x + y >= 123 DO BEGIN a; b; c PROCEDURE VAR IF END;
+****                                                           ^
+%MINPAS-I  skipped symbols to here
+  46    ; ;
+  47    END.
+12 error(s)
+550 milliseconds CPU
+</XMP>
+<P>
+The next step is to check for all context sensitive errors.
+Some identifiers are predeclared,
+and they are:
+<XMP>
+    boolean    char    eof    eoln    false    input    integer
+    ord    output    pred    read    succ    true    write    writeln
+</XMP>
+They have the same context sensitive properties as in Pascal.
+Identifiers that are being declared by the user
+have to be entered into a symbol table,
+together with other information in the declaration.
+Finally, numerous type checks have to be performed.
+<P>
+The following is a listing of a run of a
+program with many context sensitive errors.
+Do note that it is possible to redefine predeclared
+identifiers, and that this is not an error.
+It is almost always bad practice, though.
+<XMP>
+   1    %LISTING 2
+   2    (* MINPAS program with many context sensitive errors *)
+   3
+   4    PROGRAM myprog(inpoote,char);
+****                         ^
+%MINPAS-E  undefined identifier
+   4    PROGRAM myprog(inpoote,char);
+****                              ^
+%MINPAS-E  wrong kind of identifier
+   5    VAR i,j,i : integer;
+****            ^
+%MINPAS-E  already declared at this level
+   6        a : bullion; c,d : eof; e : j;
+****                  ^
+%MINPAS-E  undefined identifier
+   6        a : bullion; c,d : eof; e : j;
+****                             ^
+%MINPAS-E  wrong kind of identifier
+   6        a : bullion; c,d : eof; e : j;
+****                                    ^
+%MINPAS-E  wrong kind of identifier
+   7
+   8    PROCEDURE p(a,b : integer; c : char; ok : boolean);
+   9    VAR e,f : integer; ok : char;
+****                        ^
+%MINPAS-E  already declared at this level
+  10    BEGIN (* p *)
+  11    e := true;
+****             ^
+%MINPAS-E  type conflict in assignment
+  12    i := a; j := b AND i OR 'A';
+****                     ^
+%MINPAS-E  operand/operator conflict
+  12    i := a; j := b AND i OR 'A';
+****                          ^
+%MINPAS-E  operator/operand conflict
+  12    i := a; j := b AND i OR 'A';
+****                               ^
+%MINPAS-E  operator/operand conflict
+  13    ok := ok OR (a &lt;= b);
+****              ^
+%MINPAS-E  operand/operator conflict
+  14    WHILE i < 'A' DO p(i+1,b+2,c+3,false);
+****                   ^
+%MINPAS-E  operand/operand conflict
+  14    WHILE i < 'A' DO p(i+1,b+2,c+3,false);
+****                                ^
+%MINPAS-E  operand/operator conflict
+  15    IF integer THEN p(1,2,3,4,5);
+****             ^
+%MINPAS-E  wrong predeclared identifier
+  15    IF integer THEN p(1,2,3,4,5);
+****                           ^
+%MINPAS-E  formal/actual type conflict
+  15    IF integer THEN p(1,2,3,4,5);
+****                             ^
+%MINPAS-E  formal/actual type conflict
+  15    IF integer THEN p(1,2,3,4,5);
+****                             ^
+%MINPAS-E  no further parameters allowed
+  16    IF ok THEN write(a)
+****             ^
+%MINPAS-E  expression must be boolean
+  16    IF ok THEN write(a)
+****                   ^
+%MINPAS-E  output has not been declared
+  17    END; (* p *)
+  18
+  19    FUNCTION f : char;
+  20    BEGIN (* f *)
+  21    a := f(1,2,3);
+****          ^
+%MINPAS-E  no parameters allowed
+  22    f := 'A'
+  23    END; (* f *)
+  24
+  25    FUNCTION fun(alpha : integer; beta : alpha);
+****                                             ^
+%MINPAS-E  wrong kind of identifier
+  25    FUNCTION fun(alpha : integer; beta : alpha);
+****                                               ^
+%MINPAS-E  ":" expected for function
+  26    BEGIN
+  27    fun(123);
+****       ^
+%MINPAS-E  ":=" expected
+  27    fun(123);
+****           ^
+%MINPAS-E  need more actual parameters
+  28    f := 'A';
+****    ^
+%MINPAS-E  function illegal in statement
+  29    fun := fred + 3;
+****              ^
+%MINPAS-E  undefined identifier
+  30    END;
+  31
+  32    PROCEDURE typed(in1,boolean : integer; char : typed) : read;
+****                                                      ^
+%MINPAS-E  wrong kind of identifier
+  32    PROCEDURE typed(in1,boolean : integer; char : typed) : read;
+****                                                         ^
+%MINPAS-E  no ":" allowed for procedure
+  32    PROCEDURE typed(in1,boolean : integer; char : typed) : read;
+****                                                              ^
+%MINPAS-E  wrong kind of identifier
+  33    BEGIN (* typed *)
+  34    IF boolean > 10 THEN typed(1,2,3);
+****                                    ^
+%MINPAS-E  formal/actual type conflict
+  35    typed(1,2,3,boolean + char,elizabeth);
+****               ^
+%MINPAS-E  formal/actual type conflict
+  35    typed(1,2,3,boolean + char,elizabeth);
+****               ^
+%MINPAS-E  no further parameters allowed
+  35    typed(1,2,3,boolean + char,elizabeth);
+****                                       ^
+%MINPAS-E  undefined identifier
+  36    END;
+  37
+  38    FUNCTION ok(boo : boolean; ch : char) : integer;
+  39    BEGIN (* ok *) (* boolean and char are useable again *)
+  40    IF boo THEN ok := ord(ch) ELSE ok := ord(succ(ch)) + ord('A')
+  41    END; (* ok *)
+  42
+  43    BEGIN (* main *)
+  44    read(i); read(j);
+****       ^
+%MINPAS-E  input has not been declared
+  45    f := 'A';
+****    ^
+%MINPAS-E  function illegal in statement
+  46    p(1,2+j,'a',true);
+  47    write(succ(chr(ord('X) - ord('A)))); writeln;
+  48    write(succ(123)); write(succ('A')); write(succ(true));
+****                                                       ^
+%MINPAS-E  parameter has wrong type
+  49    WHILE NOT eof DO
+  50        BEGIN read(i); p(i,i,'A',i = 0); write(j) END
+  51    END.
+37 error(s)
+780 milliseconds CPU
+</XMP>
+<P>
+The handling of the context sensitive aspects
+of the language does not require any changes in the structure
+of the program.
+<P>
+There now has to be a table of predeclared identifiers
+and a table of userdeclared identifiers.
+It is possible to use the same table,
+but this version uses two --- the first is already
+provided in the utilities of Chapter 17.
+When an identifer is being declared,
+it is entered into the second table.
+A check has to be made that the identifier is not
+already declared at the same level.
+When an identifier is used,
+the lookup procedure first performs a linear search
+through the user declared identifiers,
+and then a binary search through the predeclared identifiers.
+If it is not found,
+an error is reported
+and the identifier is entered as a variable of no particular type.
+This makes it possible to minimise spurious error messages later.
+<P>
+Full type checking has to be done for expressions
+and for actual parameterlists.
+The latter presents a problem in that when
+the body of a procedure or function has been read,
+the name of the procedure or function has
+to remain visible but the names of the parameters
+and local variables must disappear.
+However, the types of the parameters have to remain
+for later checking in actual parameterlists.
+One way to do this is to let the symbol table
+handle all visibilities and uses of the formal
+parameters inside the body,
+and to have a separate type table for the parameters
+which is not deleted when the body has been read.
+So, to perform the type checking for actual parameter lists,
+this latter type table is used.
+<P>
+The Pascal source is as follows:
+<XMP>
+PROGRAM minpas(input,output);
+
+TYPE
+    symbol =
+        (identifier,leftparenthesis,rightparenthesis,
+        comma,semicol,colon,period,hyphen,              queery,
+        program_,var_,procedure_,function_,
+        begin_,end_,if_,then_,else_,while_,do_,assign,
+        lss,leq,neq,eql,gtr,geq,add,or_,mul,dvd,mod_,and_,
+        not_,
+        charconst,stringconst,numberconst);
+    standardident =
+       (undefined,boolean_,char_,integer_,
+        true_,false_,ord_,chr_,eof_,eoln_,
+        succ_,pred_,input_,output_,read_,write_,writeln_,
+        user_defined);
+    types = undefined .. integer_;
+    stident_set = SET OF standardident;
+
+PROCEDURE programme;
+
+LABEL 10,90,99;
+
+CONST
+    errormark = '%MINPAS';
+    list_filename = '41minp2x.lst';
+    reslength = 10; emptyres = '          ';
+    maxrestab = 40;
+    identlength = 16; emptyident = '                ';
+    maxstdidenttab = 20;
+
+%INCLUDE '41SCANUT.pas'
+
+CONST
+    maxtable = 30;
+    maxpartyptab = 40;
+VAR
+    factor_begin_sys : symset;
+    table : ARRAY [0..maxtable] OF RECORD
+                alf : identalfa;
+                obj : symbol;
+                typ : types;
+                parptr : integer;
+                i : integer
+                END;
+    locatn,lasttable,savelasttable,levelstart : integer;
+    savesym : symbol;
+    partyptab : ARRAY [1..maxpartyptab] OF
+                  RECORD ptyp : types; islast : boolean END;
+    lastpartyptab : integer;
+    havefiles : SET OF input_ .. output_;
+
+  PROCEDURE initialise;
+  BEGIN (* initialise *)
+  iniscanner;
+  erw('(         ', leftparenthesis);
+  erw(')         ', rightparenthesis);
+  erw('*         ', mul);
+  erw('+         ', add);
+  erw(',         ', comma);
+  erw('.         ', period);
+  erw('/         ', dvd);
+  erw(':         ', colon);
+  erw(':=        ', assign);
+  erw(';         ', semicol);
+  erw('<         ', lss);
+  erw('&lt;=        ', leq);
+  erw('&lt;>        ', neq);
+  erw('=         ', eql);
+  erw('>         ', gtr);
+  erw('>=        ', geq);
+  erw('?         ', queery);
+  erw('AND       ', and_);
+  erw('BEGIN     ', begin_);
+  erw('DO        ', do_);
+  erw('ELSE      ', else_);
+  erw('END       ', end_);
+  erw('FUNCTION  ', function_);
+  erw('IF        ', if_);
+  erw('MOD       ', mod_);
+  erw('NOT       ', not_);
+  erw('OR        ', or_);
+  erw('PROCEDURE ', procedure_);
+  erw('PROGRAM   ', program_);
+  erw('THEN      ', then_);
+  erw('VAR       ', var_);
+  erw('WHILE     ', while_);
+  specials_repeat := ['=','>'];
+  est('boolean         ',boolean_);
+  est('char            ',char_);
+  est('chr             ',chr_);
+  est('eof             ',eof_);
+  est('eoln            ',eoln_);
+  est('false           ',false_);
+  est('input           ',input_);
+  est('integer         ',integer_);
+  est('ord             ',ord_);
+  est('output          ',output_);
+  est('pred            ',pred_);
+  est('read            ',read_);
+  est('succ            ',succ_);
+  est('true            ',true_);
+  est('write           ',write_);
+  est('writeln         ',writeln_);
+  factor_begin_sys :=
+      [identifier,numberconst,charconst,not_,leftparenthesis];
+  lastpartyptab := 0;
+  havefiles := []
+  END; (* initialise *)
+
+    PROCEDURE enter;
+    BEGIN (* enter *)
+    lasttable := lasttable + 1;
+    IF lasttable > maxtable THEN
+        point('F','symbol table overflow         ');
+    table[lasttable].alf := ident
+    END; (* enter *)
+
+    PROCEDURE lookup;
+    VAR i,j : integer;
+    BEGIN (* lookup *)
+    table[0].alf := ident; locatn := lasttable;
+    WHILE table[locatn].alf &lt;> ident DO locatn := locatn - 1;
+    IF locatn > 0 THEN id := user_defined ELSE
+        BEGIN (* binary search through standard identifiers *)
+        i := 1; j := laststdident;
+        REPEAT
+            locatn := (i + j) div 2;
+            IF ident &lt;= stdidents[locatn].alf THEN j := locatn - 1;
+            IF ident >= stdidents[locatn].alf THEN i := locatn + 1
+            UNTIL i > j;
+        IF i - 1 > j THEN id := stdidents[locatn].symb ELSE
+            BEGIN
+            point('E','undefined identifier          ');
+            enter;
+            WITH table[lasttable] DO
+                BEGIN obj := var_; typ := undefined END;
+            locatn := lasttable; id := undefined
+            END
+        END; (* ELSE *)
+    IF writelisting > 5 THEN
+        writeln(listing,'"',ident,'" at ',locatn,' is ',id)
+    END; (* lookup *)
+
+  PROCEDURE c_identifier(fsys : symset; sts : stident_set);
+  VAR i : integer;
+  BEGIN (* c_identifier *)
+  IF sym &lt;> identifier THEN
+      BEGIN
+      point('E','identifier expected           ');
+      test(fsys,[],'illegal subsequent sybmbol    ')
+      END
+    ELSE
+      BEGIN
+      IF sts = [] THEN
+          BEGIN
+          enter;
+          i := levelstart;
+          WHILE table[i].alf &lt;> ident DO i := i + 1;
+          IF i < lasttable THEN
+              point('E','already declared at this level')
+          END
+        ELSE
+          BEGIN
+          lookup;
+          IF NOT (id IN sts + [undefined]) THEN
+              BEGIN
+              point('E','wrong kind of identifier      ');
+              id := undefined
+              END;
+          IF user_defined IN sts THEN
+              IF locatn > 0 THEN
+                  IF table[locatn].obj &lt;> var_ THEN
+                      point('E','variable expected             ')
+          END;
+      getsym;
+      test(fsys,[],'illegal after this identifier ')
+      END
+  END; (* c_identifier *)
+
+  PROCEDURE decl_sequence(fsys : symset; parameters : boolean);
+
+    PROCEDURE var_par_typing(fsys : symset);
+    VAR i : integer;
+    BEGIN (* var_par_typing *)
+    IF sym = identifier THEN
+        BEGIN
+        c_identifier(fsys + [comma,colon,identifier],[]);
+        i := lasttable;
+        WHILE sym = comma DO
+            BEGIN
+            getsym;
+            c_identifier(fsys + [comma,colon,identifier],[])
+            END;
+        check(colon,[],'":" expected                  ');
+        c_identifier(fsys,[boolean_,char_,integer_]);
+        REPEAT
+            WITH table[i] DO
+                BEGIN obj := var_; typ := id END;
+            IF parameters THEN
+                BEGIN
+                lastpartyptab := lastpartyptab + 1;
+                IF lastpartyptab > maxpartyptab THEN
+                    point('F','too many parameters in program');
+                WITH partyptab[lastpartyptab] DO
+                    BEGIN ptyp := id; islast := false END
+                END;
+            i := i + 1
+            UNTIL i > lasttable
+        END (* IF *)
+    END; (* var_par_typing *)
+
+  BEGIN (* decl_sequence *)
+  var_par_typing(fsys + [semicol]);
+  WHILE sym = semicol DO
+      BEGIN getsym; var_par_typing(fsys + [semicol]) END;
+  IF parameters THEN partyptab[lastpartyptab].islast := true
+  END; (* decl_sequence *)
+
+  PROCEDURE var_declaration(fsys : symset);
+  BEGIN (* var_declaration *)
+  IF sym = var_ THEN
+      BEGIN getsym; decl_sequence(fsys,false) END
+  END; (* var_declaration *)
+
+  PROCEDURE body(fsys : symset);
+
+    PROCEDURE statementsequence(fsys : symset);
+
+      PROCEDURE statement(fsys : symset);
+      VAR ty1 : types; savelocatn : integer;
+
+        PROCEDURE user_actuals(fsys : symset; loc : integer);
+        forward;
+
+        PROCEDURE standard_actuals
+                 (fsys : symset; ts : stident_set; VAR ty : types);
+        forward;
+
+        PROCEDURE expression(fsys : symset; VAR ty : types);
+        VAR ty1 : types; oper : symbol;
+
+          PROCEDURE simple_expression(fsys : symset; VAR ty : types);
+          VAR ty1 : types; oper : symbol;
+
+            PROCEDURE term(fsys : symset; VAR ty : types);
+            VAR ty1 : types; oper : symbol;
+
+              PROCEDURE factor(fsys : symset; VAR ty : types);
+              VAR savelocatn : integer;
+              BEGIN (* factor *)
+              test(factor_begin_sys,fsys,
+                   'start of factor expected      ');
+              WHILE sym IN factor_begin_sys DO
+                  BEGIN
+                  ty := undefined;
+                  CASE sym OF
+                      identifier :
+                          BEGIN
+                          lookup; savelocatn := 0;
+                          CASE id OF
+                            true_,false_ :
+                              BEGIN
+                              getsym;
+                              ty := boolean_
+                              END;
+                            eof_,eoln_ :
+                              BEGIN
+                              IF NOT (input_ IN havefiles) THEN
+                                BEGIN
+                                point('E',
+                                  'input has not been declared   ');
+                                havefiles := havefiles + [input_]
+                                END;
+                              getsym;
+                              ty := boolean_
+                              END;
+                            chr_ :
+                              BEGIN
+                              standard_actuals(fsys,[integer_],ty);
+                              ty := char_
+                              END;
+                            ord_ :
+                              BEGIN
+                              standard_actuals(fsys,
+                                [boolean_,char_,integer_],ty);
+                              ty := integer_
+                              END;
+                            pred_,succ_ :
+                              standard_actuals
+                                (fsys,[char_,integer_],ty);
+                            user_defined :
+                              BEGIN
+                              savelocatn := locatn;
+                              WITH table[locatn] DO
+                                CASE obj OF
+                                  var_ :
+                                    BEGIN
+                                    getsym;
+                                    ty := typ
+                                    END;
+                                  function_ :
+                                    BEGIN
+                                    getsym;
+                                    user_actuals(fsys,savelocatn);
+                                    ty := typ
+                                    END;
+                                  procedure_ :
+                                    BEGIN
+                                    point('E',
+                                    'procedure illegal in factor   ');
+                                    getsym;
+                                    user_actuals(fsys,savelocatn);
+                                    ty := undefined
+                                    END;
+                                  OTHERWISE
+                                    point('F',
+                                    'internal in factor            ')
+                                  END (* CASE *)
+                              END;
+                            undefined :
+                              getsym;
+                            OTHERWISE
+                              BEGIN
+                              point('E',
+                                'wrong predeclared identifier  ');
+                              getsym (* don't read again ! *)
+                              END
+                            END (* CASE *)
+                          END;
+                      numberconst :
+                          BEGIN
+                          ty := integer_; getsym
+                          END;
+                      charconst :
+                          BEGIN
+                          ty := char_; getsym
+                          END;
+                      not_ :
+                          BEGIN
+                          getsym;
+                          factor(fsys,ty);
+                          ty := boolean_
+                          END;
+                      leftparenthesis :
+                          BEGIN
+                          getsym;
+                          expression(fsys + [rightparenthesis],ty);
+                          check(rightparenthesis,[],
+                                '")" expected                  ')
+                          END;
+                      END; (* CASE *)
+                  IF writelisting > 4 THEN
+                      writeln(listing,'factor type = ',ty);
+                  test(fsys,factor_begin_sys,
+                       'illegal symbol after factor   ')
+                  END (* WHILE *)
+              END; (* factor *)
+
+            BEGIN (* term *)
+            factor(fsys + [mul,dvd,mod_,and_],ty);
+            WHILE sym IN [mul,dvd,mod_,and_] DO
+                BEGIN
+                IF (sym IN [mul,dvd,mod_]) AND
+                    NOT (ty IN [undefined,integer_])
+                  OR (sym = and_) AND
+                    NOT (ty IN [undefined,boolean_])
+                THEN
+                    point('E','operand/operator conflict     ');
+                oper := sym; getsym;
+                factor(fsys + [mul,dvd,mod_,and_],ty1);
+                IF (oper IN [mul,dvd,mod_]) AND
+                    NOT (ty1 IN [undefined,integer_])
+                  OR (oper = and_) AND
+                    NOT (ty1 IN [undefined,boolean_])
+                THEN
+                    BEGIN
+                    point('E','operator/operand conflict     ');
+                    ty := undefined
+                    END;
+                IF ty1 = undefined THEN ty := undefined
+                END
+            END; (* term *)
+
+          BEGIN (* simple_expression *)
+          term(fsys + [add,hyphen,or_],ty);
+          WHILE sym IN [add,hyphen,or_] DO
+              BEGIN
+              IF (sym IN [add,hyphen]) AND
+                  NOT (ty IN [undefined,integer_])
+                OR (sym = or_) AND
+                  NOT (ty IN [undefined,boolean_])
+              THEN
+                  point('E','operand/operator conflict     ');
+              oper := sym; getsym;
+              term(fsys + [add,hyphen,or_],ty1);
+              IF (oper IN [add,hyphen]) AND
+                  NOT (ty1 IN [undefined,integer_])
+                OR (oper = or_) AND
+                  NOT (ty1 IN [undefined,boolean_])
+              THEN
+                  BEGIN
+                  point('E','operator/operand conflict     ');
+                  ty := undefined
+                  END;
+              IF ty1 = undefined THEN ty := undefined
+              END
+          END; (* simple_expression *)
+
+        BEGIN (* expression *)
+        simple_expression(fsys + [lss,leq,neq,eql,gtr,geq],ty);
+        IF sym IN [lss,leq,neq,eql,gtr,geq] THEN
+            BEGIN
+            oper := sym; getsym;
+            simple_expression(fsys,ty1);
+            IF NOT ((ty = ty1) OR
+                 (ty = undefined) OR (ty1 = undefined))
+                THEN point('E','operand/operand conflict      ');
+            IF (ty &lt;> ty1) OR (ty = undefined) OR (ty1 = undefined)
+                THEN ty := undefined
+                ELSE ty := boolean_
+            END
+        END; (* expression *)
+
+        PROCEDURE user_actuals(* fsys : symset; loc : integer *);
+        VAR ty1 : types; curpar : integer;
+        BEGIN (* user_actuals *)
+        IF sym &lt;> leftparenthesis THEN
+            BEGIN
+            IF loc > 0 THEN
+                IF table[loc].parptr > 0 THEN
+                    point('E','parameterlist expected        ')
+            END
+          ELSE
+            BEGIN
+            IF loc = 0 THEN curpar := 0 ELSE
+                BEGIN
+                curpar := table[loc].parptr;
+                IF curpar = 0 THEN
+                    point('E','no parameters allowed         ')
+                END;
+            getsym;
+            expression(fsys + [comma,rightparenthesis],ty1);
+            IF curpar > 0 THEN
+                IF NOT (ty1 IN [partyptab[curpar].ptyp,undefined])
+                    THEN point('E','formal/actual type conflict   ');
+            WHILE sym = comma DO
+                BEGIN
+                IF curpar > 0 THEN
+                    WITH partyptab[curpar] DO
+                        IF islast THEN
+                            BEGIN
+                            point('E',
+                              'no further parameters allowed ');
+                            curpar := 0
+                            END
+                          ELSE
+                            curpar := curpar + 1;
+                getsym;
+                expression(fsys + [comma,rightparenthesis],ty1);
+                IF curpar > 0 THEN
+                    WITH partyptab[curpar] DO
+                        BEGIN
+                        IF writelisting > 3 THEN
+                            writeln(listing,
+                              'next expected type = ',ptyp);
+                        IF NOT (ty1 IN [ptyp,undefined]) THEN
+                            point('E',
+                              'formal/actual type conflict   ')
+                        END;
+                END;
+            IF curpar > 0 THEN
+                IF NOT partyptab[curpar].islast THEN
+                    point('E','need more actual parameters   ');
+            check(rightparenthesis,[],
+                  '")" expected                  ')
+            END (* ELSE *)
+        END; (* actualparameters *)
+
+        PROCEDURE standard_actuals
+           (* fsys : symset; ts : stdidentset; VAR ty : types *);
+        BEGIN (* standard_actuals *)
+        getsym;
+        IF sym &lt;> leftparenthesis THEN
+            point('E','"(" and parameter expected    ')
+          ELSE
+            BEGIN
+            getsym;
+            IF ts = [undefined] THEN
+                BEGIN
+                c_identifier(fsys +
+                     [rightparenthesis],[user_defined]);
+                ty := undefined (* KLUDGE *)
+                END
+              ELSE
+                expression(fsys + [rightparenthesis],ty);
+            IF NOT (ty IN ts + [undefined]) THEN
+                point('E','parameter has wrong type      ');
+            check(rightparenthesis,
+                [],'")" expected                  ')
+            END
+        END; (* standard_actuals *)
+
+      BEGIN (* statement *)
+      CASE sym OF
+          identifier :
+              BEGIN
+              lookup; savelocatn := 0;
+              CASE id OF
+                  read_ :
+                      BEGIN
+                      IF NOT (input_ IN havefiles) THEN
+                          BEGIN
+                          point('E',
+                              'input has not been declared   ');
+                          havefiles := havefiles + [input_]
+                          END;
+                      standard_actuals(fsys,[undefined],ty1);
+                      END;
+                  write_,writeln_ :
+                      BEGIN
+                      IF NOT (output_ IN havefiles) THEN
+                          BEGIN
+                          point('E',
+                              'output has not been declared  ');
+                          havefiles := havefiles + [output_]
+                          END;
+                      IF id = write_ THEN
+                          standard_actuals
+                            (fsys,[boolean_,char_,integer_],ty1)
+                        ELSE
+                          getsym;
+                      END;
+                  user_defined :
+                      BEGIN
+                      savelocatn := locatn;
+                      WITH table[locatn] DO
+                          CASE obj OF
+                              var_ :
+                                BEGIN
+                                getsym;
+                                IF sym &lt;> assign THEN
+                                   point('E',
+                                     '":=" expected                 ')
+                                END;
+                              procedure_ :
+                                BEGIN
+                                getsym;
+                                END;
+                              function_ :
+                                BEGIN
+                                IF locatn &lt;> savelasttable THEN
+                                  BEGIN
+                                  point('E',
+                                    'function illegal in statement ');
+                                  getsym
+                                  END
+                                ELSE
+                                  BEGIN
+                                  getsym;
+                                  IF sym &lt;> assign THEN
+                                    point('E',
+                                     '":=" expected                 ')
+                                  END
+                                END;
+                              OTHERWISE
+                                  point('F',
+                                    'internal in statement         ')
+                              END (* CASE *)
+                      END;
+                  undefined :
+                      getsym;
+                  OTHERWISE
+                      BEGIN
+                      point('E','wrong predeclared identifier  ');
+                      getsym
+                      END
+                  END; (* CASE *)
+              IF sym = assign THEN
+                  BEGIN
+                  getsym;
+                  expression(fsys,ty1);
+                  IF savelocatn > 0 THEN
+                    WITH table[savelocatn] DO
+                      IF NOT ((typ = undefined) OR
+                              (ty1 IN [typ,undefined])) THEN
+                        point('E','type conflict in assignment   ')
+                  END
+                ELSE
+                  user_actuals(fsys,savelocatn)
+              END;
+          begin_ :
+              BEGIN
+              getsym;
+              statementsequence(fsys + [end_]);
+              check(end_,[],'"END" expected                ')
+              END;
+          if_ :
+              BEGIN
+              getsym;
+              expression(fsys + [then_,do_],ty1);
+              IF NOT (ty1 IN [undefined,boolean_]) THEN
+                  point('E','expression must be boolean    ');
+              check(then_,[do_],'"THEN" expected               ');
+              statement(fsys + [else_]);
+              IF sym = else_ THEN
+                  BEGIN
+                  getsym;
+                  statement(fsys)
+                  END
+              END;
+          while_ :
+              BEGIN
+              getsym;
+              expression(fsys + [do_,then_],ty1);
+              IF NOT (ty1 IN [undefined,boolean_]) THEN
+                  point('E','expression must be boolean    ');
+              check(do_,[then_],'"DO" expected                 ');
+              statement(fsys)
+              END;
+          END; (* CASE *)
+      test(fsys,[],'illegal symbol after statement')
+      END; (* statement *)
+
+    BEGIN (* statementsequence *)
+    statement(fsys + [semicol]);
+    WHILE sym = semicol DO
+        BEGIN
+        getsym;
+        statement(fsys + [semicol])
+        END
+    END; (* statementsequence *)
+
+  BEGIN (* body *)
+  check(begin_,[],'"BEGIN" expected              ');
+  statementsequence(fsys + [end_]);
+  check(end_,[],'"END" expected                ');
+  test(fsys,[],'illegal symbol after body     ')
+  END; (* body *)
+
+BEGIN (* programme *)
+10:
+initialise; getsym;
+check(program_,[],'"PROGRAM" expected            ');
+levelstart := 1;
+c_identifier([leftparenthesis],[]);
+check(leftparenthesis,[],'"(" expected                  ');
+c_identifier([comma,rightparenthesis,semicol],[input_,output_]);
+IF id IN [input_,output_] THEN havefiles := [id];
+IF sym = comma THEN
+    BEGIN
+    getsym;
+    c_identifier([rightparenthesis,semicol],[input_,output_]);
+    IF id IN [input_,output_] THEN havefiles := havefiles + [id]
+    END;
+check(rightparenthesis,[],'")" expected                  ');
+check(semicol,[],'";" expected                  ');
+var_declaration([begin_,procedure_,function_]);
+WHILE sym IN [procedure_,function_] DO
+    BEGIN
+    savesym := sym; getsym; levelstart := lasttable + 1;
+    c_identifier([leftparenthesis,colon,semicol],[]);
+    savelasttable := lasttable;
+    WITH table[savelasttable] DO
+        BEGIN obj := savesym; parptr := 0 END;
+    IF sym = leftparenthesis THEN
+        BEGIN
+        getsym;
+        table[savelasttable].parptr := lastpartyptab + 1;
+        decl_sequence([rightparenthesis],true);
+        check(rightparenthesis,[],
+             '")" expected                  ')
+        END;
+    IF savesym = function_ THEN
+        IF sym &lt;> colon THEN
+            point('E','":" expected for function     ');
+    IF sym = colon THEN
+        BEGIN
+        IF savesym &lt;> function_ THEN
+            point('E','no ":" allowed for procedure  ');
+        getsym;
+        c_identifier([semicol,var_,begin_],[boolean_,char_,integer_]);
+        table[savelasttable].typ := id
+        END;
+    check(semicol,[],'";" expected                  ');
+    var_declaration([begin_]);
+    body([semicol]);
+    lasttable := savelasttable; levelstart := 1;
+    check(semicol,[],'";" expected                  ');
+    END; (* WHILE *)
+savelasttable := 0; (* stop function assignment *)
+body([period]);
+IF sym &lt;> period THEN
+    point('E','"." expected                  ');
+90:;
+99:;
+finalise
+END; (* programme *)
+
+BEGIN (* main *)
+programme
+END. (* main *)
+</XMP>
+<P>
+As it stands, the program illustrates some aspects of compiling which
+this book has not yet covered.
+There are many ways in which some kind of code
+generation can be added.
+<!-- Begin nav_bottom.php -->
+<!--  G L O B A L  F O O T E R  -->
+<div id="globalFooter">
+  <ul id="policies">
+    <li><a href="http://www.latrobe.edu.au/statements/accessibility">Accessibility</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/privacy">Privacy</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/copyright">Copyright and disclaimer</a></li>
+  </ul>
+  <ul id="copyright">
+    <li>CRICOS provider number: 00115M</li>
+    <!-- <li>CRICOS Provider Numbers: Bundoora, Albury-Wodonga 00115M; Bendigo 00119G</li>-->
+    <li>&copy; La Trobe University 2011</li>
+  </ul>
+</div>
+<!-- Begin Webstat Code -->
+<noscript>
+<div><img src="//webstat.latrobe.edu.au/i.latrobe" alt="" /></div>
+</noscript>
+<script type="text/javascript" src="//webstat.latrobe.edu.au/jscripts/latrobe.js"></script>
+<!-- End Webstat Code -->
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4495795-1']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+<!-- End nav_bottom.php -->
+</body>
+
+</HTML>

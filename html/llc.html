@@ -1,0 +1,427 @@
+<!-- X-URL: http://www.latrobe.edu.au/phimvt/llc.html -->
+<!-- Date: Fri, 24 Aug 2012 09:33:26 GMT -->
+<BASE HREF="http://www.latrobe.edu.au/phimvt/llc.html">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+
+<HTML>
+<head>
+
+<TITLE>LLC - Logic, Linguistics and Computation 2003</TITLE>
+<!-- begin css.php -->
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/includes.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/base.css" />
+<link rel="stylesheet" type="text/css" media="print" href="/ltu_assets/css/print.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/legacy.css" />
+<!--[if lte IE 6]>
+<link href="/ltu_assets/css/ielegacy.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+<!--[if IE 7]>
+<link href="/ltu_assets/css/ie7.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+ 
+<!-- end css.php -->
+</head>
+
+<body>
+<!-- begin nav_top.php -->
+<!--  U T I L I T Y  N A V I G A T I O N  -->
+<div id="utilityNav">
+  <p>Global Utilities</p>
+  <ul>
+    <li><a href="#content">Skip to content</a></li>
+    <li><a href="/sitemap/">Site map</a></li>
+  </ul>
+  <form action="http://search.latrobe.edu.au/search/index.cgi" method="get">
+    <div id="search">
+      <label for="query">Search: </label>
+      <input type="text" name="query" id="query" size="27" value="" class="fieldcellInput" accesskey="q" />
+      <input type="hidden" name="collection" value="Latrobe" />
+      <input type="submit" class="button" value="SEARCH" />
+    </div>
+  </form>
+</div>
+<!--  G L O B A L  N A V I G A T I O N  -->
+<div id="globalNav">
+  <p>Global Navigation</p>
+  <ul>
+    <li><a href="/">La Trobe Home</a></li>
+    <li><a href="/about">About La Trobe</a></li>
+    <li><a href="/courses/">Courses</a></li>
+    <li><a href="/campuses">Campuses</a></li>
+    <li><a href="/faculties">Faculties</a></li>
+    <li><a href="/research">Research</a></li>
+    <li><a href="/contact">Contacts</a></li>
+  </ul>
+</div>
+<!-- end nav_top.php -->
+
+<P>
+This is the page for my LLC course.
+It is essentially the main page for SYMBOLIC PROCESSING IN PASCAL,
+with details of assignments prepended.
+<P>
+Feel free to ring me:<BR>
+office: 9479 2932   home: 9439 7340  (evenings, weekends perfectly OK)
+<PRE>
+Classes: 2 two-hour sessions, Wed Hu3 404 2.00 and Fri MARB 171 10.00
+If you cannot attend all four hours, you should not do this course.
+Assessment:
+        5 assignments (10% each), any 5 of the 7 that will be set.
+        one 2.5 hour examination (50%)
+Due dates for assignments: (all on Mondays)
+    0 & 1        4-AUG
+        2       18-AUG
+        3        1-SEP
+        4       15-SEP
+        5       29-OCT
+        6       13-OCT
+        7       27-OCT
+</PRE>
+<PRE>
+********************  I M P O R T A N T ********************
+
+All assignments consist of program, input test file and
+output result file, and maybe some documentation. You should
+only submit hardcopy, in the essay chute of the Philosophy
+Department, HU2 level 3. You should attach the cover sheet
+available there - the warnings about plagiarism in essays and
+exercises also apply to programs.
+
+You may use any programming language of your choice (but if you
+are using some very rare language I might have to ask you to
+explain some parts of your program). I'll talk about language
+choices in the lecture. For now please note this:
+
+Some of the later programs require backtracking, and the
+Pascal programs that you see on the web page do this simply
+by using local procedures as parameters in recursive call.
+Your Pascal might not be able to do this properly, the cheap
+ones rarely do. If you are thinking of using Pascal, you should check
+that your compiler can do the little programs in Chapter 8.
+When using some Pascal compilers, you might have to do this:
+    $  pc  -L  myprog.pas
+    $  a.out
+         ...
+Note the capital L switch, which "folds" all upper case letters
+(such as BEGIN etc) to lower case.
+
+If you are using C or C++ with which you are familiar, you will
+have an initial advantage over using Pascal which is new to you.
+For that reason the earlier assignments give a small Pascal bonus.
+But the later programs are harder in C or C++, so for the later
+assignments the bonus is reversed. The harder parts can be
+done in two ways in C (and almost certainly in C++ too). If
+you are using Gnu's gcc, there is even a third way which is
+probably cleanest. You can try this out by more or less translating
+one of the tiny programs in Chapter 8 into C or C++, again
+using local functions.
+
+</PRE>
+<PRE>
+********************  A S S I G N M E N T S  ***************
+
+Assignment 0 Due: 4-AUG (same time as Ass 1)
+
+This is essentially a little encouragement to get you going early.
+The mark is only 5% which can serve as a bonus to your other five
+"proper" assignments, but only if done in a language other than Pascal.
+
+Similar to the truth table program in Chapter 1,
+write a program for the formula
+    ((p OR q) AND (NOT p OR r) AND (q IFF s)) IMP (r OR s)
+where IMP means "implies" and IFF means "if and only if".
+The program should be clean and elegant, there should be no redundancies.
+The output should be in EXACTLY the same style as the one in Chapter 1,
+except that for the truth values you may use 1 and 0 instead of T and F.
+
+
+Assignment 1 Due: 4-AUG
+
+Write a prefix to infix translator of logical formulas, with embellishments.
+    % Pas   % C
+ 1) 45      35  The basic translator, as in class, or Chapter 2
+ 2) 20      20  Demo  input/output
+ 3)  5       5  No outer parentheses
+ 4)  0      10  Error handling (Pas: GOTO, C: longjump)
+ 5)  5       5  OR: Error handling without GOTO or longjump
+ 6) 10      10  Output buffer for input formulas over one line
+ 7) 10      10  > v & precedences:
+                CApqArs => p v q > r v s    AKpqKrs => p & q v r & s
+ 8) 10      10  v & repetitions:
+                AApqArs => p v q v r v s    KKpqKrs => p & q & r & s
+ 9) 10      10  > special case:
+                CpCqCrs => p > q > r > s    CCCpqrs => ((p > q) > r) > s
+10) 10      10  Discussion (100 words, code optional) on how equivalence
+                should be handled.
+</PRE>
+<PRE>
+Assignment 2 Due: 18-AUG
+
+Write an evaluator for infix logical formulas, with embellishments.
+    %
+1) 40  The basic evaluator, as in class, or Chapter 3
+        Pascal bonus: 10 %
+2) 20  Demo  input/output
+3) 10  Error handling (any method)
+4) 10  On error, a pointer to the exact position
+5) 20  In the output, write the value of each subformula underneath
+        its operator -   e.g.   ((1 & 0) > -(0 v 1))
+                                    0    1 0   1
+6) 10  Allow AND OR NOT IMP IFF in input
+7) 20  Instead of an evaluator with atoms 0 and 1,
+        allow atoms a b .. z and write a translator to postfix
+        (using the same operators as in prefix).
+8) 30  As for 7) but also allow 0 and 1:
+       optimise as in  p v 1 => 1, p v 0 => p, 0 & p => 0, 1 & p => p  etc
+        e.g.  ((p & 1) v (q > 0))  => (postfix)  p q N A
+</PRE>
+<P>
+<PRE>
+Assignment 3  Due: 1-SEP
+
+Design, document, implement, demonstrate a simple macro preprocessor.
+Similar to the one in Chapter 4, but "better": make it easy to have
+ordinary upper case letters in the text, and use for example  $A  to
+call a macro (or #A or %A or whatever you like. But you should also
+pay attention to how any special characters (e.g. $ or # and perhaps
+a few others) are to be entered into text.
+     %
+1)  20  document: i.e. write a user manual (for the end user who
+        does not want to know how and in what language it is implemented)
+2)  60  implement:  in a language of your choice (anything is fine)
+        Pascal bonus: 10% .
+        Remember, the bonus is to encourage you to make things easier later.
+        For the last three assignments the bonus system will reverse
+        because it is so much harder to write them in C or C++.
+3)  20  demonstrate: input and output to show that it really does
+        what your manual says
+4)  20  Bug-report / improvements, etc: if you can spot and describe
+        any errors in your own program, then you will get back some
+        of the marks that you have lost.
+</PRE>
+
+<P>
+<PRE>
+Assignment 4  Due: 15-SEP
+
+Write a program that repeatedly reads formulas of propositional logic
+in minimally parenthesised infix notation and constructs the truthtable.
+Reference: Chapter 5. Use any programming language of your own choice.
+     %
+1)  20  Parser only, with error detection and demo
+2)   5  Additionally to - & v > =, allow NOT AND OR IMP IFF as operators
+3)  10  Collect atoms, generate postfix (demo if this is all you have)
+4)  15  Generate all combinations of truth values (demo if this is all)
+5)  10  Calculate value of formula in each line (demo of course)
+6)   5  Add a switch to enable just a synopsis:
+           tautology / self-contradiction / contingent
+        (One medium sized demo for each)
+7)  30  Print values of all subformulas under their operator
+        (You need an input buffer to print the input formula first,
+         and also an output buffer because the values are not
+         calculated in the order in which they appear in the input)
+8)  10  If you did 2) and 7) together
+If you are not using the script/photo facility, you parser (part 1))
+should echo all input characters to the output file.
+</PRE>
+<P>
+<PRE>
+Assignment 5  Due: 29-SEP (first day of semester break)
+
+Write a program that repeately reads regular expressions
+and expands them. It is best to follow the steps below.
+Reference: Chapter 9.
+     %
+1)  20  Parser only, error detection + demo
+2)  10  Generate tree code (demo if this is all you have)
+3)  20  expansion for cat and alt, + demo
+4)  30  Bonus if you did 3) without using procedures as parameters
+        (in C or C++ this is the only way)
+5)  10  add the ? postfix operator ("zero or once")
+6)  10  length limit facility (needed for what comes below)
+7)  20  add the * postfix operator ("zero or more")
+8)  10  add the + postfix operator ("once or more")
+9)  10  invent a facility to allow expansion of ANY character
+        in the regular expression, including | ( ) ? * + .
+</PRE>
+<P>
+<PRE>
+Assignment 6  Due: 13-Oct
+
+Write a program that repeatedly reads formulas in propositional
+logic (minimally parenthesised), and then uses the semantic
+tableaux method to search for interpreteations in which the
+given formula is false.
+Reference: Chapter 10
+1 EITHER
+    40  Write a recursive descent parser (error detection and
+        generous demos) similar to the truth table program
+        but generate tree code similar to the regular expression
+        expander. (Show the tree code)
+ OR 60  Instead of a recursive descent method for parsing and
+        tree code generating, use a goal stack machine.
+        (Show error detection, show the tree code).
+2   30  Write procedures: show, ver and val for semantic tableaux
+        (Give generous demos which really test the program).
+        Bonus 20% if this part is written in a language other
+        than Pascal (and hence probably the rest, too).
+3   10  Replace the set parameters in ver and fal by global sets.
+4   20  Replace ver and fal by just one procedure -
+           make(true..)      make(false..)
+5   10  Add some _useful_ bells and whistles.
+</PRE>
+<P>
+<PRE>
+Assignment 7  Due 27-Oct 
+As per lecture and chapter 11: "Context Free Grammars".
+Do as much as you can, reasonable marks for partial completion.
+Even more than the usual 10 marks if you get close to completion.
+The original Pascal source is already visible to you in the Chapter. 
+</PRE>
+<PRE>
+********************  T H E    C H A P T E R S   *******************
+</PRE>
+
+<P>
+The chapters most relevant to the course are:
+<UL>
+<LI>1 2 3 4 5  (easily translated into C or C++)
+<LI>8 (test some of these on your Pascal)
+<LI>9 10 11 (difficult to translate into C or C++)
+</UL>
+<P>
+<UL>
+<LI> Chapter  1:
+<A HREF="sympas/s10onetab.html">
+A Truthtable Program</A> (13K)
+<LI> Chapter  2:
+<A HREF="sympas/s11pre.html">
+Prefix to Infix Translator</A>.
+(16K)
+<LI> Chapter  3:
+<A HREF="sympas/s12infevl.html">
+Infix Evaluator</A> (16K)
+<LI> Chapter  4:
+<A HREF="sympas/s13macros.html">
+A Macro Expander</A> (14K)
+<LI> Chapter  5:
+<A HREF="sympas/s14trutab.html">
+A Truth Table Generator</A> (33K)
+<LI> Chapter  6:
+<A HREF="sympas/s15opprec.html">
+Operator Precedence</A> (29K)
+<LI> Chapter  7:
+<A HREF="sympas/s21typroc.html">
+An imperative Language</A> (40K)
+<LI> Chapter  8:
+<A HREF="sympas/s22secrec.html">
+Second Order Recursion</A> (35K)
+<LI> Chapter  9:
+<A HREF="sympas/s23regexp.html">
+Regular Expressions</A> (25K)
+<LI> Chapter 10:
+<A HREF="sympas/s24ver.html">
+Semantic Tableaux</A> or Truth Trees
+(32K)
+<LI> Chapter 11:
+<A HREF="sympas/s25confre.html">
+Context Free Grammars</A> (42K)
+<LI> Chapter 12:
+<A HREF="sympas/s30hirecs.html">
+Higher Order Recursion</A> (33K)
+<LI> Chapter 13:
+<A HREF="sympas/s31ll1gen.html">
+A Deterministic Parser</A> (39K)
+<LI> Chapter 14:
+<A HREF="sympas/s32syr.html">
+Symbol Table and Recursion</A> (47K)
+<LI> Chapter 15:
+<A HREF="sympas/s33mondef.html">
+A Theorem Prover for Monadic Logic</A> (97K)
+<LI> Chapter 16:
+<A HREF="sympas/s36datlog.html">
+Datalog - a Precursor to Prolog</A> (66K)
+<LI> Chapter 17:
+<A HREF="sympas/s41scanut.html">
+Some Utilities</A> (40K)
+<LI> Chapter 18:
+<A HREF="sympas/s42minjoy.html">
+A Miniature Version of Joy</A> (113K)
+<LI> Chapter 19:
+<A HREF="sympas/s43datbas.html">
+A Language for Querying Databases</A> (116K)
+<LI> Chapter 20:
+<A HREF="sympas/s45netver.html">
+A Petri Net Verifier</A> (94K>
+<LI> Chapter 21:
+<A HREF="sympas/s49hiteco.html">
+Self-compiling Compilers</A> (61K)
+<LI> Appendix Part 1:
+<A HREF="sympas/s99app-1.html">
+Answers Part 1</A> (47K)
+<LI> Appendix Part 2:
+<A HREF="sympas/s99app-2.html">
+Answers Part 2</A> (46K)
+<LI> Appendix Part 3:
+<A HREF="sympas/s99app-3.html">
+Answers Part 3</A> (36K)
+<LI> Appendix Part 4:
+<A HREF="sympas/s99app-4.html">
+Answers Part 4</A> (52K)
+<LI> Appendix Part 5:
+<A HREF="sympas/s99app-5.html">
+Answers Part 5</A> (38K)
+<LI> Appendix Part 6:
+<A HREF="sympas/s99app-6.html">
+Answers Part 6</A> (9K)
+<LI> Bibliography
+<A HREF="sympas/sbokbib.html">
+Bibliography</A> (19K)
+</UL>
+<P>
+Mailto:
+<A HREF="mailto:phimvt@lure.latrobe.edu.au">
+Manfred von Thun</A> (email: phimvt@lure.latrobe.edu.au).
+<P>
+<A HREF="index.html">
+Back</A> to my home page.
+<!-- Begin nav_bottom.php -->
+<!--  G L O B A L  F O O T E R  -->
+<div id="globalFooter">
+  <ul id="policies">
+    <li><a href="http://www.latrobe.edu.au/statements/accessibility">Accessibility</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/privacy">Privacy</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/copyright">Copyright and disclaimer</a></li>
+  </ul>
+  <ul id="copyright">
+    <li>CRICOS provider number: 00115M</li>
+    <!-- <li>CRICOS Provider Numbers: Bundoora, Albury-Wodonga 00115M; Bendigo 00119G</li>-->
+    <li>&copy; La Trobe University 2011</li>
+  </ul>
+</div>
+<!-- Begin Webstat Code -->
+<noscript>
+<div><img src="//webstat.latrobe.edu.au/i.latrobe" alt="" /></div>
+</noscript>
+<script type="text/javascript" src="//webstat.latrobe.edu.au/jscripts/latrobe.js"></script>
+<!-- End Webstat Code -->
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4495795-1']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+<!-- End nav_bottom.php -->
+</body>
+
+</HTML>

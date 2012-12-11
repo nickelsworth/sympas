@@ -1,0 +1,447 @@
+<HTML>
+<head>
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Chapter 4</TITLE>
+</HEAD>
+<body>
+
+<H1>Macro expander</H1>
+<P>
+In the previous two chapters we have seen two simple programs
+which translate and evaluate;
+the translation process and the evaluation process
+were fixed once and for all ---
+the user could not affect them.
+In this chapter we shall see our first example
+of greater flexibility --- the user can define new symbols
+which after the definition can be used to mean
+whatever they were defined to mean.
+Probably the simplest kind of definition
+is the literal replacement of a short text by a longer text.
+This is called macro expansion.
+<H2>Text macro</H2>
+<P>
+Although macro expansion is such a simple notion,
+it is not all that well known.
+For that reason we start off with a very simple example.
+The text to follow is actually an input file to the
+macro expander --- it could equally well have been typed
+in directly from the terminal.
+Note that it begins with a number of lines which start
+with a capital letter followed by the identity sign <CODE>=</CODE>.
+These lines define the capital letter to be short hand for
+the quoted text to follow on the same line.
+The definitions are followed by three skeleton notes ---
+to mum, mary and bill -
+and the capital letters defined earlier occur in these notes.
+Here is the input file:
+<XMP>
+G = "H F"
+S = "send more money"
+M = "mum"
+D = "dad"
+H = "how are you?"
+F = "i am fine."
+J = "jeremy"
+
+dear M,
+G
+please tell D to S.
+    your loving son J
+
+@
+dear mary,
+G
+i have just written to my M.
+i hope D will S.
+    most affectionately, J
+
+@
+P = "%"
+hi bill -
+just wrote for the old man to S.
+do you really expect me to pay 20P interest?
+    j
+%
+</XMP>
+If the macro expanding program is run
+and given the above file as input,
+then it does the following:
+When reading the lines with the definitions,
+it associates with each defined capital letter
+the text which follows it in the definition.
+When there are no more definitions,
+it starts reading characters from the input file
+and copies them to the output file ---
+except when it sees a capital letter which
+it will expand in accordance with the definition.
+If the text of the definition contains a capital letter,
+this is expanded also.
+<XMP>
+
+dear mum,
+how are you? i am fine.
+please tell dad to send more money.
+    your loving son jeremy
+
+dear mary,
+how are you? i am fine.
+i have just written to my mum.
+i hope dad will send more money.
+    most affectionately, jeremy
+
+hi bill -
+just wrote for the old man to send more money.
+do you really expect me to pay 20% interest?
+    j
+</XMP>
+<P>
+The example illustrates almost everything the program can do,
+and it is not very much.
+However, the program does illustrate how definitions
+are implemented, and it is sufficiently simple.
+The simplicity was bought in part by not allowing capital letters
+in the output; one of the exercises invites you to remedy this.
+<P>
+The incomplete information you have now about the macro expander
+is fairly typical of a partial specification
+which a system designer receives from the client.
+The designer then has to fill in the gaps
+in a reasonable way
+and present a complete specification to the client for approval.
+Such a specification only describes the system
+as it will appear to the user,
+it does not describe how the implementation works.
+One way to give the specification is to write a user manual
+for a system that has not been implemented yet.
+Write such a manual now,
+fill in the gaps as you see fit,
+change minor details as you see fit,
+but explain your changes in notes.
+DO IT NOW,  DO NOT READ ANY FURTHER.
+<H2>Designing the implementation</H2>
+<P>
+How should text bodies of defined macros be stored?
+This is a design decision that should be made quite early.
+One way is to have fixed length strings, one for each of the
+potential bodies,
+and then no body can exceed the maximum length.
+But then a lot of space is wasted by unused and short macros.
+Another way is to have one large memory or string space,
+and for each of the 26 potential bodies have two pointers
+into this space, indicating where it starts and where it finishes.
+In addition we need an integer to keep track of what the last
+used part of the memory is.
+<P>
+The main program has to initialise each of the 26
+starting pointers to zero, indicating that nothing has been defined.
+Also, the variable for the last used memory has to be initialised to zero.
+At this point the program enters a major loop
+to read definitions and to expand text.
+Each pass through the loop admits an optional definition phase
+and then an expansion phase.
+In the example given,
+definitions occurred only during the first and third pass;
+in passes other than the first any previous definitions
+are still in force,
+but they could have been overwritten.
+Passes through the loop have to be controlled by special characters:
+if the loop is to be re-entered then a separator character is
+used at the end of the text to be expanded,
+otherwise a terminator character is used.
+Of course the separator and terminator are not copied
+to the output file.
+To allow for even the (perverse) case of an input file
+whose first printing character is the terminator,
+the loop should be a <CODE>WHILE</CODE> statement
+whose entry condition is that the last printing character
+read is not the terminator.
+Before the <CODE>WHILE</CODE> loop the program has to read the first
+printing character,
+skipping over white space which might precede the definitions.
+Since skipping over white space has to be done elsewhere in the program,
+the task is delegated to a procedure
+<CODE>getch</CODE> whose body is essentially familiar.
+The body of the major loop has to process any optional definitions
+and a text to be expanded;
+these two tasks have to be done by two minor loops.
+<P>
+A minor <CODE>WHILE</CODE> loop for the definitions is entered first,
+its entry condition is that the current character
+is a capital letter, a permitted macro name.
+That character has to be saved in another variable
+so that access to the as yet unread text body of the current
+macro definition can be stored there.
+The next printing character has to be <CODE>=</CODE>,
+otherwise an error has to be reported.
+The next printing but otherwise arbitrary
+character will serve as the quote
+to begin and end the text body of the macro;
+the device enables the body of a macro to contain
+any characters except the chosen quote.
+The next character read will normally be the start
+character of the body of the current macro,
+and this has to be recorded.
+Now a further loop is needed to read the body of the macro.
+Since the body might be empty,
+it must be a <CODE>WHILE</CODE> loop whose entry condition
+is that the character is not the ending quote.
+Inside this loop we have to check that there is space left
+in the memory,
+if there is not, then a message to that effect should be written
+and the program aborted.
+(It might be argued that some other action is called for.)
+In the normal case the last character read
+has to be inserted in the next position in the string memory.
+Upon exit from this loop the position of the finish
+character in the body of the current macro can be recorded
+and the next printing character read.
+This might be a capital letter,
+and if it is then the enclosing <CODE>WHILE</CODE> loop is re-entered.
+If it is not,
+it should be the first character of the text to be expanded.
+<P>
+But there is a complication.
+What happens if the text to be expanded is a macro call,
+a capital letter?
+That would mean that this capital letter would be seen
+by the previous loop
+as the beginning of another macro definition.
+To allow for this case,
+an optional masking character is needed which is not
+a capital letter (and,
+less importantly,
+not a character that commonly occurs at the beginning
+of text to be expanded).
+If this masking character is present,
+it is simply read past.
+Only now can the text expansion loop be entered.
+To allow for empty text,
+it is again a <CODE>WHILE</CODE> loop
+which is not even entered if the character
+is the terminator or the separator.
+In the body of this loop the character has to be written
+or expanded,
+and in case it was the last character of a line,
+a new line has to be started on the output.
+Only then can the next character be read,
+and this ends the body of the expansion loop.
+<P>
+If the writing or expanding of a single character
+requires expanding because it is a capital letter,
+it can lead to further expansion if the body of the
+macro contains calls to others.
+In that case upon return from expanding the other macros
+the expanding of the current macros has to be resumed.
+This calling can go on for several levels,
+and every return has to be dealt with properly.
+The simplest way to handle this is by means of a procedure
+which calls itself recursively.
+As a parameter it takes a character to be written or expanded.
+In its body,
+if the parameter is not a macro call it is written to the output.
+If it is a macro letter
+we have to look up the start and the finish position
+for the body of this macro,
+and use a <CODE>FOR</CODE> loop to recursively write or expand
+each of the relevant characters in the string memory.
+But what happens if a macro calls itself --- either directly
+or indirectly (<CODE>A</CODE> calls <CODE>B</CODE> 
+which calls <CODE>C</CODE> which calls <CODE>A</CODE>)?
+The expansion process would go on for ever.
+Such recursive expansion has to be blocked,
+and the simplest method is to keep track
+of which macros have been called.
+This is best done by a global set of called macro characters
+<CODE>A</CODE> .. <CODE>Z</CODE> which is initialised to empty before the global
+text expansion loop is entered.
+In the procedure any macro expansion
+is preceded by a test that the parameter character
+has not yet been expanded,
+otherwise an error is reported and no expansion takes place.
+If the expansion is permissable,
+then the <CODE>FOR</CODE> loop can be executed.
+But before the loop the parameter character
+has to be added to the set of called macros,
+and, very importantly, after the loop it has to be removed.
+<P>
+The only other procedure to mention is the error handler,
+called during definitions for missing <CODE>=</CODE>
+and during expansion for recursive calls.
+It is essentially familiar.
+The choice of the terminator, separator and masker characters
+is somewhat arbitrary
+and therefore they are best defined in <CODE>CONST</CODE> declarations
+at the beginning of the program.
+The characters <CODE>@</CODE>, <CODE>%</CODE> and <CODE>:</CODE> are as reasonable as any.
+<P>
+At the end of the previous section you were urged
+to write a user manual based on incomplete information.
+If you did, compare some of your details
+with the details in this implementation design.
+If you did not,
+write a user manual now which precisely reflects
+this implementation design.
+
+<PRE>
+<H1>The Program</H1>
+PROGRAM macrox(input,output);
+(* Macro expander *)
+
+LABEL 1, 99;
+
+CONST
+  separator = '@';
+  terminator = '%';
+  masker = ':';
+  maxmemory = 10000;
+
+TYPE
+  string20 = PACKED ARRAY [1..20] OF char;
+
+VAR
+  ch, current, quote : char;
+  macros : ARRAY ['A'..'Z'] OF RECORD start,finish : integer END;
+  memory : ARRAY [1..maxmemory] OF char;
+  lastused : integer;
+  called : SET OF 'A'..'Z';
+
+PROCEDURE getanych;
+BEGIN
+IF eof THEN  GOTO 99;
+read(ch)
+END; (* getanych *)
+
+PROCEDURE getch;
+BEGIN
+REPEAT
+    getanych
+    UNTIL ch > ' '
+END; (* getch *)
+
+PROCEDURE error(s : string20);
+BEGIN
+writeln; writeln('error : ',s);
+readln;
+GOTO 1
+END;
+
+PROCEDURE expand(c : char);
+VAR i : integer;
+BEGIN
+IF NOT (c IN ['A'..'Z']) THEN write(c) ELSE
+    IF c IN called THEN error('recursive call      ') ELSE
+        BEGIN
+        called := called + [c];
+        WITH macros[c] DO
+            FOR i := start TO finish DO
+                expand(memory[i]);
+        called := called - [c]
+        END
+END; (* expand *)
+
+BEGIN (* main *)
+FOR current := 'A' TO 'Z' DO macros[current].start := 0;
+lastused := 0;
+1:
+writeln;
+WHILE ch <> terminator DO
+    BEGIN (* major loop *)
+    getch;
+    WHILE ch IN ['A'..'Z'] DO
+        BEGIN (* minor macro definition loop *)
+        current := ch; getch;
+        IF ch = '=' THEN getch ELSE error('"=" expected        ');
+        quote := ch; getanych;
+        macros[current].start := lastused + 1;
+        WHILE ch <> quote DO
+            BEGIN (* macro body *)
+            IF lastused = maxmemory THEN
+                BEGIN
+                writeln('string space exhausted, abort');
+                GOTO 99
+                END;
+            lastused := lastused + 1;
+            memory[lastused] := ch;
+            getanych
+            END; (* WHILE, macro body *)
+        macros[current].finish := lastused;
+        getch
+        END; (* WHILE, minor macro definition loop *)
+    IF ch = masker THEN getch;
+    called := [];
+    WHILE NOT (ch IN [separator,terminator]) DO
+        BEGIN (* minor text expansion loop *)
+        expand(ch);
+        IF eoln THEN
+            BEGIN readln; writeln END;
+        getanych
+        END (* WHILE, minor text expansion loop *)
+    END; (* WHILE, major loop *)
+99:
+END. (* main *)
+</PRE>
+<H2>Exercises and reading</H2>
+<P>
+<EM> Manual</EM>:
+Write a user manual based on just the information
+that you have before you now.
+(This may or may not include access to the source.)
+<P>
+<EM> Capitals</EM>:
+Modify the macro expander so that it will
+be able to deal with capital letters as text.
+All macro calls should then consist of a <EM>wake up</EM> character
+followed by the single letter name of the macro.
+For example, <CODE>$</CODE> could be the wake up character,
+and then calls would look like this:
+<CODE>Dear $M, ... Please tell $D to $S.</CODE>.
+You will have to re-think the expansion process in some detail.
+Alternatively, though this is less convenient for
+the user, to get capital letters into the text they could
+be quoted: <CODE>'Dear M, ... 'Please tell D ...</CODE>.
+<P>
+<EM> Reading</EM>:
+For a really usable and very sophisticated
+macro processor,
+see Kernighan and Plauger (1981, Ch. 8).
+If you have access to Unix,
+study the manual for the m4 processor
+(say <CODE>man m4</CODE>).
+<P>
+<EM> A better macro processor</EM>:
+Implement either the first or the second version of the macro processor
+in Kernighan and Plauger.
+Note that their version was originally written in the language C.
+Can you write a version with an absolute minimum of procedures,
+by <EM>unfolding</EM> as many calls as possible?
+Which style do you consider better?
+<P>
+<EM> The C preprocessor</EM>:
+This is a utility that is often invoked automatically
+with the compiler for the C programming language.
+One of its powerful features is macro definition and expansion.
+If you have access to UNIX, say <CODE>man cpp</CODE>.
+<P>
+<EM> Reading</EM>:
+For another macro processor,
+this time geared to processing Pascal programs,
+see a description in Comer (1979)
+and the actual program in Comer (1980).
+Another macro expander,
+for macros with parameters,
+is given in Schwartz <EM>et al</EM> (1986, pp 457 - 462).
+The program is written in the very high level language SETL
+which is not widely available;
+however, the program could serve as a design for a program
+in a different language such as Pascal.
+A macro expansion facility is often provided
+as part of an assembler,
+and the macros are then geared to the assembly language.
+An assembler with macros is given as a Pascal program in
+Terry (1986, Chapter 4).
+Calingaert (1979 Chapter 4) gives pseudo-code
+for several macro expanders of increasing power.
+
+</body>
+
+</HTML>

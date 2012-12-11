@@ -1,0 +1,2666 @@
+<HTML>
+<head>
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Chapter 20</TITLE>
+</head>
+
+<body>
+
+<H1>A Petri net verifier</H1>
+<H2>Introduction</H2>
+<P>
+Netver is a small verifier for Petri nets.
+It takes as input a description of a Petri net
+together with one or more path expressions;
+it produces as output all possible sequences of firings of transitions,
+or sets of markings of places.
+The path expressions give full control over
+the output that is produced.
+<P>
+Petri nets are difficult to analyse manually;
+but it is easy enough to write a simulator which produces as output
+possible firing sequences,
+or all possible markings
+that can lead to other markings.
+The danger is that the designers then have to wade through
+enormous output to find what they want.
+The verification tool to be described here
+attempts to avoid this by giving designers only the output they need.
+The tool uses two techniques:
+1) instead of working with markings of places it works with
+sets of markings, and
+2) detailed control over the firing of transitions is given
+by a collection of primitives for programmed backtracking.
+Jointly, though less so separately, the two techniques
+make it possible to introduce powerful primitives
+for the analysis of nets.
+<P>
+The remainder of the
+chapter
+is organised as follows:
+The next section introduces Petri nets in an elementary way,
+including a general description of how Netver operates.
+The next two sections give the syntax and the semantics of Netver,
+the format is
+(at least at this stage)
+kept very compact.
+The following section consists of many small examples.
+The implementation is described in the following section.
+A final section attempts to draw some conclusions and
+discusses future work.
+<P>
+For an understanding of Petri nets very little is assumed here,
+but see
+Peterson (1981)
+or Reisig (1982)
+for detail.
+For an understanding of the verifier,
+it would be an advantage to have some familiarity with
+a backtracking language such as
+Snobol (Griswold et al, 1971),
+Icon (Griswold and Hanson, 1979),
+or Prolog (Clocksin and Mellish, 1981)
+or with the generators of
+Clu (Liskov et al, 1981)
+or Alphard (Shaw 1981).
+<H2>Nets and Netver</H2>
+<P>
+<EM>Petri net</EM>s are a species of inputless nondeterministic automata.
+The number of states may be finite or infinite,
+though the ones to be considered here are always finite.
+A Petri net consists of a number of passive data components
+called <EM>place</EM>s,
+together with a number of active processing components
+called <EM>transition</EM>s.
+<P>
+The places constitute a factorisation of the set of states;
+they are variables whose values change over time as events occur.
+The transitions are disjoint classes of events;
+the occurrence of an event in the class is often called
+a <EM>firing</EM> of the transition.
+The firing of transitions is subject to certain laws which
+do not change over time.
+In many expositions the places, transitions and laws
+are displayed graphically;
+such a method will not be used here.
+<H3>Static descriptions of nets</H3>
+<P>
+Nets have places with an associated positive integer
+called the capacity of the place.
+A place with capacity n
+is an integer variable whose values range from 0 to n.
+In Netver a specification of four places,
+say <CODE>a</CODE>, <CODE> b</CODE>, <CODE> c</CODE>, <CODE> d</CODE>,
+might look like this:
+<XMP>
+PLACE
+    a, b, c : 1                 (* three places of capacity one *)
+    d : 5;                      (* one place of capacity five   *)
+</XMP>
+<P>
+The state of a net at any one time
+is given by an instantaneous description or <EM>marking</EM>
+which says what values the place variables have,
+or how many <EM>tokens</EM> they contain.
+For the place capacities given,
+the total number of possible markings is
+2 * 2 * 2 * 6 = 48.
+For example, each of the following six lines describes a
+possible marking of the net:
+<XMP>
+        a = 0   b = 1   c = 0   d = 2
+        a = 0   b = 1   c = 0   d = 3
+        a = 0   b = 1   c = 0   d = 4
+        a = 0   b = 1   c = 1   d = 2
+        a = 0   b = 1   c = 1   d = 3
+        a = 0   b = 1   c = 1   d = 4
+</XMP>
+<P>
+For many purposes it is desirable to allow disjunctions of
+instantaneous descriptions.
+In Netver certain disjunctions are allowed, for example
+<XMP>
+        a = [0]   b = [1]   c = [01]   d = [234]
+</XMP>
+This would express the disjunction of the six sentences given above.
+Such a compact form, to be called a <EM>hypermarking</EM>,
+represents, not a state, but a set of states of the net,
+and Netver operates on such state sets.
+At any one time a place is specified by a non-empty set of
+possible markings.
+An empty set would be contradictory,
+and in Netver this never arises.
+In the special case where each place contains a unit set,
+a state set in Netver is exactly the same as a state in
+an ordinary net.
+Note that hypermarkings cannot express all disjunctions of markings,
+for example "place <CODE>a</CODE> is empty or place <CODE>b</CODE> is full"
+cannot be expressed.
+<H3>Dynamic behaviour</H3>
+<P>
+The state of a system changes when events occur.
+The occurrence of an event depends on some condition,
+and the occurrence of an event produces some effect.
+<P>
+In nets the only events are <EM>transition firing</EM>s,
+and the only conditions are the markings of places,
+and the only effects are on the markings of places.
+Transitions and their firing behaviour are specified by
+input arcs from places and output arcs to places,
+and each arc has an associated positive integer
+not exceeding the capacity of the place from which it comes
+or to which it goes.
+The firing of a transition depends on the condition that
+1) at each place from which there is an input arc
+there are at least as many tokens as specified by the arc, and
+2) at each place to which there is an output arc
+there are at least as many vacancies as specified by the arc.
+The firing of a transition has the effect that
+1) at each place from which there is an input arc
+the number of tokens is decreased by as many tokens as specified
+by the input arc, and
+2) at each place to which there is an output arc
+the number of tokens is increased by as many tokens as specified
+by the output arc.
+<P>
+In Netver declarations of, say, three transitions <CODE>t</CODE>, <CODE>u</CODE>, <CODE>v</CODE>
+and their associated arcs might look like this:
+<XMP>
+TRANSITION
+    t  INARC a 1; OUTARC b,c 1;
+    u  INARC b 1; OUTARC d 3;
+    v  INARC c 1; INARC d 2; OUTARC a,b 1;
+</XMP>
+In the example given,
+transition <CODE>v</CODE> may fire if
+place <CODE>c</CODE> contains one token,
+place <CODE>d</CODE> contains at least two tokens, and
+places <CODE>a</CODE> and <CODE>b</CODE> have one vacancy each.
+If transition <CODE>v</CODE> does fire, then
+the token is removed from <CODE>c</CODE>,
+two tokens are removed from <CODE>d</CODE>, and
+one token is added to each of <CODE>a</CODE> and <CODE>b</CODE>.
+<P>
+A net is normally given an initial marking of the places
+and then allowed to run.
+Because of the indeterminism,
+many different sequences of transition firings can result.
+In Netver places have hypermarkings,
+and a special case of a hypermarking is a non-disjunctive
+marking in which for each place
+it is specified exactly how many tokens it contains.
+Therefore Netver can be used to simulate the running of initialised nets.
+An initialisation might take the form:
+<XMP>
+    SET a 1   SET b 0   SET c 1   SET d 2
+</XMP>
+This assigns to each place a, b, c, d a marking given by the numeral
+following.
+However, it is also possible to give a partial initialisation, such as
+<XMP>
+    SET a 0   SET b 1   SET c 0 1   SET d 2 3 4
+</XMP>
+This gives the net the disjunctive hypermarking used in
+the previous section.
+<H3>Control of behaviour</H3>
+<P>
+Netver is designed to analyse
+sequences of firings of nets with hypermarkings.
+To avoid the generation of sequences that are of no interest
+to the designer of the net,
+mechanisms are provided to allow
+arbitrarily tight control over the firings.
+Sequences of firings are just strings over an alphabet
+whose vocabulary is the set of transitions,
+and hence the possible behaviour of a net is essentially
+a language over the transitions.
+Since nets are typically designed to run forever,
+their language contains infinitely long sequences.
+For a mathematical understanding,
+the work of Engelfriet (1974) on program schemes
+is applicable here.
+<P>
+To analyse finite portions of the language,
+Netver uses concepts familiar from formal language theory,
+in particular <EM>path  expression</EM>s,
+which are essentially regular expressions
+with several extensions.
+A backtracking mechanism handles the generation of
+all and only those firing sequences which
+1) can be produced by the net, <EM>and</EM>
+2) the user wants to know about.
+<P>
+Path expressions are built from atomic operands
+and a few operators.
+The atoms are transitions,
+and the operations include at least
+a binary operation of composition,
+a binary operation of alternation,
+and a unary operation of indefinite repetition.
+Using, say, the four transitions
+<CODE>t</CODE>, <CODE>u</CODE>, <CODE>v</CODE>, <CODE>w</CODE> as atoms,
+the construction
+<XMP>
+        composition(alternation(t,u), alternation(v,w))
+</XMP>
+is written
+             (t | u) (v | w)
+and it means:
+first fire either <CODE>t</CODE> or <CODE>u</CODE>,
+and then fire either <CODE>u</CODE> or <CODE>v</CODE>.
+By the distribution of composition over alternation,
+the above expression is equivalent to
+<XMP>
+        t v   |   t w   |   u v   |   u w
+</XMP>
+This is how the expansion appears to the user;
+but internally the verifier avoids having to fire <CODE>t</CODE> and <CODE>u</CODE> twice
+by treating it as
+<XMP>
+        t (v | w)   |   u (v | w)
+</XMP>
+Path expressions have been used by Campbell and Habermann (1974)
+for specifying process synchronisation;
+their use here for a verifier is quite different.
+<P>
+Because of the backtracking,
+the behaviour of Netver is similar to that of Prolog
+(see for example Clocksin and Mellish, 1981):
+1) The set of solutions that will be found,
+considered as an unordered set,
+depends only on the set of defined or allowed paths,
+also considered as an unordered set.
+2) The sequence of solutions that will be found,
+now considered as an ordered set,
+depends on the sequence of defined or allowed paths,
+also considered in their order.
+In particular, the idempotent law,
+which says that the disjunction <CODE>p | p</CODE> is equivalent to just <CODE>p</CODE>,
+and the commutative law,
+which says that <CODE>p | q</CODE> is equivalent to <CODE>q | p</CODE>,
+hold for unordered solution sets but not for
+ordered solution sets.
+<P>
+In addition to the primitives from
+formal language theory or regular algebra,
+there are <CODE>LOGICAL</CODE> variables ---
+in the sense of propositional calculus or Boolean algebra,
+not in the sense of Prolog.
+These can be used to structure execution paths
+in a clean way.
+However, very little is known at this stage about the interplay
+between the concepts from the two algebras.
+Hence the inclusion of logical variables is quite tentative.
+<P>
+Apart from the clean primitives from regular and Boolean algebra,
+Netver has several powerful and useful primitives
+which render it impure
+in the same way that Prolog is rendered impure by
+cut, assert, retract, numbervars etc.
+Netver's impure primitives are <CODE>ABORT</CODE>, <CODE>FENCE</CODE>,
+<CODE>NEWSCOPE</CODE>, <CODE>MAXLENGTH</CODE>, <CODE>MAXPATHS</CODE>
+and a few others having to do
+with saved states;
+these primitives are described in detail in the manual.
+<H3>Productions and actions</H3>
+<P>
+It is useful to be able to write a path expression just once
+and then refer to it repeatedly by its name.
+For this purpose Netver has <EM>production</EM>s similar to those
+used in grammars.
+Identifiers declared in a production are just like the non-terminals
+of a grammar,
+and transitions are just like the terminals of a grammar.
+A path expression then is built up by means of the
+regular expression operators from atoms that have been declared
+in transition or production declarations.
+Transition firings count as events
+and will be recorded for possible printout,
+whereas non-terminals of productions do not count as events
+and hence are not recorded.
+(It is still an open question whether the recording
+should perhaps be independently under user control.)
+<P>
+Path expressions may also be attached to transitions by <CODE>ACTION</CODE>
+declarations.
+A transition thus augmented may fire if its arcs and its path expression
+allow it.
+If it does fire then its explicitly attached places
+are updated in accordance with its arcs,
+and any transition in its path is also fired,
+thus possibly affecting other places indirectly.
+<H3>Modes of behaviour</H3>
+<P>
+For a verifier it is useful to be able to distinguish between
+1) a transition being enabled and hence being fired, and
+2) a transition being enabled but not being fired.
+The first is an event which produces a change,
+the second is merely a condition for such an event.
+In order to be able to distinguish the two,
+Netver can operate in several modes:
+<P>
+1) In execution mode,
+the occurrence of a transition identifier in a path
+causes an attempt to fire the transition and hence
+to change the (hyper-)marking of the places to which it is connected;
+if this succeeds the path is continued,
+otherwise backtracking occurs.
+<P>
+2) In verification mode,
+the occurrence of a transition identifier in a path
+merely causes the firing condition of the transition
+to be tested, by attempting to find a nonempty
+intersection of the current (hyper-)marking
+with the marking that would enable the firing;
+if this succeeds the path is continued,
+otherwise backtracking occurs.
+<P>
+3) There is a third mode, possibility mode,
+which is like verification mode
+except that it merely tests whether there is
+a nonempty intersection;
+in this mode the hypermarkings are left untouched.
+<P>
+The distinction between verification mode and possibility mode
+only makes sense in a system whose states are
+sets of states of a simulated system.
+Further investigation is needed to determine
+how useful the third mode really is.
+<H2>Syntax</H2>
+<P>
+The input language is fairly conventional in its conception;
+it has user declared identifiers in lower case,
+reserved words in upper case,
+and a small number of punctuation characters.
+The syntax has some obvious context sensitive
+restrictions concerning declarations of identifiers.
+<H3>Lexical matters</H3>
+<P>
+The lexicon is here given in a semi-formal way only.
+<XMP>
+identifier  ::=
+        lower case letter,
+        followed by up to 15 further letters or digits or underscores
+number  ::=
+        one or more digits
+reserved word  ::=
+        see the terminals of the BNF below,
+        in the BNF the terminals are enclosed in double quotes.
+comment  ::=
+        as in Pascal, any text enclosed in "(*" and "*)".
+</XMP>
+In addition, the directives from the
+utilities in Chapter 17 may be used.
+<H3>Context free syntax</H3>
+<P>
+Again the
+syntax below is given in an extended form of BNF:
+Alternation is represented as <CODE>|</CODE>;
+concatenation is represented (without a symbol) as juxtaposition,
+and it binds more strongly than alternation;
+precedences may be overridden by (round) parentheses;
+repetitions (zero or more times) are enclosed in (square) brackets;
+options (zero or one times) are enclosed in (curly) braces.
+<XMP>
+input  ::=
+        [block ["PATH" expression {";"}] "."]
+block  ::=
+        [   "PLACE"
+              [ identifier ["," identifier]
+                {":"} {number} {";"}  ]
+          | "TRANSITION"
+              [ identifier ["," identifier]
+                [  ("INARC" | "OUTARC")
+                     [identifier ["," identifier] {number}]
+                  | "ACTION"
+                    expression  ] ] {";"}
+          | "LOGICAL"
+              [ identifier ["," identifier] ] {";"}
+          | "PRODUCTION"
+              [identifier "::=" expression {";"}]  ]
+expression  ::=
+        term ["|" term]
+term  ::=
+        factor [ factor ]
+factor  ::=
+          identifier
+        | ( "NET" | "SKIP" | "FAIL" | "ABORT" | "QUIT" | "SHOW_PATH"
+            "DEADLOCK" | "UNREACHABLE" | "SHOW_MARKINGS" | "FENCE" )
+        | ( "EXECUTE" | "VERIFY" | "POSSIBLY" |
+            "OPT" | "POS" | "REP" | "NOT")  factor
+        | ( "LEN" | "TAB" | "MAXLENGTH" | "MAXPATHS" | "POSITION" |
+            "SAVE" | "RESTORE" |
+            "SAMESTATE" | "SUBSTATE" | "SUPERSTATE"  ) number
+        | "TIMES" number factor
+        | "EMPTY" identifier
+        | ( "ATLEAST" | "ATMOST" ) identifier number
+        | "SET" identifier [number]
+        | "(" expression ")"
+</XMP>
+<P>
+As may be seen from the syntax,
+the input language has been made as tolerant to
+minor syntactic variations as possible.
+However, there are the following context free restrictions,
+all derived from the syntax.
+<P>
+If a mandatory identifier is missing,
+the error is always context sensitive,
+the exact error message is given in the next section.
+<P>
+In <CODE>PLACE</CODE> declarations,
+and also in <CODE>INARC</CODE> and <CODE>OUTARC</CODE> declarations,
+the number is optional;
+if it is not given explicitly,
+<CODE>1</CODE> is assumed.
+<P>
+In a <CODE>PRODUCTION</CODE> declaration the (non-terminal) identifier
+has to be followed by <CODE>::=</CODE>,
+otherwise the error <CODE>"'::=' expected"</CODE> is reported.
+<P>
+In factors requiring one number,
+such as those beginning
+<CODE>TIMES</CODE>,
+<CODE>LEN</CODE>,
+<CODE>MAXLENGTH</CODE>,
+<CODE>POSITION</CODE>,
+and <CODE>TAB</CODE>,
+the lack of a number results in the error
+<CODE>number expected</CODE> to be reported.
+<P>
+In a factor beginning with a parenthesis
+there must be a closing parenthesis,
+otherwise the error <CODE>"')' expected"</CODE> is reported.
+<H3>Context sensitive restrictions</H3>
+<P>
+There are some context sensitive restrictions
+having to do with declarations of identifiers.
+<P>
+Inside a block,
+the three kinds of declarations
+<CODE>PLACE</CODE>, <CODE>TRANSITION</CODE> and <CODE>LOGICAL</CODE>
+must introduce new identifiers;
+otherwise the error <CODE>"new identifier expected"</CODE> is reported.
+<P>
+In a transition declaration the <CODE>INARC</CODE> and <CODE>OUTARC</CODE> declarations
+must be followed by an identifier that has been previously declared
+to be a place;
+otherwise the error <CODE>"place identifier expected"</CODE> is reported.
+<P>
+In a <CODE>PRODUCTION</CODE> declaration
+the identifier must be either new or have been used previously
+only inside factors,
+otherwise the error <CODE>"nonterminal expected"</CODE> is reported.
+<P>
+At the end of the block,
+any identifier <CODE>xxx</CODE> first used inside a factor
+must have been declared in a <CODE>PRODUCTION</CODE> declaration,
+otherwise the error <CODE>"xxx is undefined"</CODE> is reported.
+(Thus use before declaration is permitted.)
+<P>
+In a factor consisting of just an identifier,
+the identifier must be either a previously declared
+transition or logical or non-terminal identifier,
+or it must be a new identifier which will henceforth
+be treated as a non-terminal identifier;
+if it is a place identifier the error <CODE>"place identifier illegal"</CODE>
+is reported.
+<P>
+Factors beginning <CODE>SET</CODE>, <CODE>EMPTY</CODE>, <CODE>ATLEAST</CODE> or <CODE>ATMOST</CODE>
+must be followed by an identifier that has been previously declared
+to be a place;
+otherwise the error <CODE>"place identifier expected"</CODE> is reported.
+<P>
+The Netver system has a number of inbuilt constraints
+concerning the sizes of various tables.
+This affects the number of identifiers which can be
+declared,
+the size of the code for transitions and paths,
+the number of places and logical variables which
+the system can handle at run time,
+and the product of the number of places and the number of savesets.
+Since no final decisions have been made about
+the sizes of these tables,
+it would be premature to document them in this
+preliminary version.
+<H2>Semantics</H2>
+<P>
+In the following,
+<CODE>pe</CODE>, <CODE>pe1</CODE> and <CODE>pe2</CODE> are any path expressions,
+<CODE>n</CODE> is any natural number,
+<CODE>Pid</CODE> is any place identifier,
+<CODE>Tid</CODE> is any transition identifier,
+<CODE>Nid</CODE> is any non-terminal identifier,
+<CODE>Lid</CODE> is any logical identifier.
+<H3>Control primitives</H3>
+<P>
+The following are the primitives for control;
+they are independent of the backtracking mechanism.
+<P>
+<OL>
+<LI> <CODE>ABORT          </CODE> <BR>
+Stops execution of this path; prepares to read another path (if any)
+or net (if any).
+<LI> <CODE>QUIT          </CODE> <BR>
+Stops execution altogether; exits to command level.
+<LI> <CODE>Nid          </CODE> <BR>
+If a non-terminal <CODE>Nid</CODE> has been declared by a production
+of the form <CODE>Nid ::= pe</CODE>,
+then a call of <CODE>Nid</CODE> is equivalent to <CODE>pe</CODE>.
+Recursion is permitted,
+though left recursion is possible only as the last disjunct
+of a disjunction.
+</OL>
+<H3>Mode selection</H3>
+<P>
+The three modes are selected by unary operators:
+<P>
+<OL>
+<LI> <CODE>EXECUTE  pe          </CODE> <BR>
+Attempts <CODE>pe</CODE> in execution mode.
+This is the default mode.
+<LI> <CODE>VERIFY  pe          </CODE> <BR>
+Attempts <CODE>pe</CODE> in verification mode, with the goal set to <CODE>true</CODE>.
+<LI> <CODE>POSSIBLY  pe          </CODE> <BR>
+Attempts <CODE>pe</CODE> in possibility mode, with the goal set to <CODE>true</CODE>.
+</OL>
+<H3>Primitives from regular algebra</H3>
+<P>
+The first few concepts are entirely general;
+they belong to any language with programmed backtracking,
+and they do not involve anything specific to nets.
+The concepts are independent of the current mode.
+<P>
+<OL>
+<LI> <CODE>SKIP          </CODE> <BR>
+Does nothing. Always succeeds.
+<LI> <CODE>FAIL          </CODE> <BR>
+Does nothing. Never succeeds.
+<LI> <CODE>pe1  pe2          </CODE> <BR>
+The composition of two path expressions causes the first
+to be attempted, and if that succeeds, causes the second
+to be attempted.
+Succeeds if both succeed in that order.
+<LI> <CODE>pe1  |  pe2          </CODE> <BR>
+The alternation of two path expressions causes the first
+to be attempted, and on backtracking causes the second
+to be attempted.
+<LI> <CODE>TIMES  n  pe          </CODE> <BR>
+The n-th power of <CODE>pe</CODE>.
+Equivalent to
+<CODE>pe pe ... pe</CODE> (n times).
+<LI> <CODE>REP  pe          </CODE> <BR>
+The alternation of all powers of <CODE>pe</CODE>.
+Equivalent to
+<CODE>SKIP | pe | pe pe | pe pe pe | ...</CODE>
+<LI> <CODE>POS  pe          </CODE> <BR>
+The alternation of all positive powers of <CODE>pe</CODE>.
+Equivalent to <CODE>pe | pe pe | pe pe pe | pe pe pe pe | ...</CODE>.
+<LI> <CODE>OPT  pe          </CODE> <BR>
+The alternation of the first two powers of <CODE>pe</CODE>.
+Equivalent to <CODE>SKIP | pe</CODE>.
+</OL>
+<P>
+The next few primitives specifically rely on the ordering of alternands.
+Hence for path expressions containing these primitives
+the commutativity and idempotency of alternation do not hold.
+<P>
+<OL>
+<LI> <CODE>PATHNUM  n          </CODE> <BR>
+Succeeds if the current path is the <CODE>n</CODE>-th,
+otherwise fails.
+Every path that is completed increments a counter,
+paths that fail before completion are not counted.
+<LI> <CODE>MAXPATHS  n          </CODE> <BR>
+Sets the maximum number of paths to be attempted to <CODE>n</CODE>.
+When this maximum is reached,
+everything fails
+and backtracking occurs up to the current point.
+Always succeeds, undone on backtracking.
+<LI> <CODE>SHOWTOTAL          </CODE> <BR>
+Sets a global switch; if this switch has been set,
+then at the end of the execution the total
+number of successful paths will be printed.
+</OL>
+<P>
+The remaining primitives in this section deal specifically with
+backtracking execution of paths.
+<P>
+<OL>
+<LI> <CODE>FENCE          </CODE> <BR>
+When occurring in a disjunct of a disjunction,
+its execution causes a flag to be set which
+prevents any later disjunct from being attempted.
+Always succeeds; the setting of the flag is not undone on backtracking.
+<LI> <CODE>NEWSCOPE  pe          </CODE> <BR>
+Declares a local scope for <CODE>FENCE</CODE>.
+Succeeds if <CODE>pe</CODE> succeeds.
+It works by creating a new flag for <CODE>FENCE</CODE>;
+upon backtracking the old flag is restored.
+</OL>
+<P>
+Note that these primitives were from regular algebra only ---
+there were no events, no firings, no places,
+nothing to do with nets.
+<H3>Primitives from Boolean algebra</H3>
+<P>
+The following concepts are dependent on the current mode.
+In execution mode they are independent of the current goal;
+in the other modes they are only dependent on the goal.
+<P>
+<OL>
+<LI> <CODE>TRUE          </CODE> <BR>
+In execution mode, always succeeds.
+In the other modes, succeeds if the goal is <CODE>true</CODE>.
+<LI> <CODE>FALSE          </CODE> <BR>
+In execution mode, always fails.
+In the other modes, succeeds if the goal is <CODE>false</CODE>.
+<LI> <CODE>Lid          </CODE> <BR>
+In execution mode, attempts to make the logical variable <CODE>Lid</CODE>
+true.
+In the other modes, attempts to give <CODE>Lid</CODE>
+the value of the current goal.
+<LI> <CODE>pe1  AND  pe2          </CODE> <BR>
+In execution mode, equivalent to the composition <CODE>pe1  pe2</CODE>.
+In the other modes, attempts to make the
+conjunction of the two expressions true or false,
+depending on the current goal.
+<LI> <CODE>pe1  OR  pe2          </CODE> <BR>
+In execution mode, equivalent to the alternation <CODE>pe1 | pe2</CODE>.
+In the other modes, attempts to make the
+disjunction of the two expressions true or false,
+depending on the current goal.
+<LI> <CODE>NOT  pe          </CODE> <BR>
+In execution mode, attempts to execute <CODE>pe</CODE>;
+if that fails, it succeeds, and vice versa
+(similar to Prolog's <CODE>not</CODE>).
+In the other modes, attempts <CODE>pe</CODE> with the negation of the current goal
+(a real logical <CODE>not</CODE>).
+<LI> <CODE>pe1  IMP  pe2          </CODE> <BR>
+Equivalent to <CODE>NOT pe1  OR  pe2</CODE>.
+<LI> <CODE>pe1  IFF  pe2          </CODE> <BR>
+Equivalent to <CODE>(pe1 IMP pe2) AND (pe2 IMP pe1)</CODE>.
+</OL>
+<P>
+There are no primitives specific to Boolean algebra
+which rely on the ordering of disjuncts,
+other than those already described in the previous section.
+
+<P>
+There appears to be very little in the literature on the relationship
+between Boolean algebra and regular algebra.
+<H3>Discrete event primitives</H3>
+<P>
+The next primitives are applicable to any system
+in which there are discrete events
+(as opposed to continuous gradual changes).
+For nets, an event is the firing of a transition.
+The concepts do not presuppose an accessible state.
+<P>
+<OL>
+<LI> <CODE>Tid          </CODE> <BR>
+In execution mode, attempts to fire transition <CODE>Tid</CODE>.
+The attempt will succeed if
+1) at each input place there are enough tokens to be destroyed, and
+2) at each output place there are enough vacancies for tokens to be created,
+and
+3) if there are action paths, the paths succeed.
+The destruction and creation of tokens follows the order of
+the declaration of the arcs.
+The effects of the firing will be undone on backtracking.
+In verification mode, attempts to create a non-empty
+intersection of the current hypermarkings of the places
+with those markings that would enable the transition to fire;
+but it does not fire the transition. Undone on backtracking.
+In possibility mode, tests whether there is a non-empty
+intersection of the current hypermarkings of the places
+with those markings that would enable the transition to fire.
+<LI> <CODE>NET          </CODE> <BR>
+Equivalent to the disjunction of all the transitions.
+Thus if a net has transitions <CODE>a</CODE> <CODE>b</CODE> <CODE>c</CODE>,
+which have been declared in that order,
+then <CODE>NET</CODE> means the same as <CODE>a | b | c</CODE>.
+<LI> <CODE>LEN  n          </CODE> <BR>
+Equivalent to
+<CODE>TIMES n NET</CODE>.
+<LI> <CODE>DEADLOCK          </CODE> <BR>
+Attempts to find a marking which does not allow any transitions
+to fire.
+Equivalent to <CODE>VERIFY NOT NET</CODE>.
+Thus if a net has transitions <CODE>a</CODE> <CODE>b</CODE> <CODE>c</CODE>,
+which have been declared in that order,
+then  <CODE>DEADLOCK</CODE> means the same as <CODE>VERIFY NOT (a OR b OR c)</CODE>.
+May produce zero or one or several solutions.
+<LI> <CODE>UNREACHABLE          </CODE> <BR>
+Attempts to find a marking which cannot be the
+effect of any transition firings (opposite of <CODE>DEADLOCK</CODE>).
+May produce zero or one or several solutions.
+</OL>
+<P>
+The next few primitives specifically rely on the fact that
+a path has a beginning, and hence that every event has
+an ordinal position.
+(Note that this need not be true of actual systems,
+which might have been running forever.)
+<P>
+<OL>
+<LI> <CODE>POSITION  n          </CODE> <BR>
+Succeeds if exactly <CODE>n</CODE> transitions have been fired,
+otherwise fails.
+<LI> <CODE>TAB  n          </CODE> <BR>
+Attempts to fire as many transitions as are needed to make
+the path contain exactly <CODE>n</CODE> transitions.
+<LI> <CODE>MAXLENGTH  n          </CODE> <BR>
+Sets the maximum pathlength to <CODE>n</CODE>.
+If the limit has been reached, any attempt to fire a transition
+will fail.
+Always succeeds,
+undone on backtracking.
+Normally used only at the beginning of a path expression.
+</OL>
+<P>
+The last primitive of this section deal with output
+of the path for inspection by the system designer.
+Note that the designer has adequate control over what
+will be printed,
+and does not have to see paths that are deemed irrelevant.
+<P>
+<OL>
+<LI> <CODE>SHOW_PATH          </CODE> <BR>
+Causes the path to be printed.
+As many transition identifiers as can be fitted onto a line
+of 60 characters will be printed;
+as many such lines as necessary are printed to complete the path.
+The printout is preceded by <CODE>path n:</CODE>, where n is the
+ordinal number of the path.
+Always succeeds.
+</OL>
+<H3>State primitives</H3>
+<P>
+The next few primitives are applicable to
+any system in which there is a global state
+which is accessible to inspection and modification.
+It is possible to save the current state, to restore the state
+to what it was when saved, and to compare the current state with what it
+was when saved.
+In this prototype verifier, saved states are referenced by a small number
+(n = 1,2..).
+(In a more mature version it might be preferred to
+use identifiers.)
+The total number of different states that can be saved depends
+on the number of places in the net, and on a system dependent
+constant.
+As yet there is no check for n out of bounds.
+<P>
+<OL>
+<LI> <CODE>SAVE  n          </CODE> <BR>
+Saves the current state of the net in a save-state numbered <CODE>n</CODE>.
+Always succeeds, is not undone on backtracking.
+<LI> <CODE>RESTORE  n          </CODE> <BR>
+Restores the current state to what it was when saved in save-state <CODE>n</CODE>.
+Always succeeds, is not undone on backtracking.
+<LI> <CODE>SAMESTATE  n          </CODE> <BR>
+Compares the current state with the one saved in save-state <CODE>n</CODE>.
+Succeeds if the two are identical.
+</OL>
+<P>
+In systems in which the state is a set of states
+of a simulated system,
+a few simple set theoretic concepts are applicable:
+<P>
+<OL>
+<LI> <CODE>NEWSTATE          </CODE> <BR>
+Makes the current state set universal.
+Always succeeds, the effects are not undone on backtracking.
+<LI> <CODE>SUBSTATE n          </CODE> <BR>
+Succeeds if the current state set is a subset of save-set <CODE>n</CODE>.
+<LI> <CODE>SUPERSTATE n          </CODE> <BR>
+Succeeds if the current state set is a superset of save-set <CODE>n</CODE>.
+</OL>
+<H3>Place primitives</H3>
+<P>
+In a net the state is essentially a record of all the places;
+only the last few concepts make explicit use of this.
+<P>
+<OL>
+<LI> <CODE>SET  Pid  n1  n2  ..          </CODE> <BR>
+Attempts to intersect the current hypermarking of place <CODE>Pid</CODE>
+with the disjunction of markings given by the numbers.
+Normally used only at the beginning of a path expression.
+<LI> <CODE>ATLEAST Pid n          </CODE> <BR>
+Succeeds if place <CODE>Pid</CODE> contains at least <CODE>n</CODE> tokens.
+<LI> <CODE>ATMOST Pid n          </CODE> <BR>
+Succeeds if place <CODE>Pid</CODE> contains at most <CODE>n</CODE> tokens.
+<LI> <CODE>EMPTY Pid          </CODE> <BR>
+Succeeds if place <CODE>Pid</CODE> is empty; equivalent to <CODE>ATMOST Pid 0</CODE>.
+<LI> <CODE>SHOW_MARKINGS          </CODE> <BR>
+Causes the markings of the places to be printed,
+always succeeds.
+For each place whose current hypermarking is non-trivial,
+one line is printed containing the identifier which names the place,
+followed by one or more numerals denoting its current (hyper)marking.
+If the current (hyper)marking contains no information
+about the place, no line is printed.
+For the purposes of this command,
+<CODE>LOGICAL</CODE> variables are treated just like places,
+except that their values are written as Booleans.
+</OL>
+
+<H2>Examples</H2>
+<P>
+The following examples have been chosen to be brief.
+They consist of echoed input to Netver
+and output from Netver.
+Lines with a line number are echoed input,
+the line number is supplied by Netver;
+lines without a line number are output from Netver.
+All examples are from a short principal input file
+and two longer subsidiary files that were included.
+<XMP>
+   1    %LISTING 1
+   2    (*  BEGIN OF DEMONSTRATION FILE FOR NETVER *)
+   3
+   4    %SET A = 1 (* PRELIMINARIES *)
+   5    %SET B = 1 (* SEVERAL NETS *)
+   6
+   7    %IF A %INCLUDE 45PRELIM.NV
+   1    (* BEGIN OF PRELIMINARY DEMONSTRATIONS *)
+   2
+   3    (* PATH EXPRESSIONS *)
+   4
+   5    PATH
+   6        (SKIP | SKIP)
+   7        (FAIL | SKIP | SKIP SKIP FAIL)
+   8        (SKIP | FAIL | SKIP)
+   9        SHOW_PATH   (* expecting four (empty) paths *);
+        path 1:
+        path 2:
+        path 3:
+        path 4:
+  10    PATH
+  11        VERIFY(
+  12          (TRUE OR FALSE) AND
+  13          NOT(FALSE OR FALSE) AND
+  14          (TRUE OR TRUE))
+  15        SHOW_PATH   (* expecting two (empty) paths *);
+        path 1:
+        path 2:
+  16    PATH
+  17        (SKIP SKIP FAIL | SKIP FENCE FAIL | SKIP)
+  18        SHOW_PATH   (* expecting no paths at all *).
+  19
+  20    (* DECLARATIONS *)
+  21
+  22    PRODUCTION
+  23        (* Note: uses before declarations are permitted *)
+  24        one  ::=  (f | s | f) (f | s);
+  25        sixteen  ::=  four four;
+  26        four  ::=  (s | s | s | s);
+  27        s  ::=  SKIP;
+  28        f  ::=  FAIL;
+  29        show  ::= SHOW_PATH;
+  30    PATH
+  31        (one | one) show (* expecting two (empty) paths *);
+        path 1:
+        path 2:
+  32    PATH
+  33        SHOW_TOTAL  sixteen sixteen (* expecting 256 *).
+        total number of paths: 256
+  34
+  35    (* LOGICAL variables *)
+  36
+  37    LOGICAL p,q,r,s;
+  38    PATH                            (* faulty dilemma *)
+  39        SHOW_TOTAL
+  40        VERIFY NOT                  (*   try to falsify *)
+  41            ( ( (p OR  q) AND       (*       premise 1 *)
+  42                (p IMP r) AND       (*       premise 2 *)
+  43                (q IMP s) )         (*       premise 3 *)
+  44            IMP (r AND s) )         (*       conclusion *)
+  45        SHOW_MARKINGS               (* expecting two solutions *);
+        mark 1:
+                p TRUE
+                q FALSE
+                r TRUE
+                s FALSE
+        mark 2:
+                p FALSE
+                q TRUE
+                r FALSE
+                s TRUE
+        total number of paths: 2
+  46    PATH                            (* correct dilemma *)
+  47        SHOW_TOTAL
+  48        VERIFY NOT                  (*   try to falsify *)
+  49            ( ( (p OR  q) AND       (*       premise 1 *)
+  50                (p IMP r) AND       (*       premise 2 *)
+  51                (q IMP s) )         (*       premise 3 *)
+  52            IMP (r OR s) )          (*       conclusion *)
+  53        SHOW_MARKINGS               (* expecting no solutions *)
+  54                                    (* since this is valid *);
+        total number of paths: 0
+  55    PATH
+  56        SHOW_TOTAL          (* just show the number *)
+  57        (SKIP | SKIP)
+  58        (SKIP | SKIP)
+  59        (SKIP | SKIP)       (* total of 8 expected *);
+        total number of paths: 8
+  60    PATH                    (* same pattern, but using LOGICALs *)
+  61        SHOW_TOTAL          (* to block some of the 8 paths *)
+  62        (SKIP  VERIFY p      |  SKIP  VERIFY NOT q)
+  63        (SKIP  VERIFY NOT p  |  SKIP  VERIFY r)
+  64        (SKIP  VERIFY NOT r  |  SKIP  VERIFY (r AND p)).
+        total number of paths: 3
+  65
+  66    (* TRANSITIONS *)
+  67
+  68    TRANSITION
+  69      alpha, beta, gamma;
+  70    PATH
+  71      alpha  NET  SHOW_PATH    (* expecting 3 paths *).
+        path 1:
+        alpha alpha
+        path 2:
+        alpha beta
+        path 3:
+        alpha gamma
+  72
+  73    (* LONG PATH WITH SHORT NAMES *)
+  74
+  75    TRANSITION
+  76        g0, c, d, e, f, g;
+  77    PRODUCTION
+  78        theme1 ::= e e f g g f e d c c d e;
+  79        theme2 ::= e d d;
+  80        theme3 ::= d c c;
+  81        theme4 ::= d d e c d e f e c d e f e d c d g0;
+  82        beethoven ::=
+  83          theme1 theme2 theme1 theme3 theme4 theme1 theme3;
+  84        plagiarist ::=
+  85          theme3 theme2 theme1 theme4 theme1;
+  86    PATH
+  87        (beethoven | plagiarist)  SHOW_PATH.
+        path 1:
+        e e f g g f e d c c d e e d d e e f g g f e d c c d e d c c
+        d d e c d e f e c d e f e d c d g0 e e f g g f e d c c d e d
+        c c
+        path 2:
+        d c c e d d e e f g g f e d c c d e d d e c d e f e c d e f
+        e d c d g0 e e f g g f e d c c d e
+  88
+  89    (* LIMITING OUTPUT *)
+  90
+  91    TRANSITION
+  92        alpha, beta, gamma, delta;
+  93    PATH
+  94        SHOW_TOTAL                  (* total number of paths *)
+  95        LEN 3                       (* fire any 3 transitions *)
+  96        NEWSCOPE
+  97          ( PATHNUM 42  SHOW_PATH  FENCE    (* show 42nd path *)
+  98            | SKIP )                        (* but not others *).
+        path 42:
+        gamma gamma beta
+        total number of paths: 64
+  99
+ 100    (* PLACES to ensure every transition fires at most once *)
+ 101
+ 102    PLACE
+ 103        a, b, g, d, e, z;
+ 104    TRANSITION
+ 105        alpha INARC a;      beta INARC b;           gamma INARC g;
+ 106        delta INARC d;      epsilon INARC e;        zeta INARC z;
+ 107    PATH
+ 108        SHOW_TOTAL  LEN 6
+ 109        NEWSCOPE
+ 110         (PATHNUM 42  SHOW_PATH  SHOW_MARKINGS  FENCE  |  SKIP).
+        path 42:
+        alpha gamma epsilon zeta delta beta
+        mark 42:
+                a 0
+                b 0
+                g 0
+                d 0
+                e 0
+                z 0
+        total number of paths: 720
+ 111
+ 112    (* ONE PRODUCER - TWO CONSUMERS *)
+ 113
+ 114    PLACE
+ 115        buffer, producing, consuming1, consuming2;
+ 116    TRANSITION
+ 117        produce     OUTARC producing;
+ 118        deposit     INARC producing OUTARC buffer;
+ 119        remove1     INARC buffer OUTARC consuming1;
+ 120        consume1    INARC consuming1;
+ 121        remove2     INARC buffer OUTARC consuming2;
+ 122        consume2    INARC consuming2;
+ 123    PRODUCTION
+ 124        initialise ::=
+ 125            SET buffer 0  SET producing 0
+ 126            SET consuming1 0  SET consuming2 0;
+ 127    PATH
+ 128        SHOW_TOTAL DEADLOCK SHOW_MARKINGS
+ 129        (* no deadlock expected *);
+        total number of paths: 0
+ 130    PATH
+ 131        SHOW_TOTAL UNREACHABLE SHOW_MARKINGS
+ 132        (* no unreachable marking expected *);
+        total number of paths: 0
+ 133    PATH (* find cycles from the given initialisation *)
+ 134        initialise  MAXLENGTH 7
+ 135        SAVE 1  POS NET  SAMESTATE 1  SHOW_PATH.
+        path 1:
+        produce deposit remove1 consume1
+        path 2:
+        produce deposit remove2 consume2
+ 136
+ 137    (* END OF PRELIMINARY DEMONSTRATIONS *)
+   8
+   9    %IF B %INCLUDE 45NETNET.NV
+   1    (* BEGIN NET DEMONSTRATIONS *)
+   2
+   3    (* BARBER SHOP -
+   4            adapted from a graphical presentation in
+   5       Filman, R.E. and Friedman, D.P., 1984,
+   6            Coordinated Computing, McGraw-Hill, pp 107-109. *)
+   7    PLACE
+   8        waiting, exiting 12;        (* size of waiting room *)
+   9        idle 7;                     (* size of barbers' tea room *)
+  10        cutting 5;                  (* number of chairs *)
+  11    TRANSITION
+  12        new_customer        OUTARC waiting;
+  13        start_cutting       INARC waiting, idle; OUTARC cutting;
+  14        finish_cutting      INARC cutting; OUTARC idle, exiting;
+  15        leave_shop          INARC exiting;
+  16    PATH
+  17        DEADLOCK SHOW_MARKINGS
+  18        (* too few  or too many barbers : *);
+        mark 1:
+                waiting 12
+                exiting 0
+                idle 0
+                cutting 0
+        mark 2:
+                waiting 12
+                exiting 0
+                idle 7
+                cutting 5
+  19    PATH    (* find just one cycle *)
+  20        SET waiting 0  SET idle 7  SET cutting 0  SET exiting 0
+  21        MAXLENGTH 8
+  22        SAVE 1  POS NET  SAMESTATE 1  SHOW_PATH  ABORT.
+        path 1:
+        new_customer new_customer start_cutting start_cutting
+        finish_cutting finish_cutting leave_shop leave_shop
+  23
+  24    (* MUTUAL EXCLUSION -
+  25            adapted from a graphical presentation in
+  26       Filman, R.E. and Friedman, D.P., 1984,
+  27            Coordinated Computing, McGraw-Hill, pp 110-111. *)
+  28    PLACE
+  29      concur1,concur2,concur3, none_critical,
+  30      critical1,critical2,critical3;
+  31    TRANSITION
+  32      enter1 INARC concur1,none_critical; OUTARC critical1;
+  33      leave1 INARC critical1; OUTARC concur1,none_critical;
+  34      enter2 INARC concur2,none_critical; OUTARC critical2;
+  35      leave2 INARC critical2; OUTARC concur2,none_critical;
+  36      enter3 INARC concur3,none_critical; OUTARC critical3;
+  37      leave3 INARC critical3; OUTARC concur3,none_critical;
+  38    PATH
+  39      SHOW_TOTAL  DEADLOCK
+  40      (* too many to look at, just show two: *)
+  41      OPT ( (PATHNUM 42 | PATHNUM 73) SHOW_MARKINGS FAIL )
+  42      (* the FAIL stops two paths being counted twice in total *);
+        mark 42:
+                concur1 0
+                concur3 0
+                none_critical 1
+                critical2 1
+                critical3 0
+        mark 73:
+                concur1 1
+                concur2 1
+                concur3 1
+                none_critical 0
+                critical3 1
+        total number of paths: 120
+  43
+  44    PATH
+  45      SET concur1 1  SET concur2 1  SET concur3 1
+  46      SET none_critical 1
+  47      SET critical1 0  SET critical2 0  SET critical3 0
+  48      MAXLENGTH 10  MAXPATHS 3  TIMES 6 NET  SHOW_PATH.
+        path 1:
+        enter1 leave1 enter1 leave1 enter1 leave1
+        path 2:
+        enter1 leave1 enter1 leave1 enter2 leave2
+        path 3:
+        enter1 leave1 enter1 leave1 enter3 leave3
+  49
+  50    (* READERS(3) AND WRITERS(1) -
+  51            adapted from a graphical presentation in
+  52       Filman, R.E. and Friedman, D.P., 1984,
+  53            Coordinated Computing, McGraw-Hill, pp 113-114. *)
+  54
+  55    (* first, the net itself: *)
+  56
+  57    PLACE
+  58        write, not_write : 1;
+  59        free_read : 3;
+  60        read1, not_read1 : 1;
+  61        read2, not_read2 : 1;
+  62        read3, not_read3 : 1;
+  63    TRANSITION
+  64        start_write
+  65          INARC not_write INARC free_read 3; OUTARC write;
+  66        stop_write
+  67          INARC write; OUTARC not_write OUTARC free_read 3;
+  68        start_read1
+  69          INARC not_read1,free_read; OUTARC read1;
+  70        start_read2
+  71          INARC not_read2,free_read; OUTARC read2;
+  72        start_read3
+  73          INARC not_read3,free_read; OUTARC read3;
+  74        stop_read1
+  75          INARC read1; OUTARC not_read1,free_read;
+  76        stop_read2
+  77          INARC read2; OUTARC not_read2,free_read;
+  78        stop_read3
+  79          INARC read3; OUTARC not_read3,free_read;
+  80
+  81    (* second, some tools for analysing the net: *)
+  82
+  83    LOGICAL
+  84        do_read1, do_read2, do_read3;
+  85    PRODUCTION
+  86        show  ::=
+  87            SHOW_PATH  SHOW_MARKINGS;
+  88        start_any_read  ::=
+  89            start_read1 | start_read2 | start_read3;
+  90        stop_any_read  ::=
+  91            stop_read1 | stop_read2 | stop_read3;
+  92        initialise ::=
+  93            SET not_read1 1  SET not_read2 1  SET not_read3 1
+  94            SET read1 0  SET read2 0  SET read3 0
+  95            SET not_write 1  SET write 0;
+  96        v1  ::=  VERIFY do_read1;    f1  ::=  VERIFY NOT do_read1;
+  97        v2  ::=  VERIFY do_read2;    f2  ::=  VERIFY NOT do_read2;
+  98        v3  ::=  VERIFY do_read3;    f3  ::=  VERIFY NOT do_read3;
+  99    PATH
+ 100        SHOW_TOTAL  initialise  LEN 4;
+        total number of paths: 94
+ 101    PATH
+ 102        SHOW_TOTAL  initialise  LEN 4  OPT(PATHNUM 42 show ABORT);
+        path 42:
+        start_read2 start_read1 start_read3 stop_read3
+        mark 42:
+                write 0
+                not_write 1
+                free_read 1
+                read1 1
+                not_read1 0
+                read2 1
+                not_read2 0
+                read3 0
+                not_read3 1
+        total number of paths: 41
+ 103    PATH
+ 104        initialise   MAXPATHS 6   LEN 4   SHOW_PATH;
+        path 1:
+        start_write stop_write start_write stop_write
+        path 2:
+        start_write stop_write start_read1 start_read2
+        path 3:
+        start_write stop_write start_read1 start_read3
+        path 4:
+        start_write stop_write start_read1 stop_read1
+        path 5:
+        start_write stop_write start_read2 start_read1
+        path 6:
+        start_write stop_write start_read2 start_read3
+ 105    PATH
+ 106        (* NOTE: no initialisation *)
+ 107        SHOW_TOTAL DEADLOCK (* far too many to print out *);
+        total number of paths: 504
+ 108    PATH
+ 109        SHOW_TOTAL start_write start_any_read show
+ 110        (* none, we hope ! *);
+        total number of paths: 0
+ 111    PATH
+ 112        SHOW_TOTAL start_any_read start_write show
+ 113        (* none, we hope ! *);
+        total number of paths: 0
+ 114    PATH
+ 115        initialise
+ 116        ( start_read1 v1 f2 f3 |
+ 117          start_read2 f1 v2 f3 |
+ 118          start_read3 f1 f2 v3 )
+ 119        NET  start_write   (v1 | v2 | v3 NET)  show.
+        path 1:
+        start_read1 stop_read1 start_write
+        mark 1:
+                write 1
+                not_write 0
+                free_read 0
+                read1 0
+                not_read1 1
+                read2 0
+                not_read2 1
+                read3 0
+                not_read3 1
+                do_read1 TRUE
+                do_read2 FALSE
+                do_read3 FALSE
+        path 2:
+        start_read2 stop_read2 start_write
+        mark 2:
+                write 1
+                not_write 0
+                free_read 0
+                read1 0
+                not_read1 1
+                read2 0
+                not_read2 1
+                read3 0
+                not_read3 1
+                do_read1 FALSE
+                do_read2 TRUE
+                do_read3 FALSE
+        path 3:
+        start_read3 stop_read3 start_write stop_write
+        mark 3:
+                write 0
+                not_write 1
+                free_read 3
+                read1 0
+                not_read1 1
+                read2 0
+                not_read2 1
+                read3 0
+                not_read3 1
+                do_read1 FALSE
+                do_read2 FALSE
+                do_read3 TRUE
+ 120
+ 121    (* END NET DEMONSTRATIONS *)
+  10
+  11    (*  END OF DEMONSTRATION FILE FOR NETVER *)
+  12    QUIT
+4920 milliseconds CPU
+</XMP>
+<H2>Implementation</H2>
+<P>
+Like most other programs in this book, the system
+consists of a small compiler which
+translates the source code to an internal form,
+and an interpreter for executing the internal form.
+Only a cursory description will be given.
+<P>
+<EM>Compilation</EM>:
+The compiler uses recursive descent in an entirely conventional manner.
+It consists of a scanner, a parser and a codegenerator.
+<P>
+The scanner, taken from the utilities in Chapter 17,
+handles numbers and reserved words in an obvious manner.
+Identifiers are handled separately,
+in particular by a procedure which
+looks them up in the symbol table.
+Then it reports to the parser whether the identifier
+has been declared already or whether it is new.
+<P>
+The parser is modelled on the grammar;
+it consists of several parsing procedures,
+one for each non-terminal.
+The bodies of the parsing procedure contain calls to
+the scanner and to a code generator.
+<P>
+The very simple code generator produces
+binary trees of nodes containing
+an operator field and a few other fields.
+The latter fields are variously integer pointers
+to other nodes,
+or they are data integers or sets of markings.
+In particular, the tree for a transition
+consists of <CODE>AND</CODE>-nodes joining the nodes for the arcs;
+and the tree for the entire NET
+consists of <CODE>OR</CODE>-nodes joining the nodes of all transitions.
+
+<P>
+<EM>Interpretation</EM>:
+The internal form of the code is then
+passed to an interpreter.
+The interpreter consists of a recursive procedure
+which takes a node as a parameter;
+a case statement then dispatches on the operator field
+of the node.
+To implement backtracking,
+the recursive procedure has another parameter which is
+a (parameterless) procedure.
+This other procedure acts as a continuation which will
+be called just in case the interpretation of the
+current node succeeds --- otherwise it is ignored.
+<P>
+In general,
+to produce some atomic effect and to undo the effect on backtracking,
+the interpreter uses code of the following form:
+<XMP>
+CASE  operator(node)  OF
+        ...
+        some-effect :
+                IF producing the effect is possible THEN
+                        produce the effect;
+                        call the continuation;
+                        undo the effect
+        ...
+</XMP>
+A typical example is the node for an arc from or to a place.
+The hypermarking of a place
+is represented by a set of small integers,
+the presence or absence of an integer represents a marking.
+The node for, say, an input arc
+contains one field which is a reference
+to the place from which the arc comes,
+and another field which is a number specifying
+how many tokens are to be removed.
+(For efficiency, there is another field
+representing the possible markings of the place after
+the firing of the transition.)
+For such a node the interpreter uses the following code:
+<XMP>
+        input-arc:
+                IF the required number of tokens can be removed THEN
+                        save the current hypermarking of the place
+                        construct the new hypermarking
+                        call the continuation
+                        restore the saved hypermarking of the place
+</XMP>
+The interpreter code for non-atomic nodes
+typically call the interpreter recursively,
+passing as continuation parameters local procedures.
+Typically the local procedure will either call or pass as a parameter
+the original continuation.
+So most of these local procedures are never called directly,
+but only as continuations.
+When they are called in this indirect manner,
+they perform some work in the environment of their definition
+including a call to the original continuation.
+<P>
+The initial call of the interpreter uses as one actual parameter
+the tree for the path expression that was last read.
+The other actual parameter is a global
+procedure which almost does nothing at all
+--- it merely increments the counter for the number of successful paths.
+
+<H2>The program</H2>
+<P>
+The following is the source:
+<XMP>
+PROGRAM netver(input,output);
+
+LABEL 10,90,99;
+
+CONST
+    errormark = '%NV';
+    list_filename = '45netver.lst';
+    reslength = 16; emptyres = '                ';
+    maxrestab = 70;
+    identlength = 16; emptyident = '                ';
+    maxstdidenttab = 1; (* dummy *)
+
+TYPE
+    symbol =
+        (place_id,transition_id,nonterminal_id,logical_id,
+         new_id,identifier,
+        (* no more idents after here *)
+         true_op,false_op,
+         net_op,skip_op,fail_op,abort_op,quit_op,
+         deadlock_op,unreachable_op,fence_op,set_op,showtotpathnum_op,
+         empty_op,atleast_op,atmost_op,newstate_op,
+         show_path_op,show_markings_op,arc_op,trans_op,nonterm_op,
+         logical_op,
+         execute_op,verify_op,possibly_op,
+         opt_op,pos_op,rep_op,timmes_op,not_op,newscope_op,
+         len_op,maxlength_op,maxpaths_op,position_op,tab_op,
+         pathnum_op,
+         save_op,restore_op,samestate_op,substate_op,superstate_op,
+         leftparenthesis,
+        (* no more  facbegsys after here *)
+         and_op, (* must be here, see TERM *)
+         cat_op,or_op,imp_op,iff_op,alt_op,
+         rightparenthesis_,
+         comma_,period_,colon_,bnfarrow_,semicol_,queery_,
+         end_,inarc_,outarc_,action_,
+         path_,place_,production_,transition_,logical_,
+        (* compulsory for scanutilities: *)
+         charconst,stringconst,numberconst,hyphen);
+    standardident = (dummy);
+
+%INCLUDE '41SCANUT.PAS'
+
+PROCEDURE initialise;
+VAR i : integer;
+BEGIN (* initialise *)
+iniscanner;
+specials_repeat := [':','='];
+erw(')               ',rightparenthesis_);
+erw(',               ',comma_);
+erw('.               ',period_);
+erw(':               ',colon_);
+erw('::=             ',bnfarrow_);
+erw(';               ',semicol_);
+erw('?               ',queery_);
+erw('ABORT           ',abort_op);
+erw('ACTION          ',action_);
+erw('ALT             ',alt_op);
+erw('AND             ',and_op);
+erw('ATLEAST         ',atleast_op);
+erw('ATMOST          ',atmost_op);
+erw('DEADLOCK        ',deadlock_op);
+erw('EMPTY           ',empty_op);
+erw('END             ',end_);
+erw('EXECUTE         ',execute_op);
+erw('FAIL            ',fail_op);
+erw('FALSE           ',false_op);
+erw('FENCE           ',fence_op);
+erw('IFF             ',iff_op);
+erw('IMP             ',imp_op);
+erw('INARC           ',inarc_);
+erw('LEN             ',len_op);
+erw('LOGICAL         ',logical_);
+erw('MAXLENGTH       ',maxlength_op);
+erw('MAXPATHS        ',maxpaths_op);
+erw('NET             ',net_op);
+erw('NEWSCOPE        ',newscope_op);
+erw('NEWSTATE        ',newstate_op);
+erw('NOT             ',not_op);
+erw('OPT             ',opt_op);
+erw('OR              ',or_op);
+erw('OUTARC          ',outarc_);
+erw('PATH            ',path_);
+erw('PATHNUM         ',pathnum_op);
+erw('PLACE           ',place_);
+erw('POS             ',pos_op);
+erw('POSITION        ',position_op);
+erw('POSSIBLY        ',possibly_op);
+erw('PRODUCTION      ',production_);
+erw('QUIT            ',quit_op);
+erw('REP             ',rep_op);
+erw('RESTORE         ',restore_op);
+erw('SAMESTATE       ',samestate_op);
+erw('SAVE            ',save_op);
+erw('SET             ',set_op);
+erw('SHOW_MARKINGS   ',show_markings_op);
+erw('SHOW_PATH       ',show_path_op);
+erw('SHOW_TOTAL      ',showtotpathnum_op);
+erw('SKIP            ',skip_op);
+erw('SUBSTATE        ',substate_op);
+erw('SUPERSTATE      ',superstate_op);
+erw('TAB             ',tab_op);
+erw('TIMES           ',timmes_op);
+erw('TRANSITION      ',transition_);
+erw('TRUE            ',true_op);
+erw('UNREACHABLE     ',unreachable_op);
+erw('VERIFY          ',verify_op);
+erw('|               ',alt_op);
+END; (* initialise *)
+
+CONST
+    interactive_usage = false;
+    maxplaces = 50;
+    maxsaves = 200;
+    maxsymtab = 100;
+    maxcode = 1000;
+    maxpathlength = 100;
+    maxcapacity = 31;
+TYPE
+    operator = net_op .. or_op;
+    markset = SET OF 0 .. maxcapacity;
+VAR
+    symtab : ARRAY [0 .. maxsymtab] OF (* 0 for sentinel *)
+        RECORD
+            alf : identalfa;
+            obj : symbol;
+            val : integer
+            END;
+    lastsymtab,location : integer;
+    new_id_allowed : boolean;
+    code : ARRAY [1 .. maxcode] OF RECORD
+                op : operator; left, right : integer;
+                arc_opset : markset;
+                END;
+    codeindex, headnode, last_block_code : integer;
+    place : ARRAY [1 .. maxplaces] OF RECORD
+                symtab_ptr, capacity : integer;
+                pl_poss, pl_cur : markset
+                END;
+    lastplace : integer;
+    saves : ARRAY [1..maxsaves] OF markset;
+    path : ARRAY [1..maxpathlength] OF integer;
+    pathlength,maxlength : integer;
+    pathnum,maxpaths : integer;
+    fenced,showtotpathnum : boolean;
+    mode : symbol; goal : boolean;
+    i,j : integer;
+
+(* - - - - -   U T I L I T I E S   - - - - - *)
+
+PROCEDURE lookup;
+BEGIN (* lookup *)
+symtab[0].alf := ident; location := lastsymtab;
+WHILE symtab[location].alf &lt;> ident DO location := location - 1;
+IF location = 0 THEN
+    BEGIN
+    lastsymtab := lastsymtab + 1;
+    WITH symtab[lastsymtab] DO
+        BEGIN alf := ident; obj := new_id; val := 0 END;
+    location := lastsymtab;
+    END;
+WITH symtab[location] DO
+    BEGIN sym := obj; num := val END
+END; (* lookup *)
+
+PROCEDURE generate(o : operator; x,y : integer);
+BEGIN
+codeindex := codeindex + 1;
+WITH code[codeindex] DO
+    BEGIN op := o; left := x; right := y END
+END; (* generate *)
+
+PROCEDURE writenode(n : integer);
+BEGIN
+WITH code[n] DO
+    BEGIN
+    IF n = headnode
+        THEN write(listing,'***')
+        ELSE write(listing,'   ');
+    write(listing,n:4,'  ', op:16,'  ',left:6,right:6);
+    CASE op OF
+        arc_op :
+            BEGIN
+            write(listing,'   ');
+            FOR j := 0 TO place[left].capacity DO
+                IF j IN arc_opset THEN write(listing,j:0,' ')
+            END;
+        logical_op,trans_op,nonterm_op :
+            write(listing,'  ',symtab[left].alf);
+        END;
+    writeln(listing)
+    END
+END; (* writenode *)
+
+(* - - - - -   I N P U T  - - - - - *)
+
+PROCEDURE expression;
+VAR left : integer; oper : operator;
+
+    PROCEDURE term;
+    VAR left : integer; oper : operator;
+
+        PROCEDURE factor;
+        VAR oper : operator; n : integer;
+        BEGIN (* factor *)
+        IF sym = identifier THEN lookup;
+        CASE sym OF
+            new_id,nonterminal_id :
+                BEGIN
+                IF sym = new_id THEN
+                    BEGIN
+                    IF NOT new_id_allowed THEN
+                        point('E','new identifier not allowed    ');
+                    symtab[location].obj := nonterminal_id;
+                    END;
+                generate(nonterm_op,location,0 (* fixed in BLOCK *) );
+                getsym
+                END;
+            transition_id :
+                BEGIN
+                generate(trans_op,location,num); getsym
+                END;
+            logical_id :
+                BEGIN
+                generate(logical_op,location,num); getsym
+                END;
+            net_op,skip_op,fail_op,abort_op,quit_op,
+            true_op,false_op,
+            deadlock_op,unreachable_op,fence_op,showtotpathnum_op,
+            newstate_op,
+            show_path_op,show_markings_op :
+                BEGIN
+                generate(sym,0,0); getsym
+                END;
+            execute_op,verify_op,possibly_op,newscope_op,
+            not_op,opt_op,pos_op,rep_op :
+                BEGIN
+                oper := sym; getsym; factor;
+                generate(oper,0,codeindex)
+                END;
+            timmes_op :
+                BEGIN
+                getsym;
+                IF sym &lt;> numberconst THEN
+                    point('E','number expected               ');
+                n := num; getsym; factor;
+                generate(timmes_op,n,codeindex)
+                END;
+            save_op,restore_op,samestate_op,substate_op,superstate_op,
+            len_op,maxlength_op,maxpaths_op,position_op,tab_op,
+            pathnum_op :
+                BEGIN
+                oper := sym; getsym;
+                IF sym &lt;> numberconst THEN
+                    point('E','number expected               ');
+                generate(oper,num,0); getsym
+                END;
+            empty_op :
+                BEGIN
+                getsym;
+                lookup;
+                IF sym &lt;> place_id THEN
+                    point('E','place identifier expected     ');
+                generate(empty_op,num,0); getsym
+                END;
+            atleast_op,atmost_op :
+                BEGIN
+                oper := sym; getsym;
+                lookup;
+                IF sym &lt;> place_id THEN
+                    point('E','place identifier expected     ');
+                n := num; getsym;
+                IF sym &lt;> numberconst THEN
+                    point('E','number expected               ');
+                generate(oper,n,num); getsym
+                END;
+            set_op :
+                BEGIN
+                getsym;
+                lookup;
+                IF sym &lt;> place_id THEN
+                    point('E','place identifier expected     ');
+                generate(set_op,num,0);
+                code[codeindex].arc_opset := [];
+                getsym;
+                WHILE sym = numberconst DO
+                    BEGIN
+                    WITH code[codeindex] DO
+                        arc_opset := arc_opset + [num];
+                    getsym
+                    END
+                END;
+            leftparenthesis :
+                BEGIN
+                getsym;
+                expression;
+                check(rightparenthesis_,[],
+                    '")" expected                  ');
+                END;
+            OTHERWISE
+                point('F','internal error in factor      ');
+            END (* CASE *)
+        END; (* factor *)
+
+    BEGIN (* term *)
+    factor;
+    IF sym &lt;= and_op THEN
+        BEGIN
+        left := codeindex;
+        IF sym &lt;= leftparenthesis THEN oper := cat_op ELSE
+            BEGIN oper := sym; getsym END;
+        term; generate(oper,left,codeindex)
+        END
+    END (* term *);
+
+BEGIN (* expression *)
+term;
+IF sym IN [alt_op,or_op,imp_op,iff_op] THEN
+    BEGIN
+    left := codeindex; oper := sym; getsym;
+    expression; generate(oper,left,codeindex)
+    END
+END (* expression *);
+
+PROCEDURE block;
+
+VAR
+    loc, cap, toknum, i : integer;
+    poss : markset;
+    net_fix : integer;
+
+    PROCEDURE arc_list;
+    VAR left : integer;
+
+        PROCEDURE onearc;
+        VAR tr_declarator : symbol; i : integer;
+
+            PROCEDURE placelist;
+            VAR left : integer;
+
+                PROCEDURE oneplace;
+                BEGIN (* oneplace *)
+                lookup;
+                IF sym &lt;> place_id THEN
+                    point('E','place identifier expected     ')
+                  ELSE
+                    BEGIN generate(arc_op,num,99999); getsym END
+                END; (* oneplace *)
+
+            BEGIN (* placelist *)
+            oneplace;
+            IF sym = comma_ THEN
+                BEGIN
+                left := codeindex; getsym;
+                placelist; generate(and_op,left,codeindex)
+                END
+            END; (* placelist *)
+
+        BEGIN (* onearc *)
+        tr_declarator := sym; getsym;
+        IF tr_declarator = action_ THEN expression ELSE
+            BEGIN (* arc *)
+            i := codeindex; placelist;
+            IF sym &lt;> numberconst then toknum := 1 ELSE
+                BEGIN toknum := num; getsym END;
+            WHILE i < codeindex DO
+                BEGIN (* update *)
+                i := i + 1;
+                WITH code[i] DO
+                    IF op = arc_op THEN
+                        BEGIN
+                        cap := place[left].capacity;
+                        IF tr_declarator = inarc_ THEN
+                            BEGIN
+                            arc_opset := [toknum .. cap];
+                            right := - toknum
+                            END
+                          ELSE
+                            BEGIN
+                            arc_opset := [0 .. cap - toknum];
+                            right := toknum
+                            END
+                        END (* arc_op *)
+                END (* update *)
+            END; (* arc *)
+        IF sym = semicol_ THEN getsym;
+        END; (* onearc *)
+
+    BEGIN (* arc_list *)
+    onearc;
+    IF sym IN [inarc_,outarc_,action_] THEN
+        BEGIN
+        left := codeindex;
+        arc_list; generate(and_op,left,codeindex)
+        END
+    END; (* arc_list *)
+
+BEGIN (* block *)
+new_id_allowed := true;
+WHILE sym IN [place_,transition_,production_,logical_] DO
+    CASE sym OF
+        logical_ :
+            BEGIN
+            getsym;
+            WHILE sym = identifier DO
+                BEGIN
+                REPEAT
+                    lookup;
+                    IF sym &lt;> new_id THEN
+                        point('E','new identifier expected       ');
+                    lastplace := lastplace + 1;
+                    WITH place[lastplace] DO
+                        BEGIN
+                        symtab_ptr := location; capacity := 1;
+                        pl_poss := [0,1]; pl_cur := [0,1]
+                        END;
+                    WITH symtab[location] DO
+                        BEGIN obj := logical_id; val := lastplace END;
+                    getsym;
+                    IF sym = comma_ THEN getsym
+                    UNTIL NOT (sym &lt;= identifier);
+                IF sym = semicol_ THEN getsym
+                END (* WHILE ident *)
+            END; (* logical *)
+        place_ :
+            BEGIN
+            getsym;
+            WHILE sym &lt;= identifier DO
+                BEGIN
+                i := lastplace;
+                REPEAT
+                    lookup;
+                    IF sym &lt;> new_id THEN
+                        point('E','new identifier expected       ');
+                    lastplace := lastplace + 1;
+                    place[lastplace].symtab_ptr := location;
+                    WITH symtab[location] DO
+                        BEGIN obj := place_id; val := lastplace END;
+                    getsym;
+                    IF sym = comma_ THEN getsym
+                    UNTIL NOT (sym &lt;= identifier);
+                IF sym = colon_ THEN getsym;
+                IF sym &lt;> numberconst THEN cap := 1 ELSE
+                    BEGIN cap := num; getsym END;
+                poss := [0 .. cap];
+                WHILE i < lastplace DO
+                    BEGIN (* update *)
+                    i := i + 1;
+                    WITH place[i] DO
+                        BEGIN
+                        capacity := cap;
+                        pl_poss := poss;
+                        pl_cur := poss
+                        END
+                    END; (* WHILE *)
+                IF sym = semicol_ THEN getsym
+                END (* WHILE ident *)
+            END; (* place *)
+        transition_ :
+            BEGIN
+            getsym;
+            WHILE sym = identifier DO
+                BEGIN
+                loc := lastsymtab + 1;
+                REPEAT
+                    lookup;
+                    IF sym &lt;> new_id THEN
+                        point('E','new identifier expected       ');
+                    symtab[location].obj := transition_id;
+                    getsym;
+                    IF sym = comma_ THEN getsym
+                    UNTIL NOT (sym &lt;= identifier);
+                IF sym = semicol_ THEN getsym;
+                IF sym IN [inarc_,outarc_,action_]
+                    THEN arc_list
+                    ELSE generate(skip_op,0,0);
+                WHILE loc &lt;= lastsymtab DO
+                    BEGIN
+                    symtab[loc].val :=codeindex; loc := loc + 1
+                    END
+                END (* WHILE ident *)
+            END; (* transition *)
+        production_ :
+            BEGIN
+            getsym;
+            WHILE sym = identifier DO
+                BEGIN
+                lookup;
+                IF NOT (sym IN [new_id, nonterminal_id]) THEN
+                    point('E','nonterminal expected          ');
+                IF sym = new_id THEN
+                    symtab[location].obj := nonterminal_id;
+                loc := location; getsym;
+                check(bnfarrow_,[],'"::=" expected                ');
+                expression; symtab[loc].val := codeindex;
+                IF sym = semicol_ THEN getsym
+                END (* WHILE idents *)
+            END (* production *)
+        END; (* CASE *)
+IF writelisting > 1 THEN
+    BEGIN writeln(listing); writeln(listing,'symbol table: ') END;
+net_fix := 0;
+FOR i := 1 TO lastsymtab DO
+    WITH symtab[i] DO
+        BEGIN
+        CASE obj OF
+            transition_id :
+                BEGIN
+                generate(trans_op,i,val);
+                generate(or_op,codeindex,0);
+                IF headnode = 0
+                    THEN headnode := codeindex
+                    ELSE code[net_fix].right := codeindex;
+                net_fix := codeindex;
+                END;
+            nonterminal_id :
+                IF val = 0 THEN
+                    BEGIN
+                    point('E','undefined non-terminal        ');
+                    putch('"'); writeident(alf); putch('"');
+                    writeline; GOTO 99
+                    END;
+            END; (* CASE *)
+        IF writelisting > 1 THEN
+            writeln(i:3,' ',alf:identlength,' ',obj,' ',val)
+        END; (* WITH,FOR *)
+IF headnode &lt;> 0 THEN (* delete the last "OR" for transitions *)
+    BEGIN
+    codeindex := codeindex - 1;
+    code[codeindex - 1].right := code[codeindex + 1].left;
+    END;
+last_block_code := codeindex;
+IF writelisting > 2 THEN
+    writeln(listing,'code for this block');
+FOR i := 1 TO codeindex DO
+    WITH code[i] DO
+        IF op = nonterm_op THEN
+            BEGIN
+            right := symtab[left].val; (* fixup *)
+            IF writelisting > 2 THEN writenode(i)
+            END
+END; (* block *)
+
+(* - - - - -  A N A L Y S I S  - - - - - *)
+
+PROCEDURE skip;
+BEGIN (* skip *)
+IF pathnum = maxpaths THEN
+    maxlength := -1; (* this will block further tries *)
+pathnum := pathnum + 1
+END; (* skip *)
+
+PROCEDURE show_markings;
+VAR i,j : integer;
+BEGIN (* show_markings *)
+writeident('mark            '); putch(' ');
+writeinteger(pathnum); putch(':'); writeline;
+FOR i := 1 TO lastplace DO
+    WITH place[i] DO
+        IF pl_cur &lt;> pl_poss THEN
+            BEGIN
+            putch(chr(9));
+            writeident(symtab[symtab_ptr].alf); putch(' ');
+            FOR j := 0 TO capacity DO
+                IF j IN pl_cur THEN
+                    BEGIN
+                    IF symtab[symtab_ptr].obj &lt;> logical_id
+                        THEN writeinteger(j)
+                    ELSE IF j = 0 THEN writeident('FALSE           ')
+                    ELSE writeident('TRUE            ');
+                    putch(' ')
+                    END;
+            writeline
+            END
+END; (* show_markings *)
+
+PROCEDURE show_path;
+VAR i : integer;
+BEGIN (* show_path *)
+writeident('path            '); putch(' ');
+writeinteger(pathnum); putch(':'); writeline;
+FOR i := 1 TO pathlength DO
+    BEGIN writeident(symtab[path[i]].alf); putch(' ') END;
+IF pathlength > 1 THEN writeline
+END; (* show_path *)
+
+PROCEDURE show_tot_num_paths(VAR f : text);
+BEGIN
+writeln(f,'     ' (* normal tab *),
+    'total number of paths: ',pathnum-1:0)
+END; (* show_tot_num_paths *)
+
+PROCEDURE unreach(n : integer; PROCEDURE cp); forward;
+PROCEDURE parse(t : integer; PROCEDURE cp);
+
+VAR saveset : markset; i : integer;
+
+    PROCEDURE setinteger(VAR v : integer; val : integer);
+    VAR old : integer;
+    BEGIN old := v; v := val; cp; v := old END;
+
+    PROCEDURE setmode(newmode : symbol;
+                      newgoal : boolean; p : integer);
+    VAR savemode : symbol; savegoal : boolean;
+
+        PROCEDURE restoremode;
+        BEGIN
+        mode := savemode; goal := savegoal;
+        cp;
+        mode := newmode; goal := newgoal
+        END;
+
+    BEGIN (* setmode *)
+    savemode := mode; savegoal := goal;
+    mode := newmode; goal := newgoal;
+    parse(p,restoremode);
+    mode := savemode; goal := savegoal
+    END; (* setmode *)
+
+    PROCEDURE parsenot(t : integer; PROCEDURE cp);
+    VAR oldgoal : boolean; i : integer;
+
+        PROCEDURE restoregoal;
+        VAR g : boolean;
+        BEGIN g := goal; goal := NOT goal; cp; goal := g END;
+
+    BEGIN (* parsenot *)
+    IF mode = execute_op THEN
+        BEGIN
+        i := pathnum;
+        parse(t,skip);
+        IF pathnum = i (* no successes *) THEN
+            BEGIN pathnum := pathnum + 1; cp END
+        END
+      ELSE
+        BEGIN
+        oldgoal := goal; goal := NOT goal;
+        parse(t,restoregoal);
+        goal := oldgoal
+        END;
+    END; (* parsenot *)
+
+    PROCEDURE restorefence;
+    VAR f : boolean;
+    BEGIN f := fenced; fenced := i = 1; cp; fenced := f END;
+
+    PROCEDURE parseright;
+    BEGIN parse(code[t].right,cp) END;
+
+    PROCEDURE parsenotright;
+    BEGIN parsenot(code[t].right,cp) END;
+
+    PROCEDURE sameagain;
+    BEGIN parse(t,cp) END;
+
+    PROCEDURE times(count,argument : integer);
+    VAR i : integer;
+
+        PROCEDURE tiimes;
+        BEGIN
+        i := i - 1;
+        IF i < 1 THEN cp ELSE parse(t,tiimes);
+        i := i + 1
+        END; (* tiimes *)
+
+    BEGIN
+    i := count; t := argument;
+    parse(t,tiimes)
+    END; (* times *)
+
+    PROCEDURE save(this_save : integer);
+    VAR i,displacement : integer;
+    BEGIN
+    displacement := lastplace * this_save;
+    FOR i := 1 TO lastplace DO
+        saves[i + displacement] := place[i].pl_cur
+    END;
+
+    PROCEDURE restore(this_restore : integer);
+    VAR i,displacement : integer;
+    BEGIN
+    displacement := lastplace * this_restore;
+    FOR i := 1 TO lastplace DO
+        place[i].pl_cur := saves[i + displacement]
+    END;
+
+    FUNCTION samestate(this_samestate : integer) : boolean;
+    VAR i,displacement : integer;
+    BEGIN
+    displacement := lastplace * this_samestate;
+    i := lastplace;
+    REPEAT
+        IF place[i].pl_cur = saves[i + displacement]
+            THEN i := i - 1 ELSE i := -1
+        UNTIL i < 1;
+    samestate := i = 0
+    END;
+
+    FUNCTION substate(this_substate : integer) : boolean;
+    VAR i,displacement : integer;
+    BEGIN (* substate *)
+    displacement := lastplace * this_substate;
+    i := lastplace;
+    REPEAT
+        IF place[i].pl_cur &lt;= saves[i + displacement]
+            THEN i := i - 1 ELSE i := -1
+        UNTIL i < 1;
+    substate := i = 0
+    END; (* substate *)
+
+    FUNCTION superstate(this_superstate : integer) : boolean;
+    VAR i,displacement : integer;
+    BEGIN (* superstate *)
+    displacement := lastplace * this_superstate;
+    i := lastplace;
+    REPEAT
+        IF place[i].pl_cur >= saves[i + displacement]
+            THEN i := i - 1 ELSE i := -1
+        UNTIL i < 1;
+    superstate := i = 0
+    END; (* superstate *)
+
+BEGIN (* parse *)
+IF writelisting > 3 THEN
+    BEGIN
+    write(listing,pathnum:0,' ',mode:1,' ',goal:1,' ');
+    writenode(t)
+    END;
+IF pathlength &lt;= maxlength THEN
+  WITH code[t] DO
+    CASE op OF
+
+(* control *)
+
+        abort_op :
+            maxlength := -1; (* instead of GOTO 1 *)
+        quit_op :
+            GOTO 99;
+        nonterm_op :
+            parse(right,cp);
+
+(* mode *)
+
+        execute_op,verify_op,possibly_op :
+            setmode(op,true,right);
+
+(* regular *)
+
+        skip_op :
+            cp;
+        fail_op :
+            ; (* do nothing *)
+        cat_op :
+            parse(left,parseright);
+        alt_op :
+            BEGIN
+            parse(left,cp);
+            IF NOT fenced THEN parse(right,cp);
+            END;
+        opt_op :
+            BEGIN cp; parse(right,cp) END;
+        pos_op :
+            BEGIN parse(right,cp); parse(right,sameagain) END;
+        rep_op :
+            BEGIN cp; parse(right,sameagain) END;
+        timmes_op :
+            times(left,right);
+        showtotpathnum_op :
+            BEGIN showtotpathnum := true; cp END;
+        fence_op :
+            BEGIN fenced := true; cp END;
+        newscope_op :
+            BEGIN
+            i := ord(fenced); fenced := false;
+            parse(right,restorefence)
+            END;
+        maxpaths_op :
+            setinteger(maxpaths,left);
+        pathnum_op :
+            IF pathnum = left THEN cp;
+
+(* boolean *)
+
+        false_op,true_op :
+            IF (op = true_op) = goal THEN cp;
+        logical_op :
+            WITH place[right] DO
+                IF ord(goal) IN pl_cur THEN
+                    BEGIN
+                    saveset := pl_cur;
+                    pl_cur := [ord(goal)]; cp;
+                    pl_cur := saveset
+                    END;
+        and_op,or_op :
+            IF (op = and_op) = goal
+                THEN parse(left,parseright)
+                ELSE BEGIN parse(left,cp); parse(right,cp) END;
+        not_op :
+                parsenot(right,cp);
+        imp_op :
+            IF goal THEN
+                BEGIN
+                parsenot(left,cp);
+                parse(right,cp)
+                END
+              ELSE
+                parsenot(left,parseright);
+        iff_op :
+            IF goal THEN
+                BEGIN
+                parse(left,parseright);
+                parsenot(left,parsenotright)
+                END
+              ELSE
+                BEGIN
+                parse(left,parsenotright);
+                parsenot(left,parseright)
+                END;
+(* events *)
+
+        trans_op :
+            BEGIN
+            IF pathlength = maxpathlength THEN
+                BEGIN writeln('path is too long'); GOTO 99 END;
+            pathlength := pathlength + 1;
+            path[pathlength] := left; (* to symtab *)
+            parse(right,cp);
+            pathlength := pathlength - 1
+            END;
+        net_op :
+            parse(headnode,cp);
+        len_op :
+            times(left,headnode);
+        tab_op :
+            times(left-pathlength,headnode);
+        position_op :
+            IF pathlength = left THEN cp;
+        maxlength_op :
+            setinteger(maxlength,left);
+        show_path_op :
+            BEGIN show_path; cp END;
+
+(* state *)
+
+        save_op :
+            BEGIN save(left); cp END;
+        restore_op :
+            BEGIN restore(left); cp END;
+        samestate_op :
+            IF samestate(left) THEN cp;
+        newstate_op :
+            BEGIN
+            FOR i := 1 TO lastplace DO
+                WITH place[i] DO pl_cur := pl_poss;
+            cp
+            END;
+        substate_op :
+            IF substate(left) THEN cp;
+        superstate_op :
+            IF superstate(left) THEN cp;
+
+(* place *)
+
+        set_op :
+            WITH place[left] DO
+                IF pl_cur * arc_opset &lt;> [] THEN
+                    BEGIN
+                    saveset := pl_cur;
+                    pl_cur := arc_opset;
+                    cp;
+                    pl_cur := saveset
+                    END;
+(* ! ! ! ! ! ! ! ! ! THIS NEEDS LOOKING AT ! ! ! ! ! ! ! ! ! ! *)
+        empty_op :
+            WITH place[left] DO
+                IF (0 IN pl_cur) = goal THEN
+                    BEGIN
+                    saveset := pl_cur;
+                    CASE mode OF
+                        execute_op,verify_op :
+                            IF goal
+                                THEN pl_cur := [0]
+                                ELSE pl_cur := pl_poss - [0];
+                        possibly_op :
+                        OTHERWISE
+                            point('F',
+                                'internal - emptyop            ')
+                        END; (* CASE *)
+                    cp;
+                    pl_cur := saveset
+                    END;
+        show_markings_op :
+            BEGIN show_markings; cp END;
+        arc_op :
+            WITH place[left] DO
+                BEGIN
+                saveset := pl_cur;
+                CASE mode OF
+                    execute_op :
+                        IF pl_cur * arc_opset &lt;> [] THEN
+                            BEGIN
+                            pl_cur := [];
+                            IF right < 0 THEN
+                                BEGIN (* inarc *)
+                                FOR i := - right TO capacity DO
+                                    IF i IN saveset THEN
+                                        pl_cur := pl_cur + [i + right]
+                                END
+                              ELSE
+                                BEGIN (* outarc_ *)
+                                FOR i := 0 TO capacity - right DO
+                                    IF i IN saveset THEN
+                                        pl_cur := pl_cur + [i + right]
+                                END;
+                            cp
+                            END; (* execute *)
+                    verify_op :
+                        BEGIN
+                        IF goal
+                            THEN pl_cur := pl_cur * arc_opset
+                            ELSE pl_cur := pl_cur - arc_opset;
+                        IF pl_cur &lt;> [] THEN cp
+                        END;
+                    possibly_op :
+                        IF goal AND (pl_cur * arc_opset = []) OR
+                        NOT goal AND (pl_cur-arc_opset = []) THEN cp;
+                    OTHERWISE
+                        point('F',
+                            'internal: arc_op              ');
+                    END; (* CASE *)
+                pl_cur := saveset
+                END; (* WITH *)
+        deadlock_op :
+            setmode(verify_op,false,headnode);
+        unreachable_op :
+            unreach(headnode,cp);
+        OTHERWISE
+            BEGIN
+            writeln('internal error "parse", op = ',op);
+            GOTO 99
+            END
+        END; (* CASE *)
+END; (* parse *)
+
+PROCEDURE unreach; (* (n : integer; PROCEDURE cp) was forward *)
+VAR saveset : markset;
+
+    PROCEDURE unreachright;
+      BEGIN unreach(code[n].right, cp) END;
+
+BEGIN (* unreach *)
+WITH code[n] DO
+    CASE op OF
+        arc_op :
+            WITH place[left] DO
+                IF pl_cur - (pl_poss - arc_opset) &lt;> [] THEN
+                    BEGIN
+                    saveset := pl_cur;
+                    pl_cur := pl_cur - (pl_poss - arc_opset);
+                    cp;
+                    pl_cur := saveset
+                    END;
+        trans_op :
+            unreach(right,cp);
+        and_op :
+            BEGIN unreach(left, cp); unreach(right, cp) END;
+        or_op :
+            unreach(left,unreachright);
+        OTHERWISE
+            parse(n,cp)
+        END (* CASE *)
+END; (* unreach *)
+
+(* - - - - -  M A I N  - - - - - *)
+
+BEGIN (* main, NETVER *)
+10:
+initialise;
+REPEAT
+    codeindex := 0; lastsymtab := 0; lastplace := 0;
+    headnode := 0; (* will be inspected in block and below *)
+    IF interactive_usage THEN write('?-  ');
+    getsym;
+    IF sym = quit_op THEN GOTO 90;
+     block;
+    IF writelisting > 10 THEN
+        BEGIN
+        writeln(listing);
+        writeln(listing,'total code for block:');
+        FOR i := 1 TO codeindex DO writenode(i);
+        END; (* IF trace > 0 *)
+    WHILE sym = path_ DO
+        BEGIN
+        codeindex := last_block_code; getsym;
+        new_id_allowed := false; expression;
+        IF trace > 0 THEN
+            BEGIN writeln; writeln('code to be executed:') END;
+        FOR i := last_block_code + 1 TO codeindex DO
+            WITH code[i] DO
+                BEGIN
+                IF op = nonterm_op THEN
+                    right := symtab[left].val; (* fixup *)
+                IF trace > 0 THEN writenode(i)
+                END;
+        maxlength := maxint; pathnum := 1; pathlength := 0;
+        maxpaths := maxint;
+        fenced := false; mode := execute_op; goal := true;
+        showtotpathnum := false;
+        IF trace > 0 THEN
+            BEGIN writeln; writeln('executing ...') END;
+        parse(codeindex,skip);
+        IF showtotpathnum THEN
+            BEGIN
+            show_tot_num_paths(output);
+            IF writelisting > 0 THEn show_tot_num_paths(listing)
+            END;
+        IF sym = semicol_ THEN getsym
+        END;
+    UNTIL false;
+90: ;
+99: finalise;
+END. (* main, NETVER *)
+</XMP>
+<H2>Discussion</H2>
+<P>
+Obviously the system is in need of numerous improvements.
+The following sections discuss most of them,
+organised into 1) mere embellishments to the user interface,
+2) improvements of the backtracking mechanism,
+and 3) greater power of the Petri net language.
+<H3>Embellishments</H3>
+<P>
+The system was written very much as a prototype,
+and no attempt was made to endow it with the kinds of
+niceties one expects from a final system.
+A more mature version should make its use more convenient,
+and here are some desirable features:
+<P>
+<EM>Error recovery</EM>:
+At least initially, specifications of nets to be verified are
+not likely to be large.
+Nevertheless, it would be helpful if the parser could
+continue after the first error
+and perform further checking.
+The techniques of simple error recovery are well understood
+(see for example the Datbas program in Chapter 19),
+and their incorporation should not present any problems.
+<P>
+<EM>String output</EM>:
+Currently the only output produced by the verifier
+is either a path or a marking.
+It would make the reading of such output much easier
+if users could also intersperse such output with
+meaningful remarks and explanations --- expressed as
+character strings.
+Two options exist here: that the output is produced at the time
+of interpretation,
+or that it is saved away in the path,
+to be produced only upon completion of the path.
+Probably both methods are useful.
+<H3>More advanced backtracking</H3>
+<P>
+The comments in this section pertain to the backtracking methods
+of the verifier,
+they would apply equally well to one which does not operate on nets.
+<P>
+<EM>Regular and Boolean Algebra</EM>:
+The verifier allows one to mix concepts from two rather
+distinct algebras,
+and the several modes of the verifier are geared to the two algebras.
+However, the examples as yet do not fully exploit
+the possibilities arising from the interaction
+of the two algebras.
+So some theoretical research is needed
+to examine the interplay between the two algebras,
+and some practical research is needed to determine the usefulness
+of having the two together in a verifier of this kind.
+<P>
+<EM>Other Primitives</EM>:
+The verifier offers a collection of general primitives
+for programmed backtracking which are quite
+independent of the concepts of the nets being verified.
+It would be useful to survey the literature
+to determine whether there are any other generally
+applicable primitives,
+and whether there are any generally applicable methods
+of combining them apart from the ones offered here.
+Klint (1985, pp 31 - 36) describes an elegant, clean and powerful
+construct called <CODE>try ..</CODE> for the control of backtracking
+and environment modification in string processing languages.
+It would appear that the construct is equally useful
+in any backtracking language.
+<P>
+<EM>Optimisations</EM>:
+The verifier as described does not use any optimisations.
+But there are several well-known techniques applicable
+to backtracking;
+some depend on the system being modelled,
+others do not.
+1) Specifically for regular algebras,
+there is an optimisation,
+called the length check in Waite (1973, p 264)
+and called the futility heuristic
+in the implementation of Snobol (Griswold 1972, p 126):
+if the completion of the current path requires
+more atoms (characters in a parsing situation,
+transition firing in a modeling situation)
+than are available (in the string to be parsed,
+in the path to be attempted),
+then it is futile to continue.
+2) Specifically for Boolean algebras,
+there is a heuristic familiar to logicians using
+the <EM>semantic tableaux</EM> method:
+if a choice is to be made between branching now or later,
+branch later - for example when attempting to verify
+<CODE>(p OR q) AND (r AND s)</CODE>,
+treat it like <CODE>(r AND s) AND (p OR q)</CODE> by
+expanding <CODE>r AND s</CODE> first.
+3) The two methods above are specific to their subject matter,
+but there is another which is independent,
+the intelligent backtracking technique:
+if failure occurs due to a choice made early in the
+process, do not backtrack blindly to other choices made later
+but backtrack immediately to the point which caused the failure.
+Van Hentenryck (1989, pp 60 - 69)
+and Lauriere (1990, pp 211 - 218 and pp 389 - 449)
+describe some very sophisticated techniques
+which are even more intelligent:
+they minimise backtracking
+by not making choices that can be known in advance
+to lead to failure.
+All these optimisations can produce almost arbitrary speedup
+for suitably chosen inputs;
+but clearly they involve some overhead,
+and whether the overhead is worth it depends on
+statistical properties of the actual mix of inputs
+which is impossible to assertain in a vacuum.
+An attempt to incorporate intelligent backtracking
+for just reachability analysis in Netver
+is reported in Wong (1991).
+<H3>A more powerful object language</H3>
+<P>
+The verifier described here operates on Petri nets of
+almost the simplest kind
+(the simplest kind would be one in which all place capacities
+are one).
+A great deal of current research has been concerned with
+what generally are called higher level nets.
+This section discusses some of the ways
+in which the verifier could be extended for such higher level nets.
+<P>
+<EM>Folding of places</EM>:
+For the nets of this verifier,
+the places are really integer variables,
+but are thought of as containing tokens ---
+all of the same kind, and as many as indicated by the value of the variable.
+In another species of nets the places
+are thought of as containing several kinds of tokens,
+and for each kind it has to be indicated how many there are.
+Such places are best thought of as being combinations
+of simpler places each containing only one kind of token,
+and hence they may be represented by records of several integers,
+one for each kind.
+No difficulty should be experienced with
+adapting the verifier to deal with such places.
+<P>
+<EM>Predicate Transition Nets</EM>:
+In the simplest case the maximum capacity for each kind of token
+is one.
+So for each kind it is either false or true that the place
+contains a token of that kind,
+and hence such places are in fact set variables.
+Again it should be easy to adapt the verifier for such places.
+<P>
+<EM>Queueing places</EM>:
+In all the nets considered so far,
+tokens upon arrival at a place
+do not retain any temporal ordering of their arrival.
+In nets with queueing places
+the tokens retain this ordering,
+and typically the first one to arrive will be the the first one to leave.
+Such places are really queues ---
+either bounded or unbounded,
+which may be implemented as (perhaps circular) arrays
+or as linked lists.
+A special case is the queue of size one,
+a buffer or mailbox, suitable for asynchronous communication.
+The incorporation of bounded queueing places in the form
+of circular arrays should not present any difficulty
+for a future version of the verifier.
+<P>
+<EM>Timed Petri Nets</EM> (see e.g. Carlier et al 1984):
+If timing information of the arrival of tokens is not merely ordinal
+but subject to a metric, perhaps even system wide,
+then it becomes possible to force tokens to "age" for
+a specified time before they can be removed from a place.
+By endowing a transition (or a set of transitions)
+with a timing place to which there is (are) both output and input arcs,
+it becomes possible to restrict the frequency of firing
+of the transition (or the transitions in the set).
+At this stage it is not known how well
+the verifier in its present form could handle
+any such timing information.
+<P>
+<EM>Parallelism in Paths</EM>:
+The path expressions of Netver do not include the
+parallel composition operator and its two special forms
+for interleaving and synchronisation
+(see Bolognesi and Brinksma 1987, or ISO 1987).
+Their eventual inclusion is being contemplated,
+but will probably require substantial revision of the code.
+<P>
+<EM>Ports</EM>:
+A process can use a buffer to deposit information and then proceed
+at its own pace, and another process can eventually inspect what is
+in the buffer.
+There is no requirement that the depositing and the
+inspecting occur at the same instant.
+This is not true of PORTs,
+which are used for synchronous communication:
+if one of the two processes comes to the point
+of wanting to deposit or inspect, and the other one
+is not ready,
+then the first process has to wait.
+Again it is not known whether
+the verifier could be adapted to handle ports.
+<P>
+A Pessimistic Note:
+Part of the success of the current verifier
+depends on the fact that it uses hypermarkings
+instead of markings.
+This works well for places having small capacities,
+up to, say, 31.
+Then any actual marking is an integer 0 .. 31,
+and a hypermarking is a <CODE>SET OF 0..31</CODE>,
+still representable by 32 bits and easily processed.
+For places containing tokens of a few kinds,
+there are two possibilities:
+either 1) treat such places as a collection of the more elementary
+places, or
+2) retain the principle of squeezing a hypermarking into 32 bits,
+by allowing up to 15 tokens of two kinds, up to 7 tokens of four kinds,
+up to 3 tokens of eight kinds, and only one token of sixteen kinds.
+But for places containing tokens of more than just a few kinds
+this method will not be possible.
+Already for the type character there are too many kinds --- 128 or 256 ---
+and even for a maximum place capacity of only one,
+a hypermarking would need that many bits, seven or eight 32 bit words.
+So already for character places the method of hypermarkings
+becomes only marginally feasible.
+On the other hand, it would appear that the character type,
+and even more so the integer and string types
+are mainly needed inside buffers, queues and ports.
+Typically the firing of transitions will depend not
+on fine detail of what is inside,
+but on what can be represented by a much smaller collection of kinds.
+For example,
+if the firing of one transition depends on an integer being less that 100,
+and the firing of another transition depends on its being less than 10000,
+then as far as the verifier need be concerned there are just three kinds.
+<P>
+<EM>Reading</EM>:
+A large number of sophisticated systems somewhat similar
+to  Netver are described in the collection
+edited by Sifakis (1990).
+
+</body>
+</HTML>
+

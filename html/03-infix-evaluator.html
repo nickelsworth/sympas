@@ -1,0 +1,458 @@
+<HTML>
+<head>
+<TITLE>SYMBOLIC PROCESSINGS IN PASCAL - Chapter 3</TITLE>
+</head>
+
+<body>
+
+<H1>Infix evaluator</H1>
+<P>
+In the previous chapter we wrote a translator,
+in this chapter we shall write an evaluator.
+Arithmetical expressions such as <CODE>2 + 3</CODE> have a value, here <CODE>5</CODE>;
+and expressions such as <CODE>x + y</CODE> have a value which depends
+on the values of the variables.
+The same holds of logical formulas such as <CODE>p & q</CODE>,
+which is true if p is true and q is true, otherwise it is false.
+To avoid complications with propositional variables,
+we shall only use two constants: <CODE>0</CODE> and <CODE>1</CODE>,
+for <CODE>FALSE</CODE> and <CODE>TRUE</CODE>.
+Then for example the formula <CODE>1 & 0</CODE> is false,
+and we say that its value is <CODE>0</CODE>.
+The evaluator uses infix notation,
+but to keep the implementation as simple as possible,
+outer parentheses may not be omitted.
+<H2>User manual</H2>
+<P>
+The program INFEVL evaluates logical formulas in infix notation.
+When the program is ready to read a formula,
+it provides the prompt:
+<XMP>
+        Formula :
+</XMP>
+and then it expects a formula of propositional logic
+<XMP>
+formula  ::=
+        '0' | '1' |
+        '-' formula |
+        '(' formula ( 'v' | '&' | '>' | '=' ) formula ')'
+</XMP>
+The program ignores white space such as blanks, tabs or newlines.
+When the reading of the formula is completed,
+the program writes the value of the formula in the form
+<XMP>
+        Value  : x
+</XMP>
+where x is either <CODE>0</CODE> or <CODE>1</CODE>.
+Then the program writes a new prompt.
+Evaluation of formulas is defined recursively,
+for atomic and for compound formulas.
+Atomic formulas <CODE>0</CODE> and <CODE>1</CODE> evaluate to themselves.
+Compound formulas are evaluated in accordance with the
+following truth tables,
+where <CODE>p</CODE> and <CODE>q</CODE> are arbitrary formulas,
+and the columns below give their values:
+<XMP>
+Unary Operator
+    p   |       -p
+    ----+---------
+    0   |       1
+    1   |       0
+</XMP>
+<XMP>
+Binary Operators
+    p q   |     p v q   p & q   p > q   p = q
+    ------+----------------------------------
+    0 0   |       0       0       1       1
+    0 1   |       1       0       1       0
+    1 0   |       1       0       0       0
+    1 1   |       1       1       1       1
+</XMP>
+<P>
+If during the reading of a formula an error is detected,
+an error message is given.
+If the offending character is <CODE>"X"</CODE>,
+then the message will be one of
+<XMP>
+Error : seen "X" when "&","v",">" or "=" expected
+Error : seen "X" when "0","1","-" or "(" expected
+Error : seen "X" when ")" expected
+</XMP>
+depending on where in the parse the error occurs.
+The program terminates when it reaches
+the end of the input file;
+if this occurs in the middle of a formula then no error
+message is given.
+The following is an example run of the program.
+The second last formula is here written over several lines,
+and the last input line contains an intentional error.
+<XMP>
+Formula : 1
+Value   : 1
+Formula : (1 & (1 > 0))
+Value   : 0
+Formula : (             0 =     (1 = 0  ) )
+Value   : 1
+Formula : (
+            (1 = 1)
+          &
+            (1 > 0)
+          )
+Value   : 0
+Formula : ( 1 ? 0 )
+  Error : seen "?" when "v","&",">" or "=" expected
+</XMP>
+To exit the program one types <CODE>^C</CODE> (control-<CODE>C</CODE>).
+<H2>Designing the implementation</H2>
+<P>
+If you have understood our previous program,
+then this one should not be difficult.
+But perhaps you should read about
+parameters of procedures, both value parameters and variable parameters.
+Also, you need to know about type declarations.
+The main program is very simple --- essentially it is just a loop
+for writing the prompt, reading and evaluating a formula,
+and writing the value.
+Nominally the loop goes on forever.
+Before and after the loop we need two labels to jump
+to: the first when an error has been detected,
+the second when the end of the file has been reached.
+The reading and the evaluating of a formula is done by
+a procedure called <CODE>infix</CODE>.
+It is best to design it first without the evaluation part in mind.
+<P>
+In infix notation there are essentially three places
+where a user might have inserted blanks:
+before a formula, before an infix operator,
+and before a closing parenthesis.
+At each of these places procedure <CODE>infix</CODE>
+must be prepared to skip characters up to the next
+printing character.
+This is best done by a local procedure <CODE>getch</CODE>,
+when it returns the last printing character is in a local variable.
+The body of <CODE>infix</CODE> follows the BNF grammar for infix notation
+almost to the letter.
+But there are three places where errors can occur:
+at the beginning of a formula, where an infix operator
+should be, and where a closing parenthesis <CODE>)</CODE> should be.
+The error reporting is best done by a local
+procedure <CODE>error</CODE>,
+which has to be told what the specific error message is.
+The two local procedures <CODE>getch</CODE> and <CODE>error</CODE>
+have bodies that are essentially familiar
+from our previous program.
+The procedure <CODE>error</CODE> has a (value) parameter
+which is that part of the error message
+which differs on its three possible calls.
+Note that the type of the message parameter
+has to be given globally in a type declaration.
+<P>
+As described up to this point,
+procedure <CODE>infix</CODE> does not do any evaluating.
+If you are writing the program yourself,
+you are strongly urged to write the program
+exactly up to here ---
+all it can do is eat up characters and sometimes complain.
+The evaluation part then comes as a refinement which
+we describe next.
+To begin with,
+every subformula has a value,
+and the whole formula has a value.
+Procedure <CODE>infix</CODE> has to compute this value,
+and when it has done so,
+it has to put the value somewhere
+for use later --- by itself if the call was recursive,
+by the main program if the call was from the main program.
+So we give procedure <CODE>infix</CODE> a so-called variable or
+<CODE>VAR</CODE> parameter
+which has to be of type Boolean.
+When <CODE>infix</CODE> reads an atom
+it sets this parameter to false or true respectively.
+When <CODE>infix</CODE> reads a negation,
+it calls itself,
+but with a local variable of type boolean,
+and when that returns it sets the parameter to the opposite
+value of what that local value is.
+When <CODE>infix</CODE> reads a parenthesis,
+it calls itself with one local variable,
+then it has to read the infix operator and remember it,
+then it calls itself with another local variable.
+Depending on what the remembered operator was,
+it then sets the parameter to a value
+computed from the two local variables.
+<P>
+Beginning programmers often have difficulty with
+computing Boolean values,
+probably because they do a lot of numeric programming
+and encounter Boolean expressions only inside
+<CODE>IF</CODE>'s and <CODE>WHILE</CODE>'s, and then in the form <CODE>i = 0</CODE> or the like.
+In the infix evaluator,
+suppose the parameter to be set is <CODE>x</CODE>,
+and the two local variables are <CODE>y</CODE> and <CODE>z</CODE>.
+Then for the remembered operator for material equivalence <CODE>=</CODE>,
+a logically correct way of setting the parameter
+to its value computed from the two local variables is this:
+<XMP>
+        IF  y = true AND z = true  OR  y = false AND z = false
+            THEN x := true
+            ELSE x := false
+</XMP>
+Apart from syntax errors which the Pascal compiler will pick up,
+the statement reveals three independent and deep misunderstandings
+of the data type Boolean.
+If you cannot spot all four points,
+you should consult a good text book.
+<P>
+For the remembered material equivalence operator <CODE>></CODE>
+the situation is very similar.
+You might initially write a complex <CODE>IF</CODE> statement
+when actually a simple assignment statement will do.
+<H2>The program</H2>
+<P>
+The following is the standard Pascal source program
+for the infix evaluator.
+<XMP>
+PROGRAM infix_evaluator(input,output);
+
+LABEL 1, 99;
+
+VAR
+    value : boolean;
+
+PROCEDURE infix(VAR x : boolean);
+
+TYPE   message = PACKED ARRAY [1..30] OF char;
+
+VAR ch,oper : char; y,z : boolean;
+
+    PROCEDURE getch;
+    BEGIN (* getch *)
+    REPEAT
+        IF eof THEN GOTO 99;
+        read(ch)
+        UNTIL ch > ' '
+    END; (* getch *)
+
+    PROCEDURE error(mes : message);
+    BEGIN (* error *)
+    writeln('  ERROR : seen "',ch,'" when ',mes);
+    readln;
+    GOTO 1
+    END; (* error *)
+
+BEGIN (* infix *)
+getch;
+CASE ch OF
+    '0' :
+        x := false;
+    '1' :
+        x := true;
+    '-' :
+        BEGIN
+        infix(z);
+        x := NOT z
+        END;
+    '(' :
+        BEGIN
+        infix(y);
+        getch;
+        IF NOT (ch IN ['&','v','>','=']) THEN
+            error('"&","v",">" or "=" expected   ');
+        oper := ch;
+        infix(z);
+        getch;
+        IF ch &lt;> ')' THEN
+            error('")" expected                  ');
+        CASE oper OF
+            '&' : x := y AND z;
+            'v' : x := y OR z;
+            '>' : X := y &lt;= z;
+            '=' : x := y = z;
+            END (* CASE *)
+        END;
+    OTHERWISE
+        error('"0","1","-" or "(" expected   ');
+    END (* CASE *)
+END; (* infix *)
+
+BEGIN (* main *)
+1: REPEAT
+    write('Formula : ');
+    infix(value);
+    writeln('Value   : ', ord(value):1)
+    UNTIL false;
+99:
+END.
+</XMP>
+Strictly speaking it is not necessary to have the two local variables
+<CODE>y</CODE> and <CODE>z</CODE> in procedure <CODE>infix</CODE>,
+just one will do, say <CODE>z</CODE>.
+Then for the formulas beginning with a parenthesis
+the first recursive call has to be made <CODE>infix(x)</CODE>,
+and the four cases changed accordingly.
+But the saving does not justify even these few lines of explanation.
+\fi
+<H2>Exercises and reading</H2>
+<P>
+<EM>No GOTO</EM>:
+Rewrite the program without GOTO.
+<P>
+<EM>Prefix notation</EM>:
+Write an evaluator for logical expressions in prefix
+notation.
+You should write the parser first,
+and you might well do so by <EM>cannibalising</EM>
+the program from the previous chapter.
+Of course you will have to replace the atoms <CODE>a</CODE> .. <CODE>z</CODE>
+by <CODE>0</CODE> and <CODE>1</CODE>.
+Write a manual, too.
+A more ambitious project is to write an evaluator
+for Cambridge notation.
+<P>
+<EM>End of file</EM>:
+Neither this program nor the one in the previous chapter
+treats end of file inside a formula well:
+there really should be an error message.
+But how can you then deal with end of file
+when the user has finished?
+Devise some method and implement it.
+Change the manual where appropriate.
+<P>
+<EM>Translator</EM>:
+Write a translator from fully parenthesised
+infix notation to prefix notation.
+This is one of the translation problems mentioned at the end
+of the previous chapter which involved shifting operators
+forward.
+>From fully parenthesised infix notation it is not all that hard.
+<P>
+<EM>No outermost parentheses</EM>:
+It would be nice if the outermost parentheses of formulas
+could be omitted. What problems do you foresee?
+You should keep in mind that users might want to write
+a formula over several lines,
+and also that they write trailing blanks on the same line.
+Discuss these problems, and propose a solution.
+<P>
+<EM>Minimising Parentheses</EM>:
+When there are long conjunctions etc.
+the infix notation used here forces users to write
+a Lot of Irritating Silly Parentheses.
+For example, assuming that
+<CODE>p</CODE>, <CODE>q</CODE>, <CODE>r</CODE>, <CODE>s</CODE> are formulas,
+instead of <CODE>p & q & r & s</CODE>
+one has to write <CODE>((p & q) & (r & s))</CODE>
+or something like that.
+Can you fix the program
+so that it allows operator precedences
+described in the exercises of the previous chapter?
+Does your method work for <CODE>p > q > r > s</CODE>,
+which users would want to read as <CODE>p > (q > (r > s))</CODE>?
+If you cannot change the program,
+at least change the manual.
+<P>
+<EM>An evaluation grammar</EM>:
+In the previous chapter we saw
+a translation grammar for simultaneously specifying
+the syntax of one language and its translation into another.
+Try to devise a method
+which can be used to simultaneously specify both the syntax
+of infix formulas and their value.
+For some advanced reading,
+see Lewis, Rosenkrantz and Stearns (1978) on translation grammars
+and attribute grammars.
+For an exceptionally successful attempt at writing
+semi-formal specifications without much need for explaining
+the specification language,
+see Lieberman (1987).
+Another excellent self-explanatory semi-formal technique,
+this time for a functional language,
+is used throughout the book by
+Glaser, Hankin and Till (1984).
+<P>
+<EM>Values of subformulas</EM>:
+Change either the basic evaluator or any of its
+more elaborate versions so that it writes
+the value of <EM>each</EM> subformula underneath its operator.
+<P>
+<EM>Arithmetic</EM>:
+Write an evaluator for arithmetical expressions
+with just a few basic operations.
+You should ensure that all possible user errors
+are treated properly.
+Write a manual.
+<P>
+<EM>A Small APL</EM>:
+A sophisticated language with heavy emphasis on array processing
+is APL.
+For example, the expression <CODE>1 2 3 + 10 20 30</CODE>
+denotes the addition of two arrays of three numbers each,
+and its value is the array <CODE>11 22 33</CODE>.
+Study a manual for APL (but do not be put off by the fancy characterset),
+and then design and implement a very small subset,
+but including at least array operations as in the example.
+Note that whereas for evaluators of logical or arithmetical
+expressions the values can always be returned in <CODE>VAR</CODE>
+parameters,
+this technique does not work when the values are
+arrays of arbitrary sizes.
+<P>
+<EM>A SET evaluator</EM>:
+Design a notation for expressions in which the basic values
+are not truth values or numbers or arrays of numbers,
+but sets of lower case letters.
+You need notations for sets given by enumeration of their members,
+for the nullset and the universal set,
+for complementation, intersection, union and difference.
+The four last mentioned operations should have some
+reasonable precedences to minimise the need for parentheses.
+Write a manual, design the program, write the program.
+<P>
+As a further refinement, add relational operators
+for inclusion and equivalence of sets ---
+note that these return logical values.
+Once there are logical values,
+it seems natural to add the truth functional connectives, too.
+Give a lot of thought to the precedences
+of 1)~the logical connectives,
+2)~the relational operators,
+and 3)~the set operations.
+<P>
+<EM>Evaluators in other domains</EM>:
+You are in a city in which all streets run either north-south
+or east-west.
+Any movement you can make is in one of the four directions,
+north, south, east and west --- taken to mean up to the next
+intersection.
+Call these moves <CODE>N</CODE>, <CODE>S</CODE>, <CODE>E</CODE> and <CODE>W</CODE>,
+and a sequence of moves is written in the order of the moves,
+e.g. <CODE>NES</CODE> means moving north, then east, then south.
+Clearly that move is equivalent to just moving east.
+Similarly, <CODE>NENWWS</CODE> is equivalent to <CODE>WN</CODE>.
+Write a program which reads sequences of moves
+and then writes a minimal sequence which is equivalent to it.
+Note that often there will be several equivalent minimal sequences,
+so some decision is needed as to which of the
+equivalent minimal sequences is written out.
+<P>
+In modal logic there are three unary operators,
+for negation, possibility and necessity.
+Assume that they are written as the characters <CODE>-</CODE>, <CODE>P</CODE> and <CODE>N</CODE>.
+In some modal logics different sequences of the unary operators
+can be equivalent,
+in the sense that when they operate on the same formula
+then the resulting formulas are logically equivalent.
+For example, in most modal logics <CODE>-N-</CODE> is equivalent to <CODE>P</CODE>,
+and <CODE>-P-</CODE> is equivalent to <CODE>N</CODE>,
+and in many modal logics <CODE>NP</CODE> and <CODE>PP</CODE> are equivalent to <CODE>P</CODE>.
+Study some modal system, and write a program
+which reduces sequences of unary operators to an equivalent minimal form.
+Alternatively, write a program which does the same for
+a temporal logic, in which the unary operators
+are negation, always (in the future), sometimes (in the future)
+and next (instant in time).
+The idea of writing a program for reducing modalities
+was suggested to me by Rory Deutsch.
+
+</body>
+</HTML>

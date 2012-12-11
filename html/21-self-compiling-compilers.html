@@ -1,0 +1,1657 @@
+<HTML>
+<head>
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Chapter 21</TITLE>
+</head>
+
+<body>
+
+<H1>Self-compiling compilers</H1>
+<P>
+In previous chapters several compilers for very small languages
+have been designed,
+but none of these languages were suitable for writing their own compilers.
+In this chapter several self-compiling compilers are described.
+The later ones were <EM>bootstrapped</EM> from the earlier ones.
+<H2>Introduction</H2>
+<P>
+This section describes some of the general notions
+of self-compilations,
+and some language specific background.
+<H3>General</H3>
+<P>
+Compilers for large languages can be formidable,
+especially if they are to generate efficient code for
+a language that is conceptually very different from
+the machine for which instructions are to be generated.
+On the other hand, compilers for small languages
+can be very small indeed,
+especially if they are to produce code for a machine that has
+precisely the sort of operations which the language requires.
+This occurs for example when compiling code for a virtual machine,
+where this virtual code is either interpreted by a software interpreter,
+or further compiled into some actual machine code.
+<P>
+Almost any large universal language is suitable for
+reading strings of input characters,
+manipulating various tables,
+and writing either strings of output characters
+or sequences of instructions for some target machine.
+Hence almost any such language will be suitable for writing compilers.
+The ease with which this can be done depends
+on how well the complexities of the two languages are matched:
+the simpler the language that is to be compiled,
+the easier it is to write a compiler for it in a given language;
+the simpler the language in which the compiler is to be written,
+the harder it is to write a compiler in it for a given language.
+<P>
+If a language is suitable for writing compilers,
+then it becomes possible to write a compiler for
+the language in the language itself.
+In that case the compiler will be as large as the language it compiles.
+None of the languages that we compiled in earlier chapters were suitable
+for writing their own compilers.
+Even the largest compiler mentioned in the reading of Chapter~14,
+Wirth's Pascal-S, cannot compile itself.
+The smallest self-compiling Pascal compiler is the P-code compiler
+that has been used to bootstrap most of the early Pascal compilers.
+But because Pascal is fairly large,
+any Pascal compiler will be quite large.
+<P>
+But a self-compiling compiler need not be large at all.
+If the language that it compiles is minimally adequate
+to describe its own syntax and semantics,
+then the compiler itself can be very small indeed.
+This chapter describes a sequence of self-compiling
+compilers taking character string inputs and
+producing character string outputs.
+As presented here, the compilers produce code for the DEC editor TECO;
+but it would be easy to change the target language.
+Both the source and the target forms of the compilers
+are included in the text.
+<P>
+The remainder of this chapter contains a description
+of a family of quite simple string languages,
+HITECO~1, HITECO~2, HITECO~3 and HITECO~4
+and their self-compiling compilers.
+They are <EM>not</EM> compatible, but they are evolutionary steps.
+The four files containing both the source and their target
+forms of the compilers are respectively
+7, 12, 17 and 26 blocks (of 512 bytes) long.
+
+<H3>The source language and the target language</H3>
+<P>
+This section describes some common features of
+all the HITECO source languages
+and some general features of the TECO target language.
+<P>
+The first source language HITECO 1 was chosen so as to be as small
+as possible,
+to the extent that this was compatible with self-compilation.
+Obviously a fast parsing algorithm was wanted,
+so a deterministic parser was required.
+In turn, this implied the LL1 condition:
+that all alternatives begin with distinct keywords.
+<P>
+The later languages evolved in a natural way:
+First new features were seen to be desirable,
+so the features were added to the existing compiler.
+At this point the compiler could compile a somewhat larger language,
+but it did not itself use the new features.
+Second the new compiler was rewritten so that it now used the new features
+and could still compile itself.
+Sometimes, in a third step, earlier features were removed
+because they were no longer needed,
+or because they had been replaced by better ones.
+This bootstrapping process is described in
+more general terms in a later section.
+<P>
+The source languages were to a large extent influenced by the initial
+target language TECO,
+a utility supplied by Digital Equipment Corporation.
+TECO began its life a mere interactive editor,
+but it has evolved into a powerful string processing language.
+Interactive usage requires brief commands,
+so, because of its origins, TECO programs are very compact.
+As a result, longer programs tend to be difficult to decipher
+a week after they have been written.
+All this means that TECO can be seen as a barely legible machine language
+for a powerful string processing machine;
+it needs a high level version which would be easier to read.
+<P>
+The remainder of this section should be skipped by readers who
+are only interested in HITECO as a source language.
+<P>
+TECO supports the types integer, character and strings of characters.
+There is a distinguished string, the editing buffer,
+and most operations apply to it,
+including input and output to files.
+In addition, there are a number of registers
+containing single integers or single characters,
+or strings of characters.
+<P>
+Among the operations applicable to the editing buffer are
+anchored searches.
+These are a special kind of search which requires the search string
+to be matched beginning at the current pointer position.
+If there is a successful match,
+then the pointer moves and the search returns success
+which can be used in a conditional.
+If there is no immediate match,
+then the pointer is not moved.
+Anchored searches are an ideal mechanism for LL1 parsing;
+and for that reason all versions of HITECO
+require the source language program to reside in the editing buffer.
+Strings can be inserted anywhere in the editing buffer,
+and they can be appended to registers.
+But compilation requires an alternation of
+inspecting source language program and
+generating target language program.
+If the editing buffer were used to hold the code
+that is generated,
+then the editing pointer would have to alternate between
+pointing to a position in the source and
+pointing to a position in the target.
+So it is simpler to generate code by appending it to registers.
+<P>
+When a compiler is compiling itself it is
+executing procedures which are located somewhere,
+and it generates code for its own procedures.
+If it were placing its generated code directly
+into the positions in memory that are executing,
+then it would be adding code to the registers that are
+supposed to be executing at the time.
+So any code that is generated has to be placed elsewhere
+(and TECO's register 9 was chosen arbitrarily for this purpose).
+It is not strictly true that executable code
+is generated by HITECO,
+instead it is a program which, when executed,
+will distribute real code to where it is needed.
+So the compiler really generates code for a crude absolute loader
+(the code is compiled into TECO's register 9;
+the loading is then done by TECO itself,
+by the command <CODE>M9</CODE>).
+<H2>A small self-compiling compiler</H2>
+<P>
+The first generation in the HITECO family
+consists of very small string to string translator written
+in itself and producing TECO code.
+Some of the design decisions are discussed,
+and both the HITECO and the TECO versions of the translator are given.
+HITECO 1 is adequate for expressing simple grammmatical
+constructions for a language in which the terminals are
+symbols.
+It does not have conventional flow of control,
+nor does it have data structures,
+and it cannot manipulate characters
+except by treating them as short symbols.
+<H3>Rationale for HITECO 1</H3>
+<P>
+This first version of HITECO
+was designed in such a way that the parser does not even know
+whether it is reading a stream of characters or a stream of symbols.
+The initial version of HITECO was designed with
+the target machine in mind.
+Even extended BNF is not ideally suited for
+simple deterministic parsing
+which does not know about single characters.
+HITECO contains the same kinds of constructions as BNF,
+except that a sequence of alternatives is signalled by <CODE>CHOICE</CODE>,
+each alternative is preceded by <CODE>WHEN</CODE>
+and has to be followed by a quoted terminal and then a statement,
+the sequence is terminated by <CODE>OTHERWISE</CODE> and an error message,
+inside a concatenation a compulsory quoted terminal
+is flanked by <CODE>CHECK</CODE> and an error message,
+the indefinite repetition is signalled by <CODE>REP</CODE>
+which has to be followed by a quoted terminal and then a statement,
+and there is an explicit concatenation operator <CODE>;</CODE>,
+and round parentheses may be used for grouping.
+<P>
+The grammar uses only one non-terminal <CODE>STATEMENT</CODE>.
+In the extended BNF which is used below,
+quotations denote their content,
+juxtaposition denotes concatenation,
+the vertical bar denotes alternation,
+and the square brackets denote indefinite repetition of what they enclose.
+<XMP>
+STATEMENT ::=
+        "STATEMENT" |
+        "VARIABLE" |
+        "QUOTE" |
+        "CODE" |
+        "MESSAGE" |
+        "PUT"
+            CODE |
+        "CHECK"
+            QUOTE
+            MESSAGE |
+        "REP"
+            QUOTE
+            STATEMENT |
+        "("
+            STATEMENT
+            [";"
+                STATEMENT]
+            ")" |
+        "LET"
+            VARIABLE
+            "="
+            STATEMENT |
+        "CHOICE"
+            ["WHEN"
+                QUOTE
+                STATEMENT]
+            "OTHERWISE"
+            MESSAGE
+</XMP>
+<P>
+As may be seen from the above,
+a statement is either one of the five single terminals
+<CODE>STATEMENT</CODE>, <CODE>VARIABLE</CODE>, <CODE>QUOTE</CODE>,
+<CODE>CODE</CODE>, <CODE>CODE</CODE>  or <CODE>MESSAGE</CODE>,
+or is the terminal <CODE>PUT</CODE> followed by code,
+or it is the terminal <CODE>CHECK</CODE> followed by a quote and a message,
+or it is the terminal <CODE>REP</CODE> followed by a quote and then a statement,
+or it is the terminal <CODE>LET</CODE> followed by a variable,
+then the terminal <CODE>=</CODE> and then a statement,
+or it is the terminal <CODE>(</CODE> followed by one or more statements
+separated by the terminal <CODE>;</CODE> and terminated by the terminal <CODE>)</CODE>,
+or it is the terminal <CODE>CHOICE</CODE>
+followed by zero or more sequences consisting of the
+terminal <CODE>WHEN</CODE>, then a quote and then a statement,
+followed by the terminal <CODE>OTHERWISE</CODE> and a message.
+(Note that <CODE>STATEMENT</CODE> is a non-terminal,
+whereas <CODE>STATEMENT</CODE> is a terminal.)
+<H3>The HITECO source code</H3>
+<P>
+The HITECO 1 source code consists of one page of text.
+It is a single <CODE>LET</CODE> statement which places a single
+<CODE>CHOICE</CODE> statement into register A.
+There are 11 <CODE>WHEN</CODE> clauses corresponding to the 11
+alternatives in the grammar.
+Each WHEN clause consists of a head and a body.
+The head consists of a source quote: <CODE>PUT</CODE>, <CODE>(</CODE>,
+<CODE>CHECK</CODE>, <CODE>REP</CODE> etc., and the bodies consist of simple
+statements or of compound statements enclosed
+in parentheses.
+Simple statements occur for <CODE>PUT</CODE>, <CODE>STATEMENT</CODE>,
+<CODE>VARIABLE</CODE>,
+compound statements occur for <CODE>(</CODE>, <CODE>CHECK</CODE>,
+<CODE>REP</CODE>, <CODE>LET</CODE> etc.
+Most of the statements are simple <CODE>PUT</CODE> statements
+which generate code.
+Of the remainder,
+the simple ones are either recursive calls to <CODE>STATEMENT</CODE>,
+or calls to procedures in the run time support:
+<CODE>QUOTE</CODE>, <CODE>CODE</CODE>, <CODE>MESSAGE</CODE> and <CODE>VARIABLE</CODE>.
+The composite statements are <CODE>REP</CODE> or <CODE>CHECK</CODE> constructions,
+or they are compound statements enclosed in parentheses.
+The <CODE>CHOICE</CODE> statement and the <CODE>LET</CODE> statement are composite too.
+To enhance readability,
+all <CODE>PUT</CODE> statements have been placed towards the right,
+by ignoring them and only reading what is on the left
+one gets the syntax of HITECO without the messy code
+that has to be generated.
+<XMP>
+LET A =
+  CHOICE
+    WHEN "STATEMENT"     PUT "@:^U9'MA'"
+    WHEN "VARIABLE"      PUT "@:^U9'M3'"
+    WHEN "QUOTE"         PUT "@:^U9'1M7'"
+    WHEN "CODE"          PUT "@:^U9'0M7'"
+    WHEN "MESSAGE"       PUT "@:^U9'0M7'"
+    WHEN "PUT"
+      CODE
+    WHEN "CHECK"        (PUT "@:^U9'@::S'";
+      QUOTE;             PUT '@:^U9%"SM6% @:^U9%~      |M5% 1@:^U9%%';
+      MESSAGE;           PUT "1@:^U9%%@:^U9%'%" )
+    WHEN "REP"          (PUT "@:^U9'<@::S'";
+      QUOTE;             PUT "@:^U9';M6'";
+      STATEMENT;         PUT "@:^U9'>'" )
+    WHEN "("
+      (STATEMENT;
+      REP ";"
+        STATEMENT;       PUT "~      ";
+      CHECK ")"
+        "')' expected in compound statement" )
+    WHEN "LET"          (PUT "@:^U9'@^U'";
+      VARIABLE;          PUT "47@:^U9%% M4 @:^U9%  %~      ";
+      CHECK "="
+        "'=' expected in let statement ";
+                         PUT "~      ";
+      STATEMENT;         PUT "47@:^U9%% M4" )
+    WHEN "CHOICE"       (PUT "@:^U9'<'";
+      REP "WHEN"         (PUT "M4@:^U9'    @::S'";
+        QUOTE;            PUT '@:^U9%"SM6% M4~      @:^U9%      %';
+        STATEMENT;        PUT "@:^U9%0;'%" );
+                         PUT "~      M4";
+      CHECK "OTHERWISE"
+        "'OTHERWISE' expected in choice statement";
+                         PUT '~      @:^U9%    M5% 1@:^U9%%';
+      MESSAGE;           PUT "1@:^U9%%@:^U9'0;>'")
+    OTHERWISE
+      "illegal in statement"
+</XMP>
+<P>
+TECO is just about an ideal processor for HITECO;
+this is not surprising
+since HITECO was designed for that purpose.
+Nevertheless it was found convenient to augment TECO
+with five small procedures which act as run-time support:
+<P>
+The first one handles quotes, codes and messages:
+essentially it remembers the first printing character which initiates the item
+and served as a quote,
+and then steps through the content of the item
+copying characters to the code until it sees the matching character
+which terminates the item.
+The next one is a simple scanner which skips blanks,
+tabs and newlines.
+The next one handles errors: it writes the current line
+up to the current parsing position,
+then it writes <CODE>==HERE=></CODE>, then it writes the rest of the line.
+The next procedure is used solely for formatting the target code
+by writing a newline without the need for the newline character
+in the source (which would spoil its appearance).
+The last procedure checks that the character at the current
+parsing position is a letter,
+otherwise it calls the error procedure and writes a message.
+<XMP>
+PUT %
+
+!    R U N   T I M E   S U P P O R T   !
+
+! QUOTE = 7 !
+@^U7/ U7 ! save parameter !
+0AU8 C Q7"NQ8@:^U9\\'
+<0A-Q8"E0;
+ |  0A-126"EM4|0A@:^U9\\'  C'>
+C Q7"NQ8@:^U9\\' M6
+/
+! scanner = 6 !
+@^U6/< 0A-32"=CF<' 0A-9"=CF<' 0A-13"=CCF<' 0; >
+/
+! error reporter = 5 !
+@^U5/^A
+^A0T^A===HERE==>^A1T
+/
+! putln = 4 !
+@^U4/13@:^U9\\10@:^U9\\
+/
+! VARIABLE = 3 !
+@^U3/0A"A 0A@:^U9\\ CM6 |M5^A VARIABLE EXPECTED ^A'
+/
+%
+ .
+</XMP>
+<P>
+Since the runtime support does not involve any recursive calls,
+it would have been possible to unfold such calls
+in the <CODE>PUT</CODE> statements inside the principal procedure <CODE>A</CODE>
+which compiles statements.
+This was not done because unfolding the many calls
+to these procedures would have made the compiler so much longer.
+However, since such a "pure" compiler would be of some
+interest, it is worth contemplating.
+<H3>The TECO target code</H3>
+<P>
+This section is specific to the TECO implementation
+of HITECO.
+Readers who are not familiar with TECO may well wish to
+skip this section.
+The TECO object code constitutes the first half
+of the file which is presented in the next section.
+It is assumed that the entire code will be executed;
+one way to do it is to put it into any arbitrary Q-register
+(say Q-register 9), and then call it (by <CODE>M9</CODE>).
+The effect will be to load portions of it into other
+Q-registers, as follows:
+The bulk of the code, for <CODE>STATEMENT</CODE> will be loaded
+into Q-register A.
+The remaining short portions constitute the run-time
+environment, they are loaded into the Q-registers
+as indicated.
+<P>
+The file contains several control-A characters
+which are not printed by the line printer.
+For that reason the file is reproduced here in the form
+TECO would type it out.
+Any control-A characters are reproduced as two characters: <CODE>^A</CODE>,
+up-arrow and A.
+In all other respects the file is exactly as shown here.
+<XMP>
+@^UA/
+  <
+    @::S"STATEMENT""SM6
+      @:^U9'MA'0;'
+    @::S"VARIABLE""SM6
+      @:^U9'M3'0;'
+    @::S"QUOTE""SM6
+      @:^U9'1M7'0;'
+    @::S"CODE""SM6
+      @:^U9'0M7'0;'
+    @::S"MESSAGE""SM6
+      @:^U9'0M7'0;'
+    @::S"PUT""SM6
+      0M70;'
+    @::S"CHECK""SM6
+      @:^U9'@::S'1M7@:^U9%"SM6% @:^U9%
+      |M5% 1@:^U9%%0M71@:^U9%%@:^U9%'%0;'
+    @::S"REP""SM6
+      @:^U9'<@::S'1M7@:^U9';M6'MA@:^U9'>'0;'
+    @::S"(""SM6
+      MA<@::S";";M6MA>
+      @::S")""SM6
+      |M5^A')' expected in compound statement^A'0;'
+    @::S"LET""SM6
+      @:^U9'@^U'M347@:^U9%% M4 @:^U9%  %
+      @::S"=""SM6
+      |M5^A'=' expected in let statement ^A'
+      MA47@:^U9%% M40;'
+    @::S"CHOICE""SM6
+      @:^U9'<'<@::S"WHEN";M6M4@:^U9'    @::S'1M7@:^U9%"SM6% M4
+      @:^U9%      %MA@:^U9%0;'%>
+      M4@::S"OTHERWISE""SM6
+      |M5^A'OTHERWISE' expected in choice statement^A'
+      @:^U9%    M5% 1@:^U9%%0M71@:^U9%%@:^U9'0;>'0;'
+    M5^Aillegal in statement^A0;>/
+
+
+!    R U N   T I M E   S U P P O R T   !
+
+! QUOTE = 7 !
+@^U7/ U7 ! save parameter !
+0AU8 C Q7"NQ8@:^U9\\'
+<0A-Q8"E0;
+ |  0A-126"EM4|0A@:^U9\\'  C'>
+C Q7"NQ8@:^U9\\' M6
+/
+! scanner = 6 !
+@^U6/< 0A-32"=CF<' 0A-9"=CF<' 0A-13"=CCF<' 0; >
+/
+! error reporter = 5 !
+@^U5/^A
+^A0T^A===HERE==>^A1T
+/
+! putln = 4 !
+@^U4/13@:^U9\\10@:^U9\\
+/
+! VARIABLE = 3 !
+@^U3/0A"A 0A@:^U9\\ CM6 |M5^A VARIABLE EXPECTED ^A'
+/
+</XMP>
+<H2>Bootstrapping</H2>
+<P>
+For all self-compiling compilers,
+the first compilation has to be done by hand,
+so that the compiler writer has to write
+both the source version and the target version.
+Then the target version can be used to machine compile the source version,
+to produce a second copy of the target version.
+If all went well,
+the two target versions should be identical.
+>From then on everything is done by bootstrapping.
+This section gives a general description of the process of bootstrapping
+compilers --- using an early form of a compiler to help produce
+a better form, and a specific description of bootstrapping
+HITECO.
+<H3>The bootstrapping process in general</H3>
+<P>
+A compiler which compiles itself can be used to compile any programs
+in the language it compiles,
+and these programs need not have anything to do with compilation.
+But if the language is small, designed for self-compilation and little else,
+then one would be hard pressed to write anything but compilers in it.
+One major use of a self-compiling compiler is as a so-called
+bootstrapping device for writing a better compiler.
+Here <EM>better</EM> can mean several things.
+In the first place, if the language it compiles is the same as the original,
+then it can mean any one of:
+1) prettier formatting of the target code, making it easier to read, or
+2) greater efficiency during the compilation process, or
+3) greater efficiency of the code that is produced.
+Note that for a compiler that is not written in itself,
+2) and 3) are quite distinct aspects of efficiency,
+and that for a self-compiling compiler
+the way to achieve 2) is to achieve 3).
+On the other hand, <EM>better</EM> can also mean a different source language
+which is
+4) easier to read, or
+5) makes the writing of the compiler easier, or
+6) has more useable features.
+The way to achieve 4) and 5) is to achieve 6).
+<P>
+The bootstrapping process consists of repeatedly applying the following steps.
+Assume that version(i) of the compiler exists in two forms,
+the source form source(i), and
+the target form target(i).
+First the current source form of the compiler is edited
+to become source(i+1).
+This new source still has to be written in the language which
+target(i) can compile,
+but it can differ either in the code generation
+or in the language which it can compile.
+The new source is compiled by target(i) to produce
+a new compiler, target(i+1).
+This can now be used in the next repetition.
+If the editing changes merely concerned improved compilation,
+then target(i+1) will produce better code,
+but it will not be faster at compiling because its
+code was generated by target(i).
+To obtain a better compiler,
+the bootstrap loop has to be repeated again,
+using source(i+1) as the input to target(i+1)
+to produce target(i+2) which will now be the improved version.
+If the code concerned modifications to the code that will be generated
+during compilation,
+then the process has to be repeated a further time
+so that the improvements eventually reach target(i+3).
+On the other hand,
+if the editing changes concern the source language,
+then the new compiler will be able to compile a new language.
+But so far nothing has been written in this new language,
+and one way to do so is to edit source(i+1) so that it is now
+written in the new language.
+At this point we have a new compiler source(i+2) for a new language,
+written in itself,
+and we have an executable form target(i+1) whose source was still written
+in the previous language.
+Another compilation produces target(i+2),
+and the bootstrap is complete.
+<P>
+A very useful check to make is the seemingly pointless self-compilation:
+use target(i) to compile source(i) producing target(i+1).
+If the compiler is stable now,
+then target(i+1) will be identical to target(i).
+If the compilation is not stable yet,
+then it may take another self-compilation to reach this point.
+But it can also happen that after one or two self-compilations
+the resultant target(i+1) or target(i+2) does not work at all;
+in that case an error has occurred earlier.
+In this way self-compilation is an important internal check.
+<H3>Bootstrap to HITECO 2</H3>
+<P>
+The first generation in the HITECO family
+consists of a very small string to string translator written
+in itself and producing TECO code.
+The second generation has its run-time support written in itself.
+Some of the design decisions are discussed,
+and both the HITECO and the TECO versions of the translator are given.
+The run time support for HITECO 1 required features
+which could not be written in HITECO 1 itself.
+The principal objective of HITECO 2 was to make it possible
+to write this runtime support in HITECO 2 itself.
+<P>
+HITECO is adequate for expressing grammmatical constructions
+for a language in which the terminals are symbols.
+It does not have conventional flow of control,
+and it cannot manipulate characters.
+But both of these are required in the run time support.
+So, these features were added to HITECO2.
+<P>
+HITECO2 can be described by a grammar with three nonterminals:
+<CODE>STATEMENT</CODE>, <CODE>CONDITION</CODE> and <CODE>EXPRESSION</CODE>.
+The compiler for HITECO1 consists of just one procedure,
+and a single <CODE>PUT</CODE> statement for generating the runtime support.
+For HITECO2 the source code consists of a total of eight
+procedures written entirely in HITECO2.
+Each procedure is defined by a <CODE>LET</CODE> statement.
+The procedures for parsing the three non-terminals
+<CODE>STATEMENT</CODE>, <CODE>CONDITION</CODE>  and <CODE>EXPRESSION</CODE>
+are located in the alphabetic registers <CODE>A</CODE>, <CODE>B</CODE> and <CODE>C</CODE>,
+respectively.
+A grammar for HITECO2 is easily reconstructed from the source
+by reading <CODE>LET A = ..</CODE> as <CODE>STATEMENT ::= ..</CODE>,
+<CODE>LET B = ..</CODE> as <CODE>CONDITION ::= ..</CODE>, and
+<CODE>LET C = ..</CODE> as <CODE>EXPRESSION ::= ..</CODE>.
+The bodies of the three rules should be easy enough to
+reconstruct by ignoring the right half of the page with
+the code generation.
+<P>
+The run-time support for HITECO2 is almost identical
+to that of HITECO1, except that it is now written in HITECO2 itself.
+There are five procedures in the run-time support,
+and their code is located in registers 3, 4, 5, 6 and 7.
+<P>
+The largest and most important compiling procedure is for <CODE>STATEMENT</CODE>,
+and it is essentially an enriched version of the single
+compiling procedure for HITECO1.
+Some of the inbuilt atomic statements correspond to non-terminals,
+including <CODE>STATEMENT</CODE> itself.
+The execution of such atoms generates code.
+An entirely new atomic statement is the assignment statement,
+which had to be made of the form <CODE>MOVE e TO v</CODE>,
+where <CODE>e</CODE> is an expression and <CODE>v</CODE> is a variable name consisting
+of a single letter or digit.
+The new flow of control statements include a conventional <CODE>IF_THEN</CODE>
+statement with an optional <CODE>ELSE</CODE> part,
+and a new <CODE>LOOP</CODE> statement with <CODE>EXIT</CODE>s.
+<P>
+The condition of the <CODE>IF</CODE> part of a conditional is handled by a separate
+compiling procedure;
+conditions consist of a numeric expression followed either by one of
+three comparison operators and then another expression,
+or by one of three postfix predicates which are true
+if the value of the expression is an ASCII code for a letter,
+a digit, or either of the two.
+The last is needed because the compiler cannot handle more general
+disjunctions.
+<P>
+An expression is either a number, recognised by its initial leading digit,
+or the value of the inbuilt special variable <CODE>CH</CODE>
+representing the numeric <CODE>ASCII</CODE> value of the currently visible character
+as seen by the scanner,
+or a variable whose value is in a <CODE>REGISTER</CODE>,
+or a parameter of a procedure.
+<P>
+The procedure which the <CODE>LET</CODE> statement
+puts into register 7 is invoked in <CODE>STATEMENT</CODE>
+by <CODE>QUOTE</CODE>, <CODE>CODE</CODE> and <CODE>MESSAGE</CODE>.
+It takes a parameter which is either 0 or 1 or 2,
+and the value of that parameter determines whether
+the quotation symbol of the source
+is used for the code or not:
+As may be seen in <CODE>STATEMENT</CODE>,
+<CODE>CODE</CODE> uses parameter 0,
+and in this case the quotation symbols are stripped off,
+<CODE>QUOTE</CODE> uses parameter 1,
+and in this case the quotation symbols are retained,
+and <CODE>MESSAGE</CODE> uses parameter 2,
+and in this case <CODE>^A</CODE> (control-A) is used as the quotation symbol.
+<P>
+The procedure which the <CODE>LET</CODE> statement
+puts into register 6 is the scanner which
+uses the inbuilt procedure <CODE>GETCH</CODE> to skip
+one character for spaces and tabs, and two characters
+for carriage returns --- the other character skipped
+is the line feed.
+The conditional is in a loop,
+the inbuilt procedure <CODE>RESTART</CODE> sends control back
+to the beginning of the loop,
+and the inbuilt procedure <CODE>EXIT</CODE> sends control
+beyond the end of the loop.
+<P>
+The procedure which the <CODE>LET</CODE> statement
+puts into register 5 is the error
+reporter; it writes a new line to the terminal,
+the beginning of the current line being parsed,
+an arrow to the current parsing position,
+and the remainder of the current line.
+The procedure which the <CODE>LET</CODE> statement
+puts into register 4 merely writes
+a new line to the object code.
+The procedure which the <CODE>LET</CODE> statement
+puts into register 3 checks that the
+current character being scanned is
+a symbol constituent --- essentially a letter or a digit.
+<P>
+The following is the HITECO2 compiler written in HITECO2 itself.
+The target form of HITECO2 written in TECO is not given here
+because it is just an enriched form of the target form of HITECO1
+written in TECO.
+<XMP>
+LET A =
+  CHOICE
+    WHEN "GEN"                  (PUT "@:^U9\@:^U9&\";
+      CODE;                      PUT "@:^U9\&\")
+    WHEN "STATEMENT"            GEN "MA"
+    WHEN "CONDITION"            GEN "MB"
+    WHEN "EXPRESSION"           GEN "MC"
+    WHEN "VARIABLE"             GEN "M3"
+    WHEN "CODE"                 GEN "0M7"
+    WHEN "QUOTE"                GEN "1M7"
+    WHEN "MESSAGE"              GEN "2M7"
+    WHEN "NUMBER"               GEN %<0A"D0A@:^U9\\C | 0;'>M6%
+    WHEN "REP"                  (GEN "<@::S";
+      QUOTE;                     GEN ";M6";
+      STATEMENT;                 GEN ">")
+    WHEN "CHECK"                (GEN "@::S";
+      QUOTE;                     GEN '"SM6~      |M5';
+      MESSAGE;                   GEN "'")
+    WHEN "OPT"                  (GEN "@::S";
+      QUOTE;                     GEN '"SM6';
+      STATEMENT;                 GEN "'" )
+    WHEN "CHOICE"               (GEN "<";
+      REP "WHEN"                 (PUT "~      M4";  GEN "    @::S";
+        QUOTE;                    GEN '"SM6';
+                                  PUT "~      M4"; GEN "      ";
+        STATEMENT;                GEN "0;'" );
+                                 PUT "~      ";
+      CHECK "OTHERWISE" "'OTHERWISE' expected in CHOICE statement";
+                                 PUT "~      M4"; GEN "    M5";
+      MESSAGE;                   GEN "0;>")
+    WHEN "ERROR"                GEN "M5"
+    WHEN "SCAN"                 GEN "M6"
+    WHEN "GETCH"                GEN "C"
+    WHEN "RESTART"              GEN "F<"
+    WHEN "EXIT"                 GEN "0;"
+    WHEN "PUT"
+      CODE
+    WHEN "APPEND"
+      (EXPRESSION;              GEN "@:^U9\\")
+    WHEN "TYPE"
+      (EXPRESSION;              GEN "T")
+    WHEN "WRITE"
+      MESSAGE
+    WHEN "("
+      (STATEMENT;
+        REP ";"
+          STATEMENT;
+        CHECK ")" "')' expected in compound statement" )
+    WHEN "IF"                   (PUT "M4";
+      CONDITION;
+      CHECK "THEN" "'THEN' expected in conditional";
+      STATEMENT;                 PUT "~      ";
+      OPT "ELSE"                 (GEN "|";
+        STATEMENT);             GEN "'")
+    WHEN "LOOP"                 (GEN "<";
+      STATEMENT;                 GEN ">")
+    WHEN "LET"                  (GEN '@^U';
+      VARIABLE;                  APPEND 47; PUT "~      ";
+      CHECK "="  "'=' expected in let statement ";
+                                 PUT "~      M4";
+      STATEMENT;                 APPEND 47; PUT "M4M4")
+    WHEN "MOVE"
+      (EXPRESSION;
+      CHECK "TO" "'TO' expected in move statement";
+                                 GEN "U";
+      VARIABLE)
+    OTHERWISE
+      "illegal in statement"
+
+(LET B =
+  (EXPRESSION;
+  CHOICE
+    WHEN "="                    (GEN "-";
+      EXPRESSION;                GEN '"=')
+    WHEN "<"                    (GEN "-";
+      EXPRESSION;                GEN '"<')
+    WHEN ">"                    (GEN "-";
+      EXPRESSION;                GEN '">')
+    WHEN "ALPHABETIC"           GEN '"A'
+    WHEN "DIGIT"                GEN '"D'
+    WHEN "CONSTITUENT"          GEN '"C'
+    OTHERWISE "illegal predicate in condition");
+
+LET C =
+  IF CH DIGIT THEN NUMBER ELSE
+    CHOICE
+      WHEN "CH"                 GEN "0A"
+      WHEN "REGISTER"           (GEN "Q";
+        VARIABLE)
+      WHEN "PARAMETER"          PUT "  "
+      OTHERWISE "illegal in expression";
+
+LET 3 =
+  IF CH CONSTITUENT THEN
+    (APPEND CH;
+    GETCH;
+    SCAN)
+  ELSE
+    (ERROR;
+    WRITE "variable expected~");
+
+LET 4 =
+  (APPEND 13;
+  APPEND 10);
+
+LET 5 =
+  (WRITE "~";
+  TYPE 0;
+  WRITE "===HERE==>";
+  TYPE 1);
+
+LET 6 =
+  LOOP
+    (IF CH = 32 THEN (GETCH; RESTART);
+    IF CH = 9 THEN (GETCH; RESTART);
+    IF CH = 13 THEN (GETCH; GETCH; RESTART);
+    EXIT)
+)
+
+LET 7 =
+  (MOVE PARAMETER TO 7;
+  MOVE CH TO 8;
+  GETCH;
+  IF REGISTER 7 = 1 THEN APPEND REGISTER 8
+  ELSE IF REGISTER 7 = 2 THEN APPEND 1;
+
+  LOOP
+    IF CH = REGISTER 8 THEN EXIT ELSE
+      (IF CH = 126
+         THEN PUT "M4"
+         ELSE APPEND CH;
+      GETCH);
+  GETCH;
+  IF REGISTER 7 = 1 THEN APPEND REGISTER 8
+  ELSE IF REGISTER 7 = 2 THEN APPEND 1;
+  SCAN)
+ .
+</XMP>
+<H3>Bootstrap to HITECO 3</H3>
+<P>
+One of the principal shortcomings of HITECO2
+was the fact that procedures only had single character names.
+Hence the compiling procedures for <CODE>STATEMENT</CODE>, <CODE>CONDITION</CODE>
+and <CODE>EXPRESSION</CODE> were actually called <CODE>A</CODE>, <CODE>B</CODE> and <CODE>C</CODE>.
+Inside <CODE>STATEMENT</CODE>, there were three special purpose statements
+namely <CODE>STATEMENT</CODE>, <CODE>CONDITION</CODE> and <CODE>EXPRESSION</CODE>,
+which generated code to generate code to call <CODE>A</CODE>, <CODE>B</CODE> and <CODE>C</CODE>,
+but they did not actually call <CODE>A</CODE>, <CODE>B</CODE> and <CODE>C</CODE> themselves.
+So, HITECO2 looked deceptively like a recursive descent compiler,
+but it was really something else.
+To obtain a normal recursive descent compiler,
+the nonterminals of the grammar should correspond to
+compiling procedures.
+<P>
+Except for very simple grammars,
+recursive descent parsers have to satisfy quite
+strict visibility requirements.
+One way of satisfying such requirements is the use of block structure,
+as we have done in several earlier parsers and translators.
+Another way is to give forward declarations
+(as we did for ver and fal in the model generator of Chapter~14).
+This is a generally useful method,
+and HITECO3 uses it.
+A program has to begin with forward declarations
+for all procedures.
+The purpose of the forward declarations
+is to put the names of the declarations
+into a symbol table,
+and, depending on the target language,
+associate code information with the names.
+In the case of TECO target code,
+the required code information is the single letter
+name of the Q-register which contains the code for the procedure.
+After the forward declarations follow the declarations
+of the bodies of the procedures.
+The translated code for these bodies has to be placed into the Q-registers
+which were assigned to the names of the procedures
+during the forward declarations.
+In detail,
+since the translator produces code for a loader,
+the translator has to look up the symbol table
+in order to tell the loader into which Q-register to place
+the code which the translator
+is about to produce when it is translating a body.
+In the same way,
+if the body contains calls to procedures,
+the translator has to look up the symbol table
+in order to produce code for a call of TECO code in the
+right Q-register.
+Apart from the change just described,
+the language was left fairly unchanged.
+<P>
+The same process of bootstrapping was applied to HITECO2 to obtain
+a new self-compiling compiler for a language HITECO3.
+But this language was still inelegant.
+In particular,
+the <CODE>WHEN</CODE> before the individual choices
+and the <CODE>CHECK</CODE> before required symbols
+did not seem necessary from a logical point of view,
+although they had been operationally necessary
+for the simple parser that could be written in the language.
+To make the input language look more like BNF,
+<CODE>WHEN</CODE> and <CODE>CHECK</CODE> were eliminated
+in the next version, as described in detail in the next section.
+<H2>A useable self-compiling compiler</H2>
+<P>
+The fourth generation of HITECO adds several new features.
+Some of the design decisions are discussed,
+and both the HITECO and the TECO versions of the translator are given.
+<H3>A description of HITECO 4</H3>
+<P>
+A program begins with forward declarations of all procedures,
+this is necessary because nesting of procedures is not possible
+and there is mutual recursion for which the calling procedure
+has to know where the code for the called procedure is located.
+The HITECO4 compiler begins with forward declarations of 18 procedures.
+<P>
+The first compiling procedure is for the non-terminal <CODE>program</CODE>.
+Its body consists of a statement sequence,
+essentially for compiling the forward declarations
+of the procedure names
+and then the bodies of procedure declarations.
+Note that in the body of procedure <CODE>program</CODE>
+everything having to do with code generation has
+again been shifted to the
+right part of the page.
+This leaves the left half containing a relatively pure
+description of the input language.
+For example, the part for the procedure declarations says that until the
+current printing character is a period,
+the word <CODE>PROCEDURE</CODE> is required,
+and if it is not there then an error message is given which is
+constructed from the missing word and the string <CODE>program</CODE> which follows.
+The error message then will be:
+<CODE>'PROCEDURE' expected in program</CODE>.
+After the word <CODE>PROCEDURE</CODE> a procedure name is expected;
+this is handled by a separate compiling procedure.
+Following that, <CODE>=</CODE> is required,
+otherwise the error message <CODE>'=' expected in program</CODE> is given.
+As may be seen from these two examples,
+required symbols are written in double quotes,
+followed by another quotation containing another part of the
+error message.
+After the <CODE>=</CODE> a statement is expected, as described next.
+<P>
+The long compiling procedure for the non-terminal <CODE>statement</CODE>
+has as its body a single <CODE>CHOICE</CODE> statement.
+Note that the various choices all begin with a quoted string,
+which may be the currently visible symbol;
+if it is, then the body of the particular choice is entered.
+So a <CODE>CHOICE</CODE> statement is somewhat similar to a <CODE>CASE</CODE> statement.
+The first few choices are inbuilt atomic statements,
+mostly having to do with code generation.
+The next few take parameters, but they are still atomic statements ---
+they do not have further statements as parts.
+The first non-atomic statement type is the <CODE>LOOP</CODE> statement,
+consisting of the keyword <CODE>LOOP</CODE> followed by another statement.
+Typically the other statement will be a compound statement,
+consisting of several statement separated by semicolons
+and the whole enclosed in parentheses,
+typically at least one of these other statements will be
+an  <CODE>EXIT</CODE> statement or at least contain one.
+In the compiling procedure for statement,
+following the <CODE>LOOP</CODE> statement is the compound statement: <CODE>(</CODE>
+followed by a <CODE>SEQ</CODE>uence of statements <CODE>SEP</CODE>arated by <CODE>;</CODE>,
+followed by <CODE>)</CODE> --- otherwise the error
+<CODE>'=' expected in compound statement</CODE> is given.
+<CODE>SEQ</CODE>-statements are explained a little further down,
+as consisting of <CODE>SEQ</CODE> followed by a statement followed by <CODE>SEP</CODE>
+and then a quote --- the separator, such as <CODE>;</CODE> above.
+The next kind of statement is the <CODE>CHOICE</CODE> statement,
+consisting of <CODE>CHOICE</CODE>, a list of choices that are handled by
+a separate compiling procedure,
+then a compulsory <CODE>OTHERWISE</CODE>
+and a final statement.
+Note that this particular part of the compiling procedure
+for <CODE>statement</CODE> describes the structure of the statement
+which is the body of the compiling procedure.
+The remaining compound statements are mostly self-explanatory,
+except perhaps the <CODE>TO</CODE> statement, which is like a <CODE>FOR</CODE> statement
+of Pascal without the <CODE>FOR</CODE> part --- the expression is evaluated
+and its value is the number of times the <CODE>DO</CODE> part will be executed.
+<P>
+If a statement does not start with any of the explicit keyword choices,
+then the <CODE>OTHERWISE</CODE> part of the compiling procedure for statement is
+activated.
+If the current character is a double quote,
+then the characters up to the closing quote are taken
+as a required terminal --- such as <CODE>)</CODE>, <CODE>THEN</CODE>, <CODE>DO</CODE> etc.,
+and if they are not present,
+then the required terminal together with the following
+explanatory <CODE>MESSAGE</CODE> are combined to report an error.
+If the current character is a lower case letter,
+then the ensuing characters are read and used to lookup the
+table that was produced by the forward declarations.
+Following the procedure name,
+a (possibly empty) parameter list is parsed next.
+If the current character is an uppercase letter,
+then it is the name of a variable in an assignment statement,
+for which <CODE>:=</CODE> and an expression are expected next.
+<P>
+The next compiling procedure is for the non-terminal <CODE>CONDITION</CODE>.
+A condition consists either of the keyword <CODE>MATCH</CODE>
+followed by a quotation to be matched at the current parsing position,
+or of an expression followed by a predicate.
+(The first line of the body of this procedure is
+typical of the problems with self-compiling compilers:
+The first <CODE>MATCH</CODE> is already compiled, the quoted <CODE>"MATCH"</CODE>
+is what the next generation will require.)
+<P>
+The next compiling procedure is for <CODE>expression</CODE>,
+not in an ideal syntax but forced by the limited recursion facility
+of the target language TECO.
+The keyword expressions correspond mainly to
+the ASCII codes of special characters,
+or parenthesised expressions containing infix operators.
+Other expressions can be single upper case letters for variables,
+or digit strings which evaluate to numbers.
+The procedure <CODE>infix</CODE> compiles those parts of expressions
+beginning with arithmetic infix operators;
+the procedure <CODE>predicate</CODE> deals with either
+postfix predicates or comparison operators followed by expressions.
+<P>
+There are a few more compiling procedures for parameter lists
+(which the compiler does not check),
+and for three other kinds of lists ---
+those in <CODE>CHOICE</CODE>, <CODE>OPCODE</CODE> and <CODE>CASE</CODE> statements.
+<P>
+The target code consists of a number of procedure
+bodies which are stored in Q-registers:
+<XMP>
+REGISTER        PROCEDURE
+                                (compiling procedures)
+E               program
+F               statement
+G               condition
+H               expression
+M               infix
+U               predicate
+S               parameterlist
+J               listchoices
+K               listopcodes
+L               listcases
+                                (utility procedures)
+N               procedurename
+O               error
+P               scan
+Q               string
+R               outchar
+T               emit
+V               glc
+I               declaration
+</XMP>
+    To compile a HITECO 4 program, the TECO command <CODE>ME</CODE>
+has to be given.
+<H3>The HITECO 4 source</H3>
+<P>
+The following is the source:
+<XMP>
+DECLARE (* forward names of procedures *)
+  program
+  statement condition expression declaration
+  listchoices listopcodes listcases infix
+  procedurename error scan string outchar parameterlist
+  emit predicate glc .
+
+
+(* ---   C O M P I L I N G   P R O C E D U R E S   --- *)
+
+
+PROCEDURE program =
+                                        (glc(0);scan;
+  OPT "DECLARE" declaration;
+  UNTIL CH = PERIOD DO                  (TYPE(1);
+    "PROCEDURE" "program";               GEN "@^U";
+    procedurename;                       APP PROCEDUREQUOTE;
+    "=" "program";
+    statement;                           APP PROCEDUREQUOTE;
+                                         GEN "~~"))
+
+
+PROCEDURE statement =
+  CHOICE
+    "SKIP"                               SKIP
+    "GNR"                                emit
+    "NUMBER"                             GNR number
+    "VALUE"                              glc(3)
+    "GETCH"                              GEN "C"
+    "RESTART"                            GEN "F<"
+    "EXIT"                               GEN "0;"
+    "CODE"                               PRD string(0)
+    "QUOTE"                              PRD string(1)
+    "MESSAGE"                            PRD string(2)
+    "PUT"
+      CODE
+    "GEN"                               (PUT "@:^U9\@:^U9&\";
+      CODE;                              PUT "@:^U9\&\")
+    "PRD"                               (PUT "@:^U9\@:^U9&\";
+      statement;                         PUT "@:^U9\&\")
+    "RETURN"
+      expression
+    "APP"
+      (expression;                       GEN "@:^U999")
+    "SEARCH"                            (GEN "@S";
+      QUOTE)
+    "TYPE"
+      (parameterlist;                    GEN "T")
+    "LINE"
+      (parameterlist;                    GEN "L")
+    "JUMP"
+      (parameterlist;                    GEN "J")
+    "WRITE"
+      MESSAGE
+    "LASTWISH"                          (PRD error;
+      MESSAGE;                           GEN "^C")
+    "LOOP"                              (GEN "<";
+      statement;                         GEN ">")
+    "("
+      (SEQ statement SEP ";";
+      ")" "compound statement")
+    "REP"                               (GEN "<@::S";
+      QUOTE;                             GNR rep1;
+      statement;                         GEN ">")
+    "CHECK"                             (GEN "@::S";
+      QUOTE;                             GNR check1;
+      MESSAGE;                           GEN "'")
+    "OPT"                               (GEN "@::S";
+      QUOTE;                             GNR opt1;
+      statement;                         GEN "'")
+    "SEQ"                               (GEN "<";
+      statement;
+      "SEP" "sequence statement";        GEN "~  @::S";
+      QUOTE;                             GNR seq3)
+    "CHOICE"                            (GEN "<";
+      listchoices;
+      "OTHERWISE" "CHOICE statement";
+      statement;                         GEN "0;>")
+    "OPCODES"                           (GEN "<";
+      listopcodes;
+      "OTHERWISE" "OPCODES statement";
+      statement;                         GEN "0;>")
+    "WHILE"                             (GEN "<";
+      condition;                         GEN "|0;'";
+      "DO" "WHILE statement";
+      statement;                         GEN ">")
+    "UNTIL"                             (GEN "<";
+      condition;                         GEN "0;'";
+      "DO" "UNTIL statement";
+      statement;                         GEN ">")
+    "TO"
+      (expression;
+      "DO" "TO statement";               GEN "<";
+      statement;                         GEN ">")
+    "IF"                                (GEN "~";
+      condition;
+      "THEN" "conditional";
+      statement;
+      OPT "ELSE"                        (GEN "|";
+        statement);                      GEN "'")
+    "CASE"
+      (expression;                       GNR cas1;
+      "OF" "CASE statement";
+      listcases;                         GEN "!others!";
+      "OTHERWISE" "CASE statement";
+      statement;                         GEN "0;>")
+    OTHERWISE
+      IF CH = DOUBLEQUOTE THEN          (glc(1);
+        QUOTE;                           glc(2);
+        MESSAGE;                         GEN "^C'")
+      ELSE IF CH LOWERCASE THEN         (V := LOOKUP;
+        parameterlist;                   GEN "M"; APP V)
+      ELSE IF CH UPPERCASE THEN         (V := CH; GETCH;
+        scan;
+        ":=" "assignment statement";
+        expression;                     GEN "U"; APP V)
+      ELSE
+        LASTWISH "illegal in statement~"
+
+
+PROCEDURE condition =
+  IF MATCH  "MATCH" THEN                (GEN "@::S";
+      QUOTE;                             GNR opt1)
+    ELSE
+      (expression;
+       predicate)
+
+
+PROCEDURE expression =
+  CHOICE
+    "PARAMETER"                          SKIP
+    "CH"                                 GEN "0A"
+    "POINTER"                            GEN "."
+    "TAB"                                GEN "9"
+    "LF"                                 GEN "10"
+    "CR"                                 GEN "13"
+    "SP"                                 GEN "32"
+    "PROCEDUREQUOTE"                     GEN "96"
+    "NEWLINEMARKER"                      GEN "126"
+    "DOUBLEQUOTE"                        GEN '^^"'
+    "PERIOD"                             GEN "^^."
+    "LOOKUP"                             GNR look0
+    "("                                 (GEN "(";
+      expression;
+      infix;
+      ")"  "expression";                 GEN ")")
+    OTHERWISE
+      IF CH UPPERCASE
+        THEN (GEN "Q"; APP CH; GETCH; scan)
+      ELSE IF CH DIGIT
+        THEN NUMBER
+      ELSE
+        LASTWISH "illegal in expression~"
+
+
+PROCEDURE infix =
+  LOOP
+    (IF MATCH "+" THEN                  (GEN "+";
+        expression;                      RESTART);
+     IF MATCH "-" THEN                  (GEN "-";
+        expression;                      RESTART);
+     IF MATCH "*" THEN                  (GEN "*";
+        expression;                      RESTART);
+     IF MATCH "/" THEN                  (GEN "/";
+        expression;                      RESTART);
+     EXIT)
+
+
+PROCEDURE predicate =
+  CHOICE
+    "ALPHABETIC"                         GEN '"A'
+    "LOWERCASE"                          GEN '"V'
+    "UPPERCASE"                          GEN '"W'
+    "DIGIT"                              GEN '"D'
+    "CONSTITUENT"                        GEN '"C'
+    "="                                 (GEN "-";
+      expression;                        GEN '"=')
+    "<"                                 (GEN "-";
+      expression;                        GEN '"<')
+    ">"                                 (GEN "-";
+      expression;                        GEN '">')
+    OTHERWISE
+      LASTWISH "illegal predicate~"
+
+
+PROCEDURE parameterlist =
+OPT "("
+  (expression;
+  OPT ","                               (GEN ",";
+    expression);
+  ")" "parameterlist")
+
+
+PROCEDURE listchoices =
+  WHILE CH = DOUBLEQUOTE DO             (GEN "~@::S";
+    QUOTE;                               GNR opt1;
+    statement;                           GEN "0;'")
+
+
+PROCEDURE listopcodes =
+  WHILE CH = DOUBLEQUOTE DO             (GEN "~@::S";
+    QUOTE;                               GNR opt1;
+    "->" "correspondence";               GEN "@:^U9\@:^U9";
+    QUOTE;                               GEN "\0;'")
+
+
+PROCEDURE listcases =
+  WHILE CH DIGIT DO                     (GEN "!";
+    NUMBER;                              GEN "!";
+    ":" "cases";
+    statement;                           GEN "0;")
+
+
+(* ---   U T I L I T Y   P R O C E D U R E S   --- *)
+
+
+PROCEDURE procedurename =
+  (IF CH LOWERCASE THEN
+      R := LOOKUP
+   ELSE IF CH CONSTITUENT THEN
+     (R := CH; GETCH; scan)
+   ELSE
+     LASTWISH "procedurename expected~";
+   APP R)
+
+
+PROCEDURE error =
+  (P := POINTER;
+   LINE(0);
+   WRITE "*****   ";
+   TYPE(1);
+   WRITE "        "; (* 8 spaces *)
+   TO (P - POINTER) DO
+     (IF CH = TAB
+        THEN WRITE "	" (* one tab *)
+        ELSE WRITE " ";
+      GETCH);
+   WRITE "^~";
+   JUMP(P))
+
+
+PROCEDURE scan =
+  LOOP
+    (IF CH = SP THEN
+       (GETCH; RESTART);
+     IF CH = TAB THEN
+       (GETCH; RESTART);
+     IF CH = CR THEN
+       (GETCH; GETCH; RESTART);
+     IF MATCH "!" THEN
+       (GETCH; SEARCH "!"; RESTART);
+     IF MATCH "(*" THEN
+       (SEARCH "*)"; RESTART);
+     EXIT)
+
+
+PROCEDURE string =
+  (A := PARAMETER;
+  B := CH;
+  GETCH;
+  CASE A OF
+    0 : SKIP
+    1 : APP B
+    2 : APP 1
+    OTHERWISE SKIP;
+  UNTIL CH = B DO outchar;
+  GETCH;
+  IF A = 1 THEN APP B
+  ELSE IF A = 2 THEN APP 1;
+  scan)
+
+
+PROCEDURE outchar =
+  (IF CH = NEWLINEMARKER
+     THEN (APP CR; APP LF)
+     ELSE APP CH;
+   GETCH)
+
+
+PROCEDURE emit =
+OPCODES
+  "number"      ->  %<0A"D0A@:^U999C|0;'>MP%
+  "rep1"        ->  ";MP"
+  "check1"      ->  '"SMP~|MO'
+  "opt1"        ->  '"SMP'
+  "seq3"        ->  ";MP>"
+  "cas1"        ->
+    "~@O%0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20%
+     @O%others%<"
+  "look0"       ->  +:Q8"E@^A%~symbol table is empty~%^C' M8+
+  OTHERWISE
+    LASTWISH "not defined in emit (internal error)~"
+
+
+PROCEDURE glc =
+CASE PARAMETER OF
+  0 :
+    (GEN "! HITECO VERSION 4 !~! COMPILATION = ! ";
+    (* compute next version number in register 9 *)
+    PUT ".U1 %9\ Q1,.:X9 Q1,.K @:^U9\ U9~~\")
+  1 :
+    (PUT ".UZ";
+     GEN "@::S")
+  2 :
+    (GNR check1;
+     GEN "@^A%";
+     PUT "QZ,.:X9";
+     GEN "expected in %")
+  OTHERWISE
+    LASTWISH "unknown case in glc (internal error)~"
+
+
+PROCEDURE declaration =
+  (* lookup for procedure names, into Q-register 8 *)
+  (PUT "@^U8+<+";
+   PUT "^^E-1U8"; (* first procedure into Q-register E *)
+   LOOP
+     (IF CH = PERIOD
+       THEN PUT "CMP0;";
+     PUT "@:^U8+@::S\+";
+     PUT %< 0A"C 0A@:^U888 C F< | MP 0; >%;
+     PUT '@:^U8+\"S^^+';
+     PUT "%8@:^U8''";
+     PUT "@:^U8+U7 0;'~+");
+   PUT "@:^U8+ MO 0U7 0;> MP Q7+")
+
+ .
+</XMP>
+<H3>The TECO target code</H3>
+<P>
+The TECO target code is given here for completeness,
+most readers will want to skip the following three pages.
+<XMP>
+! HITECO VERSION 4 !
+! COMPILATION = ! 368 U9
+
+@^UE`0MVMP@::S"DECLARE""SMPMI'<0A-^^."=0;'1T@::S"PROCEDURE""SMP
+|MO@^A%"PROCEDURE" expected in %^Aprogram^A^C'@:^U9&@^U&MN96@:^U999@::S"=""SMP
+|MO@^A%"=" expected in %^Aprogram^A^C'MF96@:^U999@:^U9&
+
+&>`
+
+@^UF`<
+@::S"SKIP""SMP0;'
+@::S"GNR""SMPMT0;'
+@::S"NUMBER""SMP@:^U9%<0A"D0A@:^U999C|0;'>MP%0;'
+@::S"VALUE""SMP3MV0;'
+@::S"GETCH""SMP@:^U9&C&0;'
+@::S"RESTART""SMP@:^U9&F<&0;'
+@::S"EXIT""SMP@:^U9&0;&0;'
+@::S"CODE""SMP@:^U9&0MQ&0;'
+@::S"QUOTE""SMP@:^U9&1MQ&0;'
+@::S"MESSAGE""SMP@:^U9&2MQ&0;'
+@::S"PUT""SMP0MQ0;'
+@::S"GEN""SMP@:^U9\@:^U9&\0MQ@:^U9\&\0;'
+@::S"PRD""SMP@:^U9\@:^U9&\MF@:^U9\&\0;'
+@::S"RETURN""SMPMH0;'
+@::S"APP""SMPMH@:^U9&@:^U999&0;'
+@::S"SEARCH""SMP@:^U9&@S&1MQ0;'
+@::S"TYPE""SMPMS@:^U9&T&0;'
+@::S"LINE""SMPMS@:^U9&L&0;'
+@::S"JUMP""SMPMS@:^U9&J&0;'
+@::S"WRITE""SMP2MQ0;'
+@::S"LASTWISH""SMP@:^U9&MO&2MQ@:^U9&^C&0;'
+@::S"LOOP""SMP@:^U9&<&MF@:^U9&>&0;'
+@::S"(""SMP<MF
+  @::S";";MP>@::S")""SMP
+|MO@^A%")" expected in %^Acompound statement^A^C'0;'
+@::S"REP""SMP@:^U9&<@::S&1MQ@:^U9";MP"MF@:^U9&>&0;'
+@::S"CHECK""SMP@:^U9&@::S&1MQ@:^U9'"SMP
+|MO'2MQ@:^U9&'&0;'
+@::S"OPT""SMP@:^U9&@::S&1MQ@:^U9'"SMP'MF@:^U9&'&0;'
+@::S"SEQ""SMP@:^U9&<&MF@::S"SEP""SMP
+|MO@^A%"SEP" expected in %^Asequence statement^A^C'@:^U9&
+  @::S&1MQ@:^U9";MP>"0;'
+@::S"CHOICE""SMP@:^U9&<&MJ@::S"OTHERWISE""SMP
+|MO@^A%"OTHERWISE" expected in %^ACHOICE statement^A^C'MF@:^U9&0;>&0;'
+@::S"OPCODES""SMP@:^U9&<&MK@::S"OTHERWISE""SMP
+|MO@^A%"OTHERWISE" expected in %^AOPCODES statement^A^C'MF@:^U9&0;>&0;'
+@::S"WHILE""SMP@:^U9&<&MG@:^U9&|0;'&@::S"DO""SMP
+|MO@^A%"DO" expected in %^AWHILE statement^A^C'MF@:^U9&>&0;'
+@::S"UNTIL""SMP@:^U9&<&MG@:^U9&0;'&@::S"DO""SMP
+|MO@^A%"DO" expected in %^AUNTIL statement^A^C'MF@:^U9&>&0;'
+@::S"TO""SMPMH@::S"DO""SMP
+|MO@^A%"DO" expected in %^ATO statement^A^C'@:^U9&<&MF@:^U9&>&0;'
+@::S"IF""SMP@:^U9&
+&MG@::S"THEN""SMP
+|MO@^A%"THEN" expected in %^Aconditional^A^C'MF@::S"ELSE""SMP@:^U9&|&MF'@:^U9&'&0;'
+@::S"CASE""SMPMH@:^U9"
+@O%0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20%
+     @O%others%<"@::S"OF""SMP
+|MO@^A%"OF" expected in %^ACASE statement^A^C'ML@:^U9&!others!&@::S"OTHERWISE""SMP
+|MO@^A%"OTHERWISE" expected in %^ACASE statement^A^C'MF@:^U9&0;>&0;'
+0A-^^""=1MV1MQ2MV2MQ@:^U9&^C'&|
+0A"V:Q8"E@^A%
+symbol table is empty
+%^C' M8UVMS@:^U9&M&QV@:^U999|
+0A"W0AUVCMP@::S":=""SMP
+|MO@^A%":=" expected in %^Aassignment statement^A^C'MH@:^U9&U&QV@:^U999|MO^Aillegal in statement
+^A^C'''0;>`
+
+@^UG`
+@::S"MATCH""SMP@:^U9&@::S&1MQ@:^U9'"SMP'|MHMU'`
+
+@^UH`<
+@::S"PARAMETER""SMP0;'
+@::S"CH""SMP@:^U9&0A&0;'
+@::S"POINTER""SMP@:^U9&.&0;'
+@::S"TAB""SMP@:^U9&9&0;'
+@::S"LF""SMP@:^U9&10&0;'
+@::S"CR""SMP@:^U9&13&0;'
+@::S"SP""SMP@:^U9&32&0;'
+@::S"PROCEDUREQUOTE""SMP@:^U9&96&0;'
+@::S"NEWLINEMARKER""SMP@:^U9&126&0;'
+@::S"DOUBLEQUOTE""SMP@:^U9&^^"&0;'
+@::S"PERIOD""SMP@:^U9&^^.&0;'
+@::S"LOOKUP""SMP@:^U9+:Q8"E@^A%
+symbol table is empty
+%^C' M8+0;'
+@::S"(""SMP@:^U9&(&MHMM@::S")""SMP
+|MO@^A%")"  expected in %^Aexpression^A^C'@:^U9&)&0;'
+0A"W@:^U9&Q&0A@:^U999CMP|
+0A"D<0A"D0A@:^U999C|0;'>MP|MO^Aillegal in expression
+^A^C''0;>`
+
+@^UM`<
+@::S"+""SMP@:^U9&+&MHF<'
+@::S"-""SMP@:^U9&-&MHF<'
+@::S"*""SMP@:^U9&*&MHF<'
+@::S"/""SMP@:^U9&/&MHF<'0;>`
+
+@^UU`<
+@::S"ALPHABETIC""SMP@:^U9&"A&0;'
+@::S"LOWERCASE""SMP@:^U9&"V&0;'
+@::S"UPPERCASE""SMP@:^U9&"W&0;'
+@::S"DIGIT""SMP@:^U9&"D&0;'
+@::S"CONSTITUENT""SMP@:^U9&"C&0;'
+@::S"=""SMP@:^U9&-&MH@:^U9&"=&0;'
+@::S"<""SMP@:^U9&-&MH@:^U9&"<&0;'
+@::S">""SMP@:^U9&-&MH@:^U9&">&0;'MO^Aillegal predicate
+^A^C0;>`
+
+@^US`@::S"(""SMPMH@::S",""SMP@:^U9&,&MH'@::S")""SMP
+|MO@^A%")" expected in %^Aparameterlist^A^C''`
+
+@^UJ`<0A-^^""=|0;'@:^U9&
+@::S&1MQ@:^U9'"SMP'MF@:^U9&0;'&>`
+
+@^UK`<0A-^^""=|0;'@:^U9&
+@::S&1MQ@:^U9'"SMP'@::S"->""SMP
+|MO@^A%"->" expected in %^Acorrespondence^A^C'@:^U9&@:^U9\@:^U9&1MQ@:^U9&\0;'&>`
+
+@^UL`<0A"D|0;'@:^U9&!&<0A"D0A@:^U999C|0;'>MP@:^U9&!&@::S":""SMP
+|MO@^A%":" expected in %^Acases^A^C'MF@:^U9&0;&>`
+
+@^UN`
+0A"V:Q8"E@^A%
+symbol table is empty
+%^C' M8UR|
+0A"C0AURCMP|MO^Aprocedurename expected
+^A^C''QR@:^U999`
+
+@^UO`.UP0L^A*****   ^A1T^A        ^A(QP-.)<
+0A-9"=^A	^A|^A ^A'C>^A^
+^AQPJ`
+
+@^UP`<
+0A-32"=CF<'
+0A-9"=CF<'
+0A-13"=CCF<'
+@::S"!""SMPC@S"!"F<'
+@::S"(*""SMP@S"*)"F<'0;>`
+
+@^UQ`UA0AUBCQA
+@O%0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20%
+     @O%others%<!0!0;!1!QB@:^U9990;!2!1@:^U9990;!others!0;><0A-QB"=0;'MR>C
+QA-1"=QB@:^U999|
+QA-2"=1@:^U999''MP`
+
+@^UR`
+0A-126"=13@:^U99910@:^U999|0A@:^U999'C`
+
+@^UT`<
+@::S"number""SMP@:^U9\@:^U9%<0A"D0A@:^U999C|0;'>MP%\0;'
+@::S"rep1""SMP@:^U9\@:^U9";MP"\0;'
+@::S"check1""SMP@:^U9\@:^U9'"SMP
+|MO'\0;'
+@::S"opt1""SMP@:^U9\@:^U9'"SMP'\0;'
+@::S"seq3""SMP@:^U9\@:^U9";MP>"\0;'
+@::S"cas1""SMP@:^U9\@:^U9"
+@O%0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20%
+     @O%others%<"\0;'
+@::S"look0""SMP@:^U9\@:^U9+:Q8"E@^A%
+symbol table is empty
+%^C' M8+\0;'MO^Anot defined in emit (internal error)
+^A^C0;>`
+
+@^UV`
+@O%0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20%
+     @O%others%<!0!@:^U9&! HITECO VERSION 4 !
+! COMPILATION = ! &.U1 %9\ Q1,.:X9 Q1,.K @:^U9\ U9
+
+\0;!1!.UZ@:^U9&@::S&0;!2!@:^U9'"SMP
+|MO'@:^U9&@^A%&QZ,.:X9@:^U9&expected in %&0;!others!MO^Aunknown case in glc (internal error)
+^A^C0;>`
+
+@^UI`@^U8+<+^^E-1U8<
+0A-^^."=CMP0;'@:^U8+@::S\+< 0A"C 0A@:^U888 C F< | MP 0; >@:^U8+\"S^^+%8@:^U8''@:^U8+U7 0;'
++>@:^U8+ MO 0U7 0;> MP Q7+`
+</XMP>
+<H3>In conclusion</H3>
+<P>
+The HITECO project as described here
+took about 6 man weeks to implement;
+this figure is for writing source and target codes
+and endless self-compilations and bootstrapping steps,
+but excluding documentation.
+The result has been an implementation
+of a readable string processing language.
+Further work should now concentrate on making available
+to the HITECO user those features of TECO which the HITECO
+compiler does not use itself.
+<P>
+TECO is a powerful language,
+and it has numerous features that would not normally
+be used in interactive text editing.
+But there were some deficiencies:
+The most annoying problem was the absurdly small
+recursion stack of the old version of TECO ---
+in the manual[!] it is said to be <CODE>about 10</CODE>.
+Several intermediate versions of HITECO failed because
+they required recursion just slightly deeper than TECO
+will tolerate.
+<P>
+There are a number of things which ---
+with the wisdom of hindsight ---
+I would have liked to have done differently.
+It would have been nice to have organised the versions in such a way
+that each one can compile itself and its immediate successor.
+During the development of the sequence
+such versions did sometimes exist,
+but there were too many of them to be kept.
+With more careful design it would have been possible
+to keep the number of generations quite low.
+Perhaps somebody will be inspired to start again
+by augmenting version 1.
+It was probably a waste of time to generate pretty-printed
+TECO code in the early versions.
+Another mistake was to use the form <CODE><CTRL/A>text<CTRL/A></CODE>
+for error messages, because the control characters
+do not print (the form <CODE>@^A/text/</CODE> is used now).
+As far as the implementation in TECO is concerned,
+it might have been beneficial to produce code that
+does not rely on the limited recursion stack of TECO,
+but uses the very generous Q-register push-down list instead.
+Such a change would best be done by modifying version 4,
+but the price might be a dramatic loss of efficiency.
+<P>
+It is worth noting that the limitation on the size of the
+recursion stack has been removed in the 1990 version
+of VAX TECO.
+
+<H2>Exercises and reading</H2>
+<P>
+<EM>Modifying the source language</EM>:
+You have an offer from a Polish software agent who
+wants to buy a HITECO1 compiler,
+but he wants the key words to be in Polish.
+Assume that the English words <CODE>STATEMENT</CODE>,
+<CODE>VARIABLE</CODE>, <CODE>QUOTE</CODE> etc.
+have the Polish equivalent <CODE>STATEMENTSKY</CODE>,
+<CODE>VARIABLESKY</CODE>, <CODE>QUOTESKY</CODE> etc.
+Describe the steps needed to change the English version of HITECO1
+to a Polish version.
+All changes are to be made to the source,
+editing the target is not allowed
+(only Philistines do that).
+The final product to be delivered is to consist of a source version
+and a target version.
+<P>
+<EM>Modifying the target language</EM>:
+Two of my students have used version 1 as a starting point
+to write tiny self-compiling compilers which use C or Pascal
+as the target language.
+One of them volunteered the information that it was fun,
+the other one did not say anything.
+<P>
+Use version 4 as a starting point
+to write a self-compiling compiler which uses C or Pascal
+or any other language as the target.
+This could be done by bootstrapping,
+by changing those parts in the HITECO4 source which generate TECO code.
+Then the old TECO version would be used to compile this changed
+source to a target version in the new language.
+Then the target version can be used to compile the changed source again,
+and if all went well then the resulting
+second copy of the target should be identical to the first.
+Alternatively,
+if you do not have TECO to run a HITECO compiler
+use the source as an aid in designing a new self-compiling compiler.
+<P>
+<EM>Reading</EM>:
+A very comprehensive general account of self-compilation
+and bootstrapping can be found in Lecarme and Pellissier Gart (1986).
+
+</body>
+</html>

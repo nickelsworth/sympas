@@ -1,0 +1,1174 @@
+<HTML>
+<head>
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Chapter 8</TITLE>
+</head>
+
+<H1>Second order recursion</H1>
+<P>
+In this chapter we shall study a technique that will be used
+in several programs in the remainder of this book.
+The technique uses procedures (nothing new about that),
+which are recursive (nothing new about that either),
+and which take parameters (nothing new so far),
+but the parameters are themselves procedures (so what ?),
+and in recursive calls the procedure passed
+as a parameter is either a local procedure or the parameter procedure.
+More likely than not,
+this pattern of recursion will be new to most readers.
+<H2>First order recursion</H2>
+<P>
+This section describes the common first order recursion patterns,
+and a problem which cannot be solved by that pattern.
+<H3>An example of first order recursion</H3>
+<P>
+The pattern of first order recursion is exemplified
+by the following very simple program.
+It repeatedly reads lines of characters from the input file,
+and for each line that it has read it writes the characters
+of the line in their order
+and then the same characters in reverse order.
+Between the two lots of characters there is a separation
+of four blank characters.
+<PRE>
+PROGRAM first_order_recursion(input,output);
+
+PROCEDURE recurse;
+VAR ch : char;
+BEGIN (* recurse *)
+IF eoln THEN write('    ') ELSE
+    BEGIN
+    read(ch);
+    write(ch);                  (*  forward *)
+    recurse;
+    write(ch)                   (* backward *)
+    END
+END; (* recurse *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN recurse; writeln; readln END
+END. (* main *)
+</PRE>
+<P>
+The program has no intrinsic value,
+it is the sort of thing one might use to explain ordinary recursion
+to a beginner.
+Later sections of this
+chapter and a later chapter
+contain similar higher order recursive programs,
+so it would be advantageous to dwell over this one first.
+<P>
+Ordinary recursive programs have procedures (or functions)
+of the following form:
+<PRE>
+PROCEDURE recurse;
+BEGIN
+IF recursiontermination THEN ...        (* no more recursion *)
+    ELSE ... recurse ...                (* call to itself *)
+END;
+</PRE> 
+Instead of the one recursive call there could be several;
+if there is only one such call, then a procedure is said to be linear
+recursive.
+<H3>The even-odd partitioning problem</H3>
+<P>
+In this section we begin with a very simple problem
+to be solved in a particular way.
+The solution uses a technique
+that will be unfamiliar to most readers,
+but it will be used repeatedly
+in this and in later chapters.
+<P>
+Consider the following:
+You are to write a program
+which repeatedly reads a line of numbers
+and writes them out again.
+To make it at all interesting,
+the numbers in each line are to be partitioned into two groups,
+the odd ones and the even ones, separated by a larger space.
+<P>
+Your natural reaction is probably to read the numbers of each
+line into an array,
+and when the end of the line is reached,
+make two passes through the array:
+on the first pass write out the even ones,
+then write the separating space,
+and then on the second pass write out the odd ones.
+Alternatively you could sift them into two arrays
+as they are being read,
+and then write out the two arrays.
+<P>
+But now we make the problem more interesting:
+you are not to use any arrays at all
+(and no pointers either).
+You could of course use a recursive solution,
+stacking up numbers in local variables.
+Then all the local variables become visible again
+as the recursion unwinds.
+Thus any even numbers are immediately written out when read,
+any odd numbers are only written out when the recursion returns.
+The following is a Pascal source program
+which will solve the problem <EM>as stated so far</EM>:
+<PRE>
+PROGRAM oddevn(input,output);
+
+PROCEDURE odev;
+VAR n : integer;
+BEGIN (* odev *)
+IF eoln THEN write('    ') ELSE
+    BEGIN
+    read(n);
+    IF n MOD 2 = 0
+        THEN BEGIN odev; write(n:0,' ') END
+        ELSE BEGIN write(n:0,' '); odev END
+    END
+END; (* odev *)
+
+BEGIN (* main, oddevn *)
+WHILE NOT eof  DO
+    BEGIN odev; readln; writeln END
+END. (* main, oddevn *)
+</PRE>
+For example, it might be given the input line
+<PRE>
+        1 2 3 4 5 6 7 8 9 11 22 33 44 55
+</PRE> 
+It will then produce the output line
+<PRE>
+        1 3 5 7 9 11 33 55    44 22 8 6 4 2
+</PRE> 
+This does satisfy the specification <EM>as stated</EM>.
+But note that the odd numbers appear in the original order,
+whereas the even numbers are <EM>reversed</EM>.
+At this point we make a change in the specification:
+Both sets of numbers in the output line have to appear
+in their original order.
+In the next section we shall see how this can be done
+using a technique which is probably new to most readers.
+<P>
+In the previous program the part <CODE>... recurse ...</CODE>
+was actually an <CODE>IF-THEN-ELSE</CODE> statement in which both branches
+recursed,
+one by first recursing and then writing,
+and the other by first writing and then recursing.
+In this way the separation of the odd and even numbers was achieved.
+Note also that the recursion is terminated by writing the required
+space.
+The reason why the even numbers come out in the reverse order
+is that the first branch writes out the local variable
+on the way back from the recursion.
+<P>
+It is worth noting the form in more detail:
+<PRE>
+PROCEDURE recurse;
+BEGIN
+IF recursiontermination THEN ...        (* no more recursion    *)
+  ELSE
+    IF somecondition
+        THEN recurse ...                (* recursing first      *)
+        ELSE ... recurse                (* recursing last       *)
+END;
+</PRE> 
+<H2>Second order recursion</H2>
+<P>
+Procedures (or functions) can take value parameters
+or variable parameters,
+but they can also take procedures (or functions) as parameters.
+The latter mode can be used to revisit an earlier incarnation
+of the procedure.
+<P>
+If a procedure takes a procedure as a formal parameter,
+then the first global (non-recursive) call to it must use
+a global procedure as the actual parameter.
+If the procedure is recursive,
+then it may call itself in two ways:
+either by passing to itself a global or local procedure
+as a parameter,
+or by passing to itself its own parameter as a parameter.
+In the first case, if the passed procedure is local,
+it will allow the local procedure to revisit the
+current incarnation ---
+if indeed the local procedure, in the guise of a parameter,
+is ever called.
+In the second case it prohibits the current incarnation
+from being revisited.
+As for all recursive procedures,
+a clause is needed to escape from the recursion;
+and for the parameter procedures to have any effect at all,
+they must be called at this point (they cannot be passed on further).
+If the parameter procedure being called is a local procedure
+from an earlier incarnation,
+then local variables of that incarnation are visible at this point.
+<H3>An example of second order recursion</H3>
+<P>
+The pattern of second order recursion is exemplified
+by the following program.
+It repeatedly reads lines of what will be lower case letters
+from the input file,
+and for each line that it has read it writes
+the lower case letters in their order, then
+the upper case equivalents in reverse order, then
+the upper case equivalents in the original order, then
+the lower case letters in reverse order.
+Between each lot of characters there is a separation
+of four blank spaces.
+<P>
+Since there are four lots of characters,
+there are three occurrences of separating spaces.
+In the program these occurrences have been commented
+as <CODE>(* 1 *)</CODE>, <CODE>(* 2 *)</CODE> and <CODE>(* 3 *)</CODE>.
+The forward and backward sequences of the two kinds
+of characters have also been commented.
+<PRE>
+PROGRAM second_order_recursion(input,output);
+
+PROCEDURE writespace;
+BEGIN write('    ') END; (* 2 *)
+
+PROCEDURE recurse(PROCEDURE cp);
+VAR ch : char;
+
+    PROCEDURE local;
+    BEGIN (* local *)                          (* upper case *)
+    write(chr(ord(ch) + ord('A') - ord('a'))); (* backward *)
+    cp;                  (* when cp = writespace: 2 *)
+    write(chr(ord(ch) + ord('A') - ord('a')))  (* forward *)
+    END; (* local *)
+
+BEGIN (* recurse *)
+IF eoln THEN
+    BEGIN
+    writespace;         (* 1 *)
+    cp;
+    writespace          (* 3 *)
+    END
+  ELSE
+    BEGIN               (* lower case   *)
+    read(ch);
+    write(ch);          (* forward  *)
+    recurse(local);
+    write(ch)           (* backward *)
+    END
+END; (* recurse *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN recurse(writespace); writeln; readln END
+END. (* main *)
+</PRE>
+<P>
+Do note that there is only one variable,
+and that it is local to procedure <CODE>recurse</CODE>.
+That variable is accessed directly for reading the lower case
+characters and for writing them forward going up the recursion
+and for writing them backward coming back from the recursion.
+So this part is exactly like the corresponding procedure
+in the first program.
+That variable is also accessed indirectly,
+as a non-local variable,
+in procedure <CODE>local</CODE> for writing the upper case characters.
+Such access has to occur through a runtime structure,
+either the static chain or an equivalent optimisation, the display.
+The procedure <CODE>local</CODE> is passed as a procedure parameter
+to procedure <CODE>recurse</CODE> in the <CODE>ELSE</CODE> part of <CODE>recurse</CODE>.
+When this happens,
+the entry point to procedure local has to be passed as a parameter,
+<EM>and also</EM> the static chain or its equivalent.
+The reason why so many lesser implementations of Pascal
+do not get this right --- if they allow procedures as parameters at all ---
+is that they merely pass the entry point and not the static chain
+or its equivalent.
+I look forward to the day when students do not report back to me:
+"It doesn't work with the Pascal on my micro".
+<P>
+In the <CODE>ELSE</CODE> part of the preceding program,
+procedure <CODE>recurse</CODE> calls itself using a local procedure as a parameter.
+Another procedure which is visible there is the procedure
+which has been passed as a parameter,
+and it could equally well be used as an actual parameter
+in a recursive call.
+We should now study this schema:
+<PRE>
+PROCEDURE global;
+BEGIN ... END;
+
+PROCEDURE recurse(PROCEDURE param);
+VAR loc : sometype;
+    PROCEDURE local;
+    BEGIN ... param ... END;            (* loc visible at ... *)
+BEGIN (* recurse *)
+IF recursiontermination THEN ...        (* no more recursion    *)
+  ELSE
+    IF somecondition
+        THEN ... recurse(local) ...     (* using local as actual *)
+        ELSE ... recurse(param) ...     (* using param as actual *)
+END; (* recurse *)
+BEGIN (* main *)
+ ... recurse(global) ...
+END. (* main *)
+</PRE> 
+<P>
+To use this schema for the earlier problem,
+we merely have to flesh out the <CODE>...</CODE> and a few other places.
+The following is the standard Pascal source program
+for the odd-even problem.
+The program reads lines of numbers,
+and for each line that it has read it
+will write one line,
+containing the even numbers in their original order,
+then a space of four characters,
+then the odd numbers in their original order.
+<PRE>
+PROGRAM oddevn(input,output);
+
+PROCEDURE space;
+BEGIN write('    ') END;
+
+PROCEDURE odev(PROCEDURE cp);
+VAR n : integer;
+
+    PROCEDURE writelater;
+    BEGIN cp; write(n:0,' ') END;
+
+BEGIN (* odev *)
+IF eoln THEN cp ELSE
+    BEGIN
+    read(n);
+    IF n MOD 2 = 0
+        THEN BEGIN write(n:0,' '); odev(cp) END
+        ELSE odev(writelater)
+    END
+END; (* odev *)
+
+BEGIN (* main, oddevn *)
+WHILE NOT eof  DO
+    BEGIN odev(space); readln; writeln END
+END. (* main, oddevn *)
+</PRE>
+<P>
+The following is the same program written in the language C.
+The program uses a local function writelater defined within
+the function odev. This is not allowed by the C standard,
+but it is provided in one of the many extensions
+provided by gcc (the Gnu C compiler).
+However, although gcc also compiles C++ programs,
+I am told that the gcc extension can handle local functions ONLY inside
+C programs.
+<P>
+<PRE>
+# include &lt;stdio.h>
+
+typedef void (*proc)();
+
+int eoln() {
+    int i;
+    i = getchar();
+    if (i == '\n') return 1;
+    ungetc(i, stdin);
+    return 0;
+}
+
+int eof() {
+    int i;
+    i = getchar();
+    if (i == EOF) return 1;
+    ungetc(i, stdin);
+    return 0;
+}
+
+void space() {
+    printf(&quot; &quot;);
+}
+
+void odev(proc cp) {
+    int n;
+
+    void writelater() {
+        cp();
+        printf(&quot;%d &quot;, n);
+    }
+
+    if (eoln()) cp();
+    else {
+        scanf(&quot;%d&quot;, &amp;n);
+        if (n % 2 == 0) {
+            printf(&quot;%d &quot;, n);
+            odev(cp);
+        }
+        else odev(writelater);
+    }
+}
+
+int main() {
+    while (!eof()) {
+        odev(space);
+        printf(&quot;\n&quot;);
+    }
+}
+</PRE>
+I am grateful to John Cowan for providing me with this translation.
+
+<H3>Three other examples</H3>
+<P>
+It is easy enough to write an ordinary recursive program
+which reads lines of numbers and for each line
+that it has read it first writes the sum of the numbers in the line
+and then the numbers in the reverse of the original order.
+The next program uses second order recursion
+to do the same but to write the numbers in the line in their
+original order.
+<PRE>
+PROGRAM addnumbers(input,output);
+VAR sum : integer;
+
+PROCEDURE skip;
+BEGIN END;
+
+PROCEDURE recurse(PROCEDURE cp);
+VAR n : integer;
+
+    PROCEDURE writeforward;
+    BEGIN cp; write(n:0,' ') END;
+
+BEGIN (* recurse *)
+IF eoln
+    THEN BEGIN write(sum:0,': '); cp END
+    ELSE BEGIN read(n); sum := sum + n; recurse(writeforward) END
+END; (* recurse *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN sum := 0; recurse(skip); readln; writeln END
+END. (* main *)
+</PRE>
+<P>
+In the preceding programs,
+when the end of the line has been reached
+the runtime stack contains a history of what has
+been read on the line.
+At this point
+the stack was made accessible through the <CODE>cp</CODE> procedure.
+There is no limit to the number of times the stack
+can be accessed at this point;
+this is illustrated by the next program.
+It repeatedly reads lines of numbers,
+and for each line that it has read it writes 6 lines:
+For a divisor ranging from 1 to 6,
+each line contains those of the numbers that are
+divisible without remainder by the divisor.
+Each line is headed by the divisor.
+Thus, for the input line
+<PRE>
+5 4 3 2 1 3 4 5 6 77 88
+</PRE> 
+it produces the output lines
+<PRE>
+1:  5 4 3 2 1 3 4 5 6 77 88
+2:  4 2 4 6 88
+3:  3 3 6
+4:  4 4 88
+5:  5 5
+6:  6
+</PRE> 
+<PRE>
+PROGRAM revisit_repeatedly(input,output);
+
+VAR divisor : integer;
+
+PROCEDURE skip;
+BEGIN END;
+
+PROCEDURE recurse(PROCEDURE cp);
+VAR n : integer;
+
+    PROCEDURE filter;
+    BEGIN cp; IF n MOD divisor = 0 THEN write(n:0,' ') END;
+
+BEGIN (* recurse *)
+IF eoln THEN
+    FOR divisor := 1 TO 6 DO
+        BEGIN write(divisor:0,':  '); cp; writeln END
+  ELSE
+    BEGIN read(n); recurse(filter) END
+END; (* recurse *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN recurse(skip); readln END
+END. (* main *)
+</PRE>
+<P>
+The next program reads lines of numbers,
+and writes out that same line of numbers <EM>in their order</EM>
+except that duplicates of earlier numbers are not written.
+To check for duplicates every number <CODE>n</CODE>
+in the input line has to be compared with every earlier
+incarnation of that same variable <CODE>n</CODE>.
+Note that the parameter to the recursive procedure
+is not a continuation procedure but
+a Boolean valued function
+which can inspect the stack below.
+For the comparison in <CODE>seen</CODE> it uses its parameter <CODE>i</CODE>.
+<PRE>
+PROGRAM noduplicates(input,output);
+
+FUNCTION no(i : integer) : boolean;
+BEGIN no := false END;
+
+
+PROCEDURE nodup(FUNCTION seenbefore(i : integer) : boolean);
+VAR n : integer;
+
+    FUNCTION seen(i : integer) : boolean;
+    BEGIN seen := (i = n) OR seenbefore(i) END;
+
+BEGIN (* nodup *)
+IF eoln THEN writeln ELSE
+    BEGIN
+    read(n);
+    IF seenbefore(n) THEN nodup(seenbefore) ELSE
+        BEGIN write(n:0,' '); nodup(seen) END
+    END
+END; (* nodup *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN nodup(no); readln END
+END. (* main *)
+</PRE>
+<P>
+The next program combines features from two earlier programs ---
+the program which partitions numbers from the input line
+into those whose remainder after division by 2 is 0 or 1,
+and the program which removes duplications.
+This program does both:
+it reads lines and partitions into two groups without duplicates.
+For variety (and efficiency)
+the parameter of the functions
+has been replaced by a global variable;
+this way the parameter does not have to be passed along in searches.
+The recursive procedure <CODE>nodup</CODE> has a function and a procedure
+as parameter.
+Both serve to inspect the earlier incarnations of the local
+variable <CODE>saved</CODE>.
+<PRE>
+PROGRAM partition2nodups(input,output);
+
+VAR current : integer;
+
+FUNCTION no : boolean;
+BEGIN no := false END;
+
+PROCEDURE space;
+BEGIN write('    ') END;
+
+PROCEDURE nodup(FUNCTION old : boolean;
+                PROCEDURE cp);
+
+VAR saved : integer;
+
+    FUNCTION new : boolean;
+    BEGIN new := (current = saved) OR old END;
+
+    PROCEDURE writelater;
+    BEGIN cp; write(saved:0,' ') END;
+
+BEGIN (* nodup *)
+IF eoln THEN cp ELSE
+    BEGIN
+    read(current);
+    IF old THEN nodup(old,cp) ELSE
+        BEGIN
+        saved := current;
+        IF current MOD 2 = 0
+            THEN BEGIN write(current:0,' '); nodup(new,cp) END
+            ELSE nodup(new,writelater)
+        END
+    END
+END; (* nodup *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN nodup(no,space); writeln; readln END
+END. (* main *)
+</PRE>
+<P>
+The next program reads lines of numbers,
+and for each line of numbers it
+writes out in their order all second occurrences of numbers ---
+first, third and any further occurrences are ignored.
+Note that the second global variable serves as a <CODE>VAR</CODE> parameter
+to procedures <CODE>first_time</CODE> and <CODE>check</CODE>,
+this way it does not have to be passed along.
+<PRE>
+PROGRAM partition2shodups(input,output);
+
+VAR current : integer;
+    repetitions : integer; (* acts as VAR parameter to check *)
+
+PROCEDURE first_time;
+BEGIN repetitions := 1 END;
+
+PROCEDURE shodup(PROCEDURE cp);
+
+VAR saved,reps : integer;
+
+    PROCEDURE check;
+    BEGIN
+    IF current <> saved
+        THEN cp
+        ELSE repetitions := reps + 1
+    END; (* check *)
+
+BEGIN (* shodup *)
+IF NOT eoln THEN
+    BEGIN
+    read(current);
+    cp;
+    IF repetitions = 2 THEN write(current:0,' ');
+    saved := current; reps := repetitions;
+    IF reps > 2 THEN shodup(cp) ELSE shodup(check)
+    END
+END; (* shodup *)
+
+BEGIN (* main *)
+WHILE NOT eof DO
+    BEGIN shodup(first_time); writeln; readln END
+END. (* main *)
+</PRE>
+<P>
+The final program read lines of numbers
+and for each line of numbers
+it writes out a line of those numbers sorted in their order.
+<PRE>
+PROGRAM slowsort(input,output);
+
+(* adapted from a program written by M.F. Kuiper,
+   proved correct in Fokkinga (1987)
+   [ thanks Matthys ] *)
+
+PROCEDURE skip(m,n : integer);
+BEGIN END;
+
+PROCEDURE sort(PROCEDURE cp(m,n : integer));
+VAR val : integer;
+
+    PROCEDURE locp(m,n : integer);
+    BEGIN
+    IF (m &lt;= val) AND (val &lt; n) THEN
+         BEGIN cp(m,val); write(' ',val:1); cp(val,n) END
+       ELSE cp(m,n)
+    END;
+
+BEGIN  (* sort *)
+IF eoln THEN cp(- maxint,maxint) ELSE
+    BEGIN  read(val); sort(locp) END
+END; (* sort *)
+
+BEGIN  (* main *)
+WHILE NOT eof DO
+    BEGIN sort(skip); readln; writeln END
+END.
+</PRE>
+<H2>A LET-expression evaluator</H2>
+<P>
+The remainder of this chapter introduces an evaluator for arithmetic expressions
+with the <CODE>LET</CODE> constructor.
+When an expression has been typed by the user,
+the program responds by writing a line starting with <CODE>=</CODE>
+followed by the value that has been computed.
+The meaning of <CODE>LET</CODE>-expressions should become clear from the examples.
+The following is an interaction with the program:
+<PRE>
+$ SET VERIFY
+$ RUN 22LETEVL.EXE
+12345
+=     12345
+(111 + 222 + 333)
+=       666
+LET x = 10 IN (x * x * x)
+=      1000
+LET one = 1 IN
+  LET two = one + one IN
+    (two * two)
+=         4
+LET a = 100 IN
+  LET b = a / 10 IN
+    LET a = 2 * b IN
+      LET b = a / 2 IN
+        (b * b)
+=       100
+(10 * two)
+      ^  unknown identifier
+</PRE>
+<P>
+A session with the program has to be in accordance with the
+following grammar:
+<PRE>
+session   ::=
+        [ factor ] "."
+factor   ::=
+        number |
+        "(" expression ")" |
+        "LET" identifier "=" expression "IN" factor
+expression   :=
+        term [ ("+" | "-") term ]
+term   ::=
+        factor [ ("*" | "/") factor ]
+</PRE> 
+<P>
+A factor in the input will be evaluated immediately
+after it has been read.
+A number has to be a non-negative integer in decimal notation.
+The arithmetic operators have their usual meaning.
+A <CODE>LET</CODE> declaration establishes a local scope for the factor
+in which the declared identifier has the value of the given expression.
+In the example of the four nested <CODE>LET</CODE>s,
+both <CODE>a</CODE> and <CODE>b</CODE> are redefined in more local scopes.
+The whole point of the exercise is to use continuations
+to perform the search for the most recent declaration
+of identifiers.
+<H3>The implementation</H3>
+<P>
+Step 1: <EM>Visibility requirements</EM>.
+To implement the <CODE>LET</CODE>-evaluator we start with writing
+a recursive descent parser more or less along familiar lines.
+Visibility requirements are a little different
+from what they have been in earlier programs.
+They can be ascertained simply by noting
+which parsing procedure needs access to which other.
+This leads to a new kind of nesting pattern,
+but this should not present any problems.
+<P>
+Step 2: <EM>Parsing</EM>.
+For the bodies of the three parsing procedures
+a few difficulties arise.
+This is because there is no terminator and hence after a factor
+has been read from the input no additional symbol is to be read.
+Hence the usual one symbol lookahead method does not work.
+Instead, calls to procedure <CODE>getsym</CODE>
+have to occur in what might at first appear to be rather strange places.
+In detail,
+procedure <CODE>factor</CODE> is not allowed to read past its last symbol,
+but procedures <CODE>expression</CODE> and <CODE>term</CODE> need to look ahead
+for a possible infix operator.
+Technically, the grammar for <CODE>factor</CODE> is not an LL(1) grammar
+but a LL(0) grammar,
+but the grammar for expression and term is LL(1).
+As a consequence,
+in the main program the call to <CODE>factor</CODE>
+has to be preceded by a call to <CODE>getsym</CODE>,
+whereas in <CODE>term</CODE> the calls to <CODE>factor</CODE>
+have to be followed by a call to <CODE>getsym</CODE>.
+In <CODE>expression</CODE> the calls to <CODE>term</CODE>
+have to be preceded by calls to <CODE>getsym</CODE>,
+and in <CODE>factor</CODE> for the parenthesis case
+the call to <CODE>expression</CODE> is neither preceded nor followed
+by a call to <CODE>getsym</CODE>.
+It is advisable to write just the parser for this part first,
+without the <CODE>LET</CODE> declarations.
+<P>
+Step 3: <EM>Evaluating</EM>.
+Next, we turn the parser into an evaluator
+using the method first used in Chapter 3:
+Each of the parsing procedures <CODE>factor</CODE>, <CODE>expression</CODE> and <CODE>term</CODE>
+is given a <CODE>VAR</CODE> parameter to return a value,
+and at least the last two procedures need a local variable
+for computing values for the binary operators.
+At this point the program should be able to handle
+any arithmetical expressions which do not contain <CODE>LET</CODE> declarations.
+<P>
+Step 4: <EM><CODE>LET</CODE> declarations</EM>.
+It is an easy matter to make <CODE>getsym</CODE> recognise
+the two multi-character reserved words <CODE>LET</CODE> and <CODE>IN</CODE>,
+and to add a case to <CODE>factor</CODE> to parse declarations.
+After the <CODE>LET</CODE>, the next symbol has to be an identifier
+and it has to be stored somewhere for potential use.
+Also, the value of the following expression has to be stored.
+Both the identifier and its value are then available
+inside the factor which is the <CODE>IN</CODE> part of the <CODE>LET</CODE>.
+A conventional method would be to store the identifier
+and its associated value in a symbol table implemented
+as an <CODE>ARRAY</CODE> of <CODE>RECORDS</CODE> consisting of identifiers and their values.
+When the <CODE>LET</CODE> is encountered,
+the identifier is entered, when the
+expression after the <CODE>=</CODE> has been evaluated its value is entered
+alongside,
+when inside the <CODE>IN</CODE> part an identifier is seen its value is
+retrieved,
+when the <CODE>IN</CODE> part is completed the identifier-value pair is popped.
+This is the method we shall use freely in later programs.
+<P>
+However,
+there is another way of implementing a symbol table which
+does not use an explicit <CODE>ARRAY</CODE> at all,
+but instead uses the recursion stack itself.
+In a <CODE>LET</CODE> declaration the identifier and its value
+are saved in a local variable of procedure <CODE>factor</CODE>,
+and when <CODE>getsym</CODE> sees an identifier
+and needs to look up its value, it then descends along a chain
+of identifier-value pairs buried in the recursion stack.
+For this purpose <CODE>getsym</CODE> has to be given
+a formal parameter which is a procedure to be invoked
+when an identifier is seen.
+The actual parameter will always be a procedure
+that is local to <CODE>factor</CODE>,
+and, since it is local to <CODE>factor</CODE>,
+it can access identifier-value pairs
+that might have been saved
+in that particular incarnation of <CODE>factor</CODE>.
+Hence, if the currently seen identifier
+matches the saved identifier,
+the numeric value to be returned is the saved value.
+On the other hand,
+if there is no match, the search has to continue deeper
+into the stack, for a less recent incarnation.
+Hence this local procedure has to be able to search
+deeper, calling another procedure which it has inherited
+from <CODE>factor</CODE> itself as a parameter.
+Hence <CODE>factor</CODE> itself needs a parameter which is such
+a look-up procedure.
+For the initial call to <CODE>factor</CODE> from the main program,
+a global look-up procedure is needed which fails to find anything
+and reports an error.
+<P>
+In more detail,
+the case for <CODE>LET</CODE> in <CODE>factor</CODE> has to look like this:
+When <CODE>LET</CODE> has been seen a new identifier is expected,
+and <CODE>getsym</CODE> has to be given as an actual parameter
+a procedure local to <CODE>factor</CODE> which will save
+the current identifier in a variable local to <CODE>factor</CODE>.
+The next symbol has to be <CODE>=</CODE>,
+and for this call to <CODE>getsym</CODE> no identifier is expected,
+but since some actual parameter is needed,
+the formal parameter of <CODE>factor</CODE> serves well.
+Then comes a call to <CODE>expression</CODE>,
+using as its <CODE>VAR</CODE> parameter a variable local to <CODE>factor</CODE>,
+this will be the saved value of the expression.
+At this point the new identifier-value pair
+is in two local variables of <CODE>factor</CODE>.
+The current symbol has to be <CODE>IN</CODE>,
+otherwise an error is reported.
+Next comes a call to <CODE>getsym</CODE> and then a recursive call to <CODE>factor</CODE>.
+For both the chain of identifier-value pairs
+has to be augmented by the latest pair.
+Hence for both calls the actual look-up parameter
+has to be a procedure local to <CODE>factor</CODE>
+which can access the latest pair.
+The actual <CODE>VAR</CODE> parameter for the call to <CODE>factor</CODE>
+has to be the <CODE>VAR</CODE> parameter of the calling <CODE>factor</CODE>.
+When the calling <CODE>factor</CODE> containing the <CODE>LET</CODE> declaration
+finally returns, its local variables containing the
+latest identifier-value pair disappear,
+and so does the procedure for accessing that pair.
+<H3>The program</H3>
+<P>
+The following is the standard Pascal source program
+for the functional evaluator.
+<PRE>
+PROGRAM let_expression_evaluator(input,output);
+
+LABEL 10,99;
+
+CONST
+  interactive = true;
+  alen = 8;
+
+TYPE
+  alfa = PACKED ARRAY [1..alen] OF char;
+  string20 = PACKED ARRAY [1..20] OF char;
+  symbol = (lpar_,rpar_,let_,eq_,in_,
+            add_,sub_,mul_,div_,num_,ident_);
+
+VAR
+  cc,cc0 : integer;
+  ch : char; al : alfa; n : integer; sy : symbol;
+  value : integer;
+
+PROCEDURE getch;
+BEGIN
+IF eof THEN GOTO 99;
+IF eoln THEN cc := -1;
+read(ch); cc := cc + 1
+END;
+
+PROCEDURE error(message : string20);
+BEGIN writeln('^':cc0,'  ',message); readln; cc := -1; GOTO 10 END;
+
+PROCEDURE globalcontext;
+BEGIN error('unknown identifier  ') END;
+
+PROCEDURE getsym(PROCEDURE context);
+VAR i : integer;
+BEGIN (* getsym *)
+WHILE ch &lt;= ' '  DO getch;
+cc0 := cc;
+CASE ch OF
+    '(' : BEGIN sy := lpar_; getch END;
+    ')' : BEGIN sy := rpar_; getch END;
+    '+' : BEGIN sy := add_; getch END;
+    '-' : BEGIN sy := sub_; getch END;
+    '*' : BEGIN sy := mul_; getch END;
+    '/' : BEGIN sy := div_; getch END;
+    '=' : BEGIN sy := eq_; getch END;
+    '0','1','2','3','4','5','6','7','8','9':
+        BEGIN
+        n := 0; sy := num_;
+        REPEAT
+            n := 10 * n + (ord(ch) - ord('0')); getch
+            UNTIL NOT (ch IN ['0'..'9'])
+        END;
+    OTHERWISE
+        IF NOT (ch IN ['A'..'Z','a'..'z']) THEN
+            error('illegal character   ')
+          ELSE
+            BEGIN
+            i := 0; al := '        ';
+            REPEAT
+                IF i &lt; alen THEN
+                    BEGIN i := i + 1; al[i] := ch; getch END;
+                UNTIL NOT (CH in ['A'..'Z','a'..'z','0'..'9']);
+            IF al = 'LET     ' THEN sy := let_
+            ELSE IF al = 'IN      ' THEN sy := in_
+            ELSE context
+        END
+    END (* CASE *)
+END; (* getsym *)
+
+PROCEDURE factor(VAR x : integer;PROCEDURE oldcontext);
+
+VAR y : integer; al1 : alfa;
+
+    PROCEDURE nullcontext;
+    BEGIN sy := ident_; al1 := al  END;
+
+    PROCEDURE newcontext;
+    BEGIN
+    IF al = al1
+        THEN BEGIN sy := num_; n := y END
+        ELSE oldcontext
+    END; (* newcontext *)
+
+    PROCEDURE expression(VAR x : integer);
+    VAR y : integer; sy1 : symbol;
+
+        PROCEDURE term(VAR x : integer);
+        VAR y : integer; sy1 : symbol;
+        BEGIN (* term *)
+        factor(x,oldcontext); getsym(oldcontext);
+        WHILE sy IN [mul_,div_] DO
+            BEGIN sy1 := sy; getsym(oldcontext);
+            factor(y,oldcontext); getsym(oldcontext);
+            IF sy1 = mul_ THEN x := x * y ELSE x := x DIV y
+            END
+        END; (* term *)
+
+    BEGIN (* expression *)
+    getsym(oldcontext); term(x);
+    WHILE sy IN [add_,sub_] DO
+        BEGIN sy1 := sy; getsym(oldcontext); term(y);
+        IF sy1 = add_ THEN x := x + y ELSE x := x - y
+        END
+    END; (* expression *)
+
+BEGIN (* factor *)
+CASE sy OF
+    num_ :
+        x := n;
+    lpar_:
+        BEGIN
+        expression(x);
+        IF sy <> rpar_ THEN error('")" expected        ')
+        END;
+    let_ :
+        BEGIN
+        getsym(nullcontext);
+        IF sy <> ident_ THEN error('identifier expected ');
+        getsym(oldcontext);
+        IF sy <> eq_ THEN error('"=" expected        ');
+        expression(y);
+        IF sy <> in_ THEN error('"IN" expected       ');
+        getsym(newcontext); factor(x,newcontext);
+        END;
+    OTHERWISE error('illegal symbol      ')
+    END; (* CASE *)
+END; (* factor *)
+
+BEGIN (* main *)
+cc := 0; ch := ' ';
+10:
+REPEAT
+    getsym(globalcontext);
+    factor(value,globalcontext);
+    writeln('=',value)
+    UNTIL false;
+99:
+END.
+</PRE>
+<P>
+<EM>Exercise</EM>:
+The error pointer will not point to the exact position
+if the input line contains tabs. Fix procedure <CODE>getch</CODE>.
+<H2>Backtracking implemented as second order recursion</H2>
+<P>
+Second order recursion is useful for backtracking programs.
+The following eight queens program is based on one given
+by Wirth(1976, pp 143 - 147),
+and it gives exactly the same solutions as Wirth's.
+One difference is that one statement in Wirth's program,
+essentially
+<PRE>
+    IF solution is incomplete
+        THEN call recursively for the next step
+        ELSE print solution
+</PRE> 
+has been replaced by a simple call to the continuation procedure <CODE>cp</CODE>.
+Two minor differences are
+that this program writes the number
+of tests performed for each placement,
+and that it allows the user to set a maximum for the number of
+solutions to be searched for.
+<PRE>
+PROGRAM queens(input,output);
+LABEL 99;
+VAR
+    i : integer;
+    a : ARRAY[ 1.. 8] OF boolean;
+    b : ARRAY[ 2..16] OF boolean;
+    c : ARRAY[-7.. 7] OF boolean;
+    x : ARRAY[ 1.. 8] OF integer;
+    num, max, tests : integer;
+
+PROCEDURE show;
+VAR k : integer;
+BEGIN
+FOR k := 1 TO 8 DO write(x[k]:4); writeln(tests:10);
+num := num + 1; IF num = max THEN GOTO 99; tests := 0
+END; (* show *)
+
+PROCEDURE try(i : integer; PROCEDURE cp);
+VAR j : integer;
+
+    PROCEDURE test;
+    BEGIN
+    FOR j := 1 TO 8 DO
+        BEGIN
+        tests := tests + 1;
+        IF a[j] AND b[i+j] AND c[i-j] THEN
+            BEGIN
+            x[i] := j;
+            a[j] := false; b[i+j] := false; c[i-j] := false;
+            cp;
+            a[j] := true; b[i+j] := true; c[i-j] := true;
+            END
+        END (* FOR *)
+    END; (* test *)
+
+BEGIN (* try *)
+IF i > 0 THEN try(i-1,test) ELSE cp
+END; (* try *)
+
+BEGIN (* main *)
+FOR i := 1 TO 8 DO a[i] := true;
+FOR i := 2 TO 16 DO b[i] := true;
+FOR i := -7 TO 7 DO c[i] := true;
+read(max); num := 0; tests := 0;
+try(8,show);
+99:
+END. (* main *)
+</PRE>
+<P>
+If the input number given is 12, then the output
+from the program will consist of the following 12 lines;
+they are identical to the ones in Wirth (1976, p~147).
+<PRE>
+   1   5   8   6   3   7   2   4       876
+   1   6   8   3   7   4   2   5       264
+   1   7   4   6   8   2   5   3       200
+   1   7   5   8   2   4   6   3       136
+   2   4   6   8   3   1   7   5       504
+   2   5   7   1   3   8   6   4       400
+   2   5   7   4   1   8   6   3        72
+   2   6   1   7   4   8   3   5       280
+   2   6   8   3   1   4   7   5       240
+   2   7   3   6   8   5   1   4       264
+   2   7   5   8   1   4   6   3       160
+   2   8   6   1   3   5   7   4       336
+</PRE> 
+<P>
+It is worth noting the essential pattern in procedure test;
+that same pattern will be seen again and again in what follows.
+<PRE>
+        IF somecondition THEN
+            modify some global variables;
+            cp;
+            restore those global variables
+</PRE> 
+<P>
+Second order recursion makes it possible to write clean programs
+for the traversal of AND-OR trees.
+In such trees each node is either a leaf node, or it is an AND-node
+or an OR-node with two subtrees, its left and its right.
+The traversal procedure sketched below has two parameters,
+an ordinary value parameter which is a tree,
+and a continuation which is a parameterless procedure.
+When the traversal procedure is called globally,
+the first parameter is the tree to be traversed,
+and the second parameter is a global procedure which
+either does nothing at all, or writes out the value of global
+variables which might have been modified by processing leaves.
+<PRE>
+PROCEDURE traverse(t : tree; PROCEDURE cp);
+    PROCEDURE traverse-right;
+    BEGIN traverse(right(t),cp) END;
+BEGIN (* traverse *)
+CASE kind(t) OF
+    leaf : BEGIN
+           use leaf to modify some global variables
+           cp;
+           restore global variables
+           END;
+    and  : traverse(left(t),traverseright);
+    or   : BEGIN
+           traverse(left(t),cp);
+           traverse(right(t),cp
+           END;
+    END (* CASE *)
+END; (* traverse *)
+</PRE> 
+<P>
+<P>
+In later chapters we shall use similar procedures
+to implement backtracking in
+programs for expanding regular expressions,
+for the semantic tableaux method in logic,
+for parsing in accordance with a context free grammar,
+and for tracing possible firing sequences in Petri nets.
+<P>
+It is possible to extend the technique of higher order recursion
+even further.
+Chapter 12 describes some examples of third order recursion,
+and Chapter 15 uses it for an implementation of theorem prover
+for monadic predicate logic.
+An example of fourth order recursion is given in
+the appendix.
+<P>
+<EM>Reading</EM>:
+For a description of the technique of using
+continuations as parameters see Barrett, Ramsay and Sloman
+(1986, pp 201 - 205),
+for using continuations to implement backtracking see
+Mellish and Hardy  (1984, p 150),
+for a non-recursive implementation of backtracking with continuations
+see Ramsay and Barrett (1987, pp 60 - 62).
+Note that all three references are in the language POP-11.
+Grune and Jacobs (1990, pp 137 - 139)
+give a Pascal program which uses continuations
+to implement backtracking to write all the strings
+in the language generated by a particular context free language.
+<P>
+If you are wondering how procedures as
+parameters are implemented, see MacLennan (1983, pp 247 - 250)
+and Capon and Jinks (1988, pp 160 and 170).
+</body>
+</HTML>

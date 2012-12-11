@@ -1,0 +1,355 @@
+<HTML>
+<head>
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Chapter 1</TITLE>
+</head>
+
+<body>
+
+<H1>Getting started: a truth table program</H1>
+<P>
+In this introductory chapter we write
+one very small program which will produce
+the truth table for one particular formula.
+The method is easily adapted to writing similar programs
+for other, even much larger formulas.
+Readers familiar with Pascal will want to skip this chapter entirely.
+<H2>Hello world</H2>
+<P>
+If you have never written a Pascal program on the computer
+that you are using,
+then you should write a tiny little program and get it running.
+Otherwise you will want to skip this section.
+<P>
+To write a program you need an <EM>editor</EM> to create and edit a file
+which will remain permanently on your disk area.
+If the program is a Pascal program, then it has to be
+processed by the Pascal <EM>compiler</EM> to produce another
+file. In most systems this resulting file has to be processed further
+by a <EM>linker</EM> which produces another file again.
+Only this last file is eventually executed by the computer.
+<P>
+To get started it is useful to begin with something entirely trivial.
+The following is the sort of program that you might use:
+<XMP>
+PROGRAM hello(output);
+BEGIN
+writeln('hello world')
+END.
+</XMP>
+You should use your editor to create this file,
+and you might call it <CODE>HELLO.PAS</CODE> or something like that.
+On a VAX you then compile it with the command
+<XMP>
+        $ PASCAL HELLO
+</XMP>
+and then you link it with the command
+<XMP>
+        $ LINK HELLO
+</XMP>
+and then you run it with the command
+<XMP>
+        $ RUN HELLO
+</XMP>
+which will produce the output line
+<XMP>
+        hello world
+</XMP>
+and then give you the <CODE>$</CODE>-prompt again.
+If the program contained an error which the Pascal compiler
+detected,
+then you should not try to link the faulty program
+but go back to the editor to correct the error.
+If the program when running did not produce the right output,
+you should also go back to the editor to correct it.
+On a Unix system the commands will be different
+but essentially similar.
+<P>
+For most programs it is necessary to go through many cycles
+of editing, compiling, linking and running.
+Suppose your program is called <CODE>MYPROG</CODE>,
+then the cycle is quite well described by the following:
+<XMP>
+        REPEAT
+                $ EDIT MYPROG.PAS
+                  ... here make your changes
+                  make sure you exit properly from the editor
+                $ PASCAL MYPROG
+                IF there were no errors detected by the compiler THEN
+                        $ LINK MYPROG
+                        $ RUN MYPROG
+        UNTIL completely satisfied
+</XMP>
+Do make sure you understand this. Try it out by
+getting the <CODE>HELLO</CODE> program to write
+<XMP>
+        hello beautiful world
+</XMP>
+instead.
+If you had any problems with getting the first or the second <CODE>HELLO</CODE>
+program to work properly, then you should get help from somebody.
+<H2>Truth table</H2>
+<P>
+In the remainder of this chapter we shall learn how to write
+a program which will produce the complete truth table
+for a particular formula of propositional logic.
+Different, but similar programs are easily written for
+different formulas.
+In Chapter 5 we shall write one program which
+can read any formula of propositional logic
+and produce its truth table.
+But such a general purpose program is not entirely trivial,
+so in this chapter we shall be content with writing
+special purpose programs for just one formula.
+<P>
+To make matters as easy as possible,
+we select as a demonstration formula one which
+only uses those propositional operators
+for which Pascal has obviously corresponding
+Boolean operators:
+<XMP>
+                NOT (p OR q AND r)  OR  q AND (r OR p)
+</XMP>
+We shall assume that our propositional logic
+follows the same conventions about precedences as Pascal does:
+<CODE>NOT</CODE> binds more strongly than <CODE>AND</CODE>,
+which binds more strongly than <CODE>OR</CODE>.
+It is as if the formula were bracketed like this:
+<XMP>
+                (NOT (p OR (q AND r)))  OR  (q AND (r OR p))
+</XMP>
+<P>
+The formula contains three atomic formulas:
+<CODE>p</CODE>, <CODE>q</CODE> and <CODE>r</CODE>.
+So the full truth table will contain 2^3 = 8 lines.
+Each such line should contain the current values
+of the atomic formulas, together with the value of the big formula.
+The 8 lines should be preceded by a header
+line containing the names of the three atoms, then a space
+and then the formula.
+In the header line and in each of the 8 lines of the table,
+the names of the atoms or the values of the atoms
+should be separated by a space.
+For the 8 values of the formula,
+it will look best if they occur immediately below
+the main operator of the formula, which is the second <CODE>OR</CODE>.
+The truth values of the atomic formulas and of the big formula
+could be written as <CODE>1</CODE> and <CODE>0</CODE>, which is easiest on the eyes,
+or as <CODE>T</CODE> and <CODE>F</CODE> which is just marginally easier to program.
+This is what the output should look like:
+<XMP>
+p q r     NOT (p OR q AND r)  OR  q AND (r OR p)
+T T T                         T
+T T F                         T
+T F T                         F
+T F F                         F
+F T T                         T
+F T F                         T
+F F T                         T
+F F F                         T
+</XMP>
+<H2>The program</H2>
+<P>
+The program has to start by writing the header line
+containing the three atoms separated by a space,
+then a larger space followed by the formula.
+Because in the 8 lines of the table
+the value of the formula has to be written directly
+underneath the main operator of the formula,
+it is useful to define two <CODE>CONST</CODE> strings:
+one is the formula preceded by a few spaces,
+the other is a blank string of spaces as long
+as the formula string up to its main operator.
+This is an easy way of ensuring the alignment.
+Thus, to write the header line,
+a string <CODE>p q r </CODE> is written out, followed
+by the string constant for the formula.
+<P>
+Now the 8 lines of the table have to be written.
+For each line it is necessary to produce the
+truth values of the three atoms,
+to write them out,
+and then to write the truth value of the formula
+for these values.
+However, it is best not to think in terms of 8 lines
+but in terms of what has to be done for each of the 3 atoms.
+<P>
+Starting with <CODE>p</CODE>, then <CODE>q</CODE> and then <CODE>r</CODE>,
+for each atom the values true and false have to be
+assigned.
+When r has been assigned a value,
+the formula itself can be evaluated and the current line written out.
+To assign first <CODE>true</CODE> and then <CODE>false</CODE> to an atom,
+a <CODE>FOR</CODE> loop is useful.
+It may be that you are only familiar with <CODE>FOR</CODE> loops
+that use integers,
+but they work equally well with boolean values.
+It may be that you are only familiar with <CODE>FOR</CODE> loops
+which go upward,
+but by saying <CODE>DOWNTO</CODE> instead of <CODE>TO</CODE>
+they can be made to go downwards.
+In the case of Boolean values,
+downwards means first <CODE>true</CODE> then <CODE>false</CODE>.
+The form of such loops is:
+<XMP>
+        FOR a := true  DOWNTO false DO
+            something-or-other
+</XMP>
+In our case we have three atomic formulas
+<CODE>p</CODE>, <CODE>q</CODE> and <CODE>r</CODE>,
+and to obtain a truth table with all the possible
+combinations of values we nest the <CODE>FOR</CODE> loops for the three
+atomic formulas:
+<XMP>
+        FOR p := true DOWNTO false DO
+          FOR q := true DOWNTO false DO
+            FOR r := true DOWNTO false DO
+              something-or-other
+</XMP>
+The three variables <CODE>p</CODE>, <CODE>q</CODE> and <CODE>r</CODE> have to be declared
+as Boolean variables in a <CODE>VAR</CODE> section at the beginning of the program.
+<P>
+In our case doing something or other means
+writing out a line in the truth table.
+So a <CODE>write</CODE> statement is called for which will
+write the current values of the three atoms
+and the current value of the formula.
+All four of these are boolean values,
+and Pascal would normally write them as <CODE>TRUE</CODE> and <CODE>FALSE</CODE>.
+This would make a correct but unnecessarily wordy table,
+it looks nicer if only single characters <CODE>T</CODE> and <CODE>F</CODE> are used.
+These happen to be the first characters of what Pascal
+would normally write,
+so if we specify that the values are to be written
+in a field of just one character,
+only <CODE>T</CODE> or <CODE>F</CODE> will be written.
+For example, if <CODE>b</CODE> is a Boolean expression,
+then
+<XMP>
+        write(b:1)
+</XMP>
+will write the value of <CODE>b</CODE> as just one character, <CODE>T</CODE> or <CODE>F</CODE>.
+Since in the header line
+each atom was followed by a space,
+to achieve alignment the current value of each
+atom has to be followed by a space.
+<P>
+Finally the value of the formula has to be written,
+but it has to be preceded by a blank
+which is as long as the formula up to its main operator.
+This is the <CODE>CONST</CODE> string referred to earlier.
+The value of the formula,
+now given not as a string but as a Boolean expression,
+is written next.
+Each line in the truth table is written by
+one single <CODE>writeln</CODE> statement.
+<P>
+The following is the standard Pascal source
+for the truth table program.
+<XMP>
+PROGRAM truthtable(output);
+CONST formula = '    NOT (p OR q AND r)  OR  q AND (r OR p)';
+        blank = '                        ';
+VAR p, q, r : boolean;
+BEGIN
+writeln('p q r ',formula);
+FOR p := true DOWNTO false DO
+  FOR q := true DOWNTO false DO
+    FOR r := true DOWNTO false DO
+      writeln(p:1,' ',q:1,' ',r:1,' ',blank,
+        NOT (p OR q AND r)  OR  q AND (r OR p):1)
+END.
+</XMP>
+<P>
+You might think that it is hardly worthwhile to write
+a 12 line Pascal program to produce a truth table of 8 lines
+plus one header line.
+On the other hand, consider a formula with, say, six atomic formulas.
+This will require a table of 2^6 = 64 lines,
+but how long will the program be?
+There are three more atomic formulas than in the program
+that we have written,
+so there will have to be three more nested <CODE>FOR</CODE> loops,
+each of one extra line each.
+That will make 15 lines in all.
+<P>
+<EM>Different constants</EM>:
+Modify the program so that instead of writing <CODE>T</CODE> and <CODE>F</CODE>
+for the truth values it writes <CODE>1</CODE> and <CODE>0</CODE>.
+<P>
+<EM>A different programming language</EM>:
+If you know another programming language,
+like perhaps the C language,
+write the program in that language.
+<P>
+<EM>Other connectives</EM>:
+Assume that the material implication connective is written <CODE>IMP</CODE>
+and that the material equivalence connective is written <CODE>IFF</CODE>.
+Write a formula using these connectives,
+then write a Pascal program to produce a truth table for
+this formula.
+Note that <CODE>IMP</CODE> and <CODE>IFF</CODE> are not Pascal operators,
+so you will have to find a way around that.
+<P>
+<EM>Summary</EM>:
+It would be useful if the truth table program
+could say at the end "tautology"
+if the formula was true in every line,
+or "contradiction"
+if the formula was false in every line,
+or "contingent" otherwise.
+Modify the program accordingly.
+Sometimes one does not even want to see the whole truth table
+but only this one-word summary.
+Modify the program so that it only writes the summary.
+<P>
+<EM>Values of subformulas</EM>:
+For teaching purposes many books show truth tables
+in which the truth value of each subformula
+is written under its main operator.
+This of course is how one does truth tables by hand.
+Think about how you would modify the program
+to write the values of subformulas.
+But do not bother to actually make the program do it ---
+for a program which only writes the table for a single
+formula it really is not worth it.
+<P>
+<EM>Non-classical logic</EM>:
+There are some logics which use more than two truth values ---
+three, four, even eight.
+If you know some of them, write a program
+to write a table for a single formula
+with these unconventional truth value.
+<P>
+<EM>Reading</EM>: If you had problems with understanding the Pascal program,
+then you should consult any one of
+the many and often very good introductory books on Pascal.
+Some of those recommended are:
+Cooper and Clancy (1985),
+Leestma and Nyhoff (1990),
+Peters (1986).
+If you had problems getting your program into the computer,
+read the manual for your editor.
+<P>
+<EM>A puzzle</EM>:
+The following is taken from "The Mind  of  the  Year"  competition  in
+<EM>The Weekend Australian</EM>, September 8-9 1990, p 10.
+<P>
+At a quadruple marriage ceremony four men Arthur,  Bill,  Charlie
+and  Don  were  marrying  Erica, Fanny, Georgina and Helen, though not
+necessarily in that order.
+Consider the following statements:
+<P>
+If Fanny is not marrying Arthur, then Georgina  is  not  marrying
+Charlie.  If either Georgina or Helen is marrying Bill, then Arthur is
+marrying Fanny.  If Charlie  is  not  marrying  Erica,  then  Bill  is
+marrying  Helen.   If  Georgina  is  marrying  Don,  then  Bill is not
+marrying Fanny.  If Don is not marrying Fanny, then Fanny is  marrying
+Bill.
+<P>
+Who is marrying whom?
+Write a Pascal program to solve this puzzle.
+(Hint: think of the four women as variables,
+think of the four men as values.)
+
+</body>
+</html>

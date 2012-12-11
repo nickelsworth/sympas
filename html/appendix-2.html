@@ -1,0 +1,1394 @@
+<!-- X-URL: http://www.latrobe.edu.au/phimvt/sympas/s99app-2.html -->
+<!-- Date: Fri, 24 Aug 2012 09:12:53 GMT -->
+<BASE HREF="http://www.latrobe.edu.au/phimvt/sympas/s99app-2.html">
+
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=utf-8">
+
+<HTML>
+<head>
+
+<TITLE>SYMBOLIC PROCESSING IN PASCAL - Appendix Part 2</TITLE>
+<!-- begin css.php -->
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/includes.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/base.css" />
+<link rel="stylesheet" type="text/css" media="print" href="/ltu_assets/css/print.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="/ltu_assets/css/legacy.css" />
+<!--[if lte IE 6]>
+<link href="/ltu_assets/css/ielegacy.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+<!--[if IE 7]>
+<link href="/ltu_assets/css/ie7.css" rel="stylesheet" type="text/css" media="screen" />
+<![endif]-->
+
+ 
+<!-- end css.php -->
+</head>
+
+<body>
+<!-- begin nav_top.php -->
+<!--  U T I L I T Y  N A V I G A T I O N  -->
+<div id="utilityNav">
+  <p>Global Utilities</p>
+  <ul>
+    <li><a href="#content">Skip to content</a></li>
+    <li><a href="/sitemap/">Site map</a></li>
+  </ul>
+  <form action="http://search.latrobe.edu.au/search/index.cgi" method="get">
+    <div id="search">
+      <label for="query">Search: </label>
+      <input type="text" name="query" id="query" size="27" value="" class="fieldcellInput" accesskey="q" />
+      <input type="hidden" name="collection" value="Latrobe" />
+      <input type="submit" class="button" value="SEARCH" />
+    </div>
+  </form>
+</div>
+<!--  G L O B A L  N A V I G A T I O N  -->
+<div id="globalNav">
+  <p>Global Navigation</p>
+  <ul>
+    <li><a href="/">La Trobe Home</a></li>
+    <li><a href="/about">About La Trobe</a></li>
+    <li><a href="/courses/">Courses</a></li>
+    <li><a href="/campuses">Campuses</a></li>
+    <li><a href="/faculties">Faculties</a></li>
+    <li><a href="/research">Research</a></li>
+    <li><a href="/contact">Contacts</a></li>
+  </ul>
+</div>
+<!-- end nav_top.php -->
+
+<H2>Full truth tables</H2>
+<P>
+This program solves some of the exercises given
+in Chapter 5.
+It is a truth table program which in each line of the table
+writes the values of all subformulas.
+In addition it accepts multi-character operators as input,
+and on completion of the table it reports whether
+the input formula was contingent, a tautology or a self-contradiction.
+If the input formula is terminated with a <CODE>?</CODE> instead of a <CODE>.</CODE>,
+the table is not output, but only the brief report;
+in this case processing of the table is abandoned
+as soon as it becomes known that the formula is contingent.
+On encountering an error it places a pointer under the offending
+symbol.
+The program also optimises the two loops
+in the truth table procedure by creating a linked list
+of nodes containing the next propositional atom.
+This linking is done in the main program as soon as the entire formula
+has been read;
+hence in the truth table procedure
+the two <CODE>FOR</CODE> loops are eliminated.
+For an input file such as
+<XMP>
+(a = b) & (b > c)  >  (-c > -a).
+(p OR q)  AND  (p IMP r)  AND  (q IMP s)  IMP  (r AND s).
+</XMP>
+the program produces the following output:
+<XMP>
+? 
+a b c     (a = b) & (b > c)  >  (-c > -a).
+                             *
+1 1 1        1    1    1     1   0  1 0   
+1 1 0        1    0    0     1   1  0 0   
+1 0 1        0    0    1     1   0  1 0   
+1 0 0        0    0    1     1   1  0 0   
+0 1 1        0    0    1     1   0  1 1   
+0 1 0        0    0    0     1   1  1 1   
+0 0 1        1    1    1     1   0  1 1   
+0 0 0        1    1    1     1   1  1 1   
+tautology
+? 
+p q r s      (p OR q)  AND  (p IMP r)  AND  (q IMP s)  IMP  (r AND s).
+                                                       *
+1 1 1 1         1      1       1       1       1       1       1      
+1 1 1 0         1      1       1       0       0       1       0      
+1 1 0 1         1      0       0       0       1       1       0      
+1 1 0 0         1      0       0       0       0       1       0      
+1 0 1 1         1      1       1       1       1       1       1      
+1 0 1 0         1      1       1       1       1       0       0      
+1 0 0 1         1      0       0       0       1       1       0      
+1 0 0 0         1      0       0       0       1       1       0      
+0 1 1 1         1      1       1       1       1       1       1      
+0 1 1 0         1      1       1       0       0       1       0      
+0 1 0 1         1      1       1       1       1       0       0      
+0 1 0 0         1      1       1       0       0       1       0      
+0 0 1 1         0      0       1       0       1       1       1      
+0 0 1 0         0      0       1       0       1       1       0      
+0 0 0 1         0      0       1       0       1       1       0      
+0 0 0 0         0      0       1       0       1       1       0      
+contingent
+? 
+</XMP>
+In detail, the enhancements to the simple truth table program of
+Chapter 5 are as follows:
+<P>
+The main program again consists of a <CODE>REPEAT</CODE> loop that has to be
+executed for each formula that is read.
+Two terminators of formulas are allowed:
+a period <CODE>.</CODE> will produce the full truth table,
+and <CODE>?</CODE> will only produce a minimal synopsis ---
+'contingent', 'tautology' or 'contradiction'.
+While the formula was being read,
+an initially empty set of propositional variables is collected;
+this set is now used by a <CODE>FOR</CODE> loop to link all
+the variables to their alphabetic successors,
+using an <CODE>ARRAY</CODE> indexed by lowercase letters
+having as entries the next lowercase letter
+occurring in the formula.
+This single <CODE>FOR</CODE> loop replaces the various wasteful <CODE>FOR</CODE> loops
+in the original program.
+After this linking,
+if a full table is required then the header line will be written.
+For the list of variables the linked list can be traversed.
+For the formula itself
+the content of the input buffer is written out;
+the input buffer was copied by the scanner from the input file.
+It is also necessary to write a <CODE>*</CODE> underneath the main operator,
+so the parser and code generator have to keep track of where
+in the input buffer the various operators are located.
+This facility is used not just here,
+but also when writing values of subformulas underneath their operator.
+<P>
+<EM>The translator</EM>:
+This again consists of nested procedures
+<CODE>formula</CODE>, <CODE>expression</CODE>, <CODE>term</CODE>, and <CODE>factor</CODE>.
+Again they are responsible for parsing, error reporting and
+generating the postfix code.
+But the code that is generated now also has to contain
+an indication of where the value of a subformula is to be written,
+which is underneath the operator which gave rise to the code
+being generated.
+So code consists of a postfix character operator
+together with an integer index into the current input line
+and hence into the input buffer.
+Later, when a line of the table is being computed,
+the values of subformulas are placed into the buffer
+in the place of the operator.
+But the generation of the postfix operator and the index
+occurs well after the reading of the input operator.
+So, when an input operator is being read by the scanner,
+its index in the input buffer has to be saved in a local variable
+of the parsing procedure.
+Then when code is generated,
+the postfix operator is generated together with the saved index.
+Thus code consists of an array of records
+containing a postfix character as before,
+but also an integer index.
+<P>
+<EM>The scanner</EM>:
+Procedure <CODE>getsym</CODE>
+has to recognise single printing characters as before,
+but it also has to keep track of where in the input line they occurred,
+and in addition it has to recognise multi-letter operators.
+An auxiliary procedure <CODE>getch</CODE> reads single characters and copies
+them into the buffer.
+Procedure <CODE>getsym</CODE> begins by calling getch to skip over any blanks.
+The current length of the buffer is then made available
+as the index to be used for code generation.
+If the current character is an uppercase letter,
+then the current symbol is a multi-letter symbol and has to be
+read into a short string.
+A simple linear search then determines which operator it is.
+Only the single character equivalent is made available to the parser.
+So the parser never knows whether a single character operator
+was used or its multi-letter equivalent.
+If the multi-letter symbol is not recognised
+as a standard operator,
+then an error is reported.
+<P>
+The error reporting procedure will be called when
+a formula is terminated illegally,
+when a factor starts with the wrong symbol,
+when a right hand parenthesis is missing,
+or when a multi-letter operator is not recognised.
+Since the scanner keeps a count of how many characters
+there were in the current input line at the moment the error was detected,
+it is possible to write a <CODE> </CODE> pointer underneath the last symbol
+that had been read.
+This is followed by another line with the error message.
+<P>
+<EM>Line generation</EM>:
+The recursive procedure for generating lines in the truth table
+is just a modification of the one in Chapter 5.
+The procedure can now make use of the linked list of variables
+that was created by the main program just after the formula
+had been read.
+If the parameter of the procedure is a possible variable,
+then that variable is first made true and then made false,
+and for both cases the procedure then calls itself
+recursively using as the parameter the next variable in the list.
+Eventually all variables will have values.
+If a full table is not required,
+then the formula can be evaluated for the current assignment
+of truth values.
+But if a full table is required,
+then it is necessary to step through the linked list of variables
+to write their current values.
+Then the formula is evaluated by a procedure described
+in the next paragraph.
+This procedure writes the values of subformulas
+into what was the input buffer,
+and when it returns the transformed input buffer
+can be written out to complete the line of the truth table.
+<P>
+<EM>Evaluation</EM>:
+In the original program in Chapter 5 the evaluation of a formula
+was done by a function returning the truth value of the whole formula.
+Here however the truth values of all subformulas are required, too,
+and they are to be placed into what was originally
+the input buffer,
+but what is now becoming an output buffer.
+The reason for using the same buffer
+has to do with the alignment of the operators
+in the input formula and their truth values in the output line.
+If the input formula contained spaces, tabs or even rub-outs,
+it is not easy to achieve the alignment by using column numbers.
+The trick of using the same buffer solves the problem in a simple way.
+The actual evaluation of the postfix code
+proceeds on a stack in a manner which is familiar by now.
+For each operator that was executed,
+the truth value that has been computed
+is then placed into the output buffer as either <CODE>0</CODE> or <CODE>1</CODE>,
+at the position given by the infix index
+that had been associated with the postfix operator.
+Note that placing the values into the buffer
+occurs temporally in postfix order
+but spatially in infix positions.
+When the <CODE>FOR</CODE> loop has been executed
+and the formula has been evaluated,
+then it has to be recorded whether
+the formula was true or was false.
+If a full table is not required
+and by now the formula has been both true and false,
+the program can report that the formula is contingent
+and can jump to the start in readiness for a new formula.
+<P>
+The source is as follows:
+<XMP>
+PROGRAM truthtable(input,output);
+
+LABEL 1, 99;
+
+CONST
+    maxbuffer = 80;
+    maxcode = 60;
+    maxstack = 30;
+    prompt = '? '; promptblank = '  ';  (* belong together *)
+    gap = 4;
+    emptyalfa = '    '; alfalength = 4; (* belong together *)
+                                        (* with literals in getsym *)
+TYPE
+    message = PACKED ARRAY [1..30] OF char;
+VAR
+    ch : char;
+    buffer : ARRAY [1..maxbuffer] OF char;
+    bufferindex,bufferlength : integer;
+    code : ARRAY [1..maxcode] OF
+              RECORD op : char; inx : integer END;
+    codeindex : integer;
+    occurrences,truevars  : SET OF char;
+    c,first : char;
+    nextvars : ARRAY [char] OF char;
+    beentrue,beenfalse : boolean;
+    columns, i : integer;
+    fulltable : boolean;
+
+PROCEDURE error(mes : message);
+VAR i : integer;
+BEGIN (* error *)
+write(promptblank);
+FOR i := 1 TO bufferindex - 1 DO
+    IF buffer[i] > ' ' THEN write(' ') ELSE write(buffer[i]);
+writeln('^');
+writeln('ERROR: ',mes);
+readln;
+GOTO 1
+END; (* error *)
+
+PROCEDURE getsym;
+VAR al : PACKED ARRAY [1..alfalength] OF char; k : integer;
+
+    PROCEDURE getch;
+    BEGIN
+    IF eof THEN goto 99;
+    read(ch);
+    bufferlength := bufferlength + 1; buffer[bufferlength] := ch
+    END; (* getch *)
+
+BEGIN (* getsym *)
+REPEAT getch  UNTIL ch > ' ';
+bufferindex := bufferlength;
+IF ch IN ['A'..'Z'] THEN
+    BEGIN
+    al := emptyalfa; k := 1; al[k] := ch;
+    WHILE (input^ IN ['A'..'Z']) AND (k < alfalength) DO
+        BEGIN getch; k := k + 1; al[k] := ch END;
+    IF al = 'NOT ' THEN ch := '-' ELSE
+    IF al = 'AND ' THEN ch := '&' ELSE
+    IF al = 'OR  ' THEN ch := '#' ELSE
+    IF al = 'IMP ' THEN ch := '>' ELSE
+    IF al = 'IFF ' THEN ch := '=' ELSE
+        error('unknown reserved word         ')
+    END (* IF *)
+END; (* getsym *)
+
+PROCEDURE generate(o : char; i : integer);
+BEGIN (* generate *)
+codeindex  :=  codeindex + 1;
+WITH code[codeindex] DO
+    BEGIN op := o; inx := i END
+END; (* generate *)
+
+(* - - - - -  T R A N S L A T O R  - - - - - *)
+
+PROCEDURE formula;
+VAR localchar : char; localindex : integer;
+
+    PROCEDURE expression;
+    VAR localindex : integer;
+
+        PROCEDURE term;
+        VAR localindex : integer;
+
+            PROCEDURE factor;
+            VAR localindex : integer;
+            BEGIN
+            CASE ch of
+                'a','b','c','d','e','f','g','h','i',
+                'j','k','l','m','n','o','p','q','r',
+                's','t','u','v','w','x','y','z',
+                '0','1' :
+                    BEGIN
+                    generate(ch,bufferindex);
+                    occurrences := occurrences + [ch];
+                    getsym
+                    END;
+                '-' :
+                    BEGIN
+                    localindex := bufferindex; getsym;
+                    factor;
+                    generate('-',localindex)
+                    END;
+                '(' :
+                    BEGIN
+                    getsym;
+                    formula;
+                    IF ch = ')' THEN getsym ELSE
+                        error('right parenthesis expected    ');
+                    END
+                OTHERWISE
+                    error('beginning of factor expected  ');
+                END (* CASE *)
+            END; (* factor *)
+
+        BEGIN (* term *)
+        factor;
+        WHILE ch = '&' DO
+            BEGIN
+            localindex := bufferindex; getsym;
+            factor;
+            generate('&',localindex)
+            END (* WHILE *)
+        END; (* term *)
+
+    BEGIN (* expression *)
+    term;
+    WHILE ch IN ['#','v'] DO
+        BEGIN
+        localindex := bufferindex; getsym;
+        term;
+        generate('#',localindex)
+        END (* WHILE *)
+    END; (* expression *)
+
+BEGIN (* formula *)
+expression;
+IF (ch = '>') OR (ch = '=') THEN
+    BEGIN
+    localchar := ch; localindex := bufferindex; getsym;
+    formula;
+    generate(localchar,localindex)
+    END (* WHILE *)
+END; (* formula *)
+
+(* - - - - -  T A B L E   G E N E R A T O R  - - - - - *)
+
+PROCEDURE table(v : char);
+VAR c : char;
+
+    PROCEDURE evaluate;
+    VAR s : ARRAY [1..maxstack] OF boolean;
+        t : integer; (* top of stack *)
+        i : integer;
+    BEGIN (* evaluate *)
+    t := 0;
+    FOR i := 1 TO codeindex DO
+        WITH code[i] DO
+            BEGIN
+            CASE op OF
+                'a','b','c','d','e','f','g','h','i','j','k','l','m',
+                'n','o','p','q','r','s','t','u','v','w','x','y','z' :
+                      BEGIN t := t+1; s[t] := op IN truevars  END;
+                '1' : BEGIN t := t+1; s[t] := true            END;
+                '0' : BEGIN t := t+1; s[t] := false           END;
+                '-' : BEGIN           s[t] := NOT s[t]        END;
+                '&' : BEGIN t := t-1; s[t] := s[t] AND s[t+1] END;
+                '#' : BEGIN t := t-1; s[t] := s[t] OR  s[t+1] END;
+                '>' : BEGIN t := t-1; s[t] := s[t] &lt;=  s[t+1] END;
+                '=' : BEGIN t := t-1; s[t] := s[t]  =  s[t+1] END;
+                END; (* CASE *)
+            IF op IN ['-','&','#','>','='] THEN
+                buffer[inx] := chr(ord('0') + ord(s[t]))
+            END; (* WITH *)
+    IF s[1] THEN beentrue := true ELSE beenfalse := true;
+    IF NOT fulltable THEN
+        IF beentrue AND beenfalse THEN
+            BEGIN writeln('contingent'); GOTO 1 END
+    END; (* evaluate *)
+
+BEGIN (* table *)
+IF v > 'z' THEN (* all variables have values now *)
+    IF NOT fulltable THEN evaluate ELSE
+        BEGIN
+        c := first;
+        WHILE c &lt;= 'z' DO
+            BEGIN
+            write(ord(c in truevars):1,' ');
+            c := nextvars[c]
+            END;
+        write(' ':gap);
+        evaluate;
+        FOR i := 1 TO bufferlength DO write(buffer[i]);
+        writeln
+        END
+  ELSE
+    BEGIN (* more variables to be assigned values *)
+    truevars := truevars + [v]; table(nextvars[v]);
+    truevars := truevars - [v]; table(nextvars[v])
+    END
+END; (* table *)
+
+(* - - - - -  M A I N  - - - - - *)
+
+BEGIN (* main *)
+1:
+REPEAT
+    (* read a formula *)
+    write(prompt); bufferlength := 0; getsym;
+    IF ch = '.' THEN GOTO 99;
+    codeindex := 0; occurrences := [];
+    formula;
+    IF NOT (ch IN ['.','?']) THEN
+        error('"." or "?" expected           ');
+    fulltable := ch = '.';
+    writeln;
+    (* link successors *)
+    first := succ('z');
+    FOR c := 'z' DOWNTO 'a' DO
+        IF c IN occurrences THEN
+            BEGIN nextvars[c] := first; first := c END;
+    IF fulltable THEN
+        BEGIN
+        (* write headerline *)
+        c := first; columns := 0;
+        WHILE c &lt;= 'z' DO
+            BEGIN
+            write(c,' '); columns := columns + 2;
+            c := nextvars[c]
+            END;
+        write(' ':gap); columns := columns + gap;
+        FOR i := 1 TO bufferlength DO
+            BEGIN
+            write(buffer[i]);
+            IF buffer[i] > ' ' THEN buffer[i] := ' ' (* wipe *)
+            END;
+        writeln;
+        (* emphasise main operator *)
+        write(' ':columns);
+        FOR i := 1 TO code[codeindex].inx - 1 DO write(buffer[i]);
+        writeln('*');
+        END; (* IF *)
+    (* table and synopsis *)
+    beentrue := false; beenfalse := false;
+    table(first);
+    IF beentrue
+        THEN IF beenfalse THEN writeln('contingent')
+                          ELSE writeln('tautology')
+        ELSE writeln('contradiction')
+    UNTIL false;
+99:
+END.
+</XMP>
+<H2>Optimised semantic tableaux with macros</H2>
+<P>
+This program solves some of the exercises in Chapter 10.
+It is a semantic tableau program which uses the trunk before branch
+optimisation.
+It also has an inbuilt macro expansion mechanism.
+Instead of using a recursive descent parser
+or a non-recursive predictive top down parser,
+it uses a non-recursive LR1 bottom up parser.
+Finally, for variety, it uses <EM>pointer</EM>s to implement
+the internal code.
+<P>
+<EM>The macro mechanism</EM>:
+This facility allows users to define capital letters
+as short for any sequence of characters.
+These macros are therefore <EM>text</EM> macros,
+and the sequence of characters is not checked
+syntactically at the point of definition
+but only at the point of use when the sequence of characters
+is presented to the parser.
+Definitions of macros can occur anywhere in the source file,
+independently of what the parser is currently doing.
+Consequently the entire macro definition mechanism is hidden inside
+the scanner and a few global variables that are only
+accessed by the scanner.
+The parser at no stage knows
+whether a single character symbol it is reading
+came directly from the input file or whether it came
+from a macro body.
+Hence the scanner and its macro mechanism could be used
+for a quite different input language.
+<P>
+In detail, definitions of macros are preceded by a <CODE>!</CODE>
+to enter definition mode.
+Then uppercase letters are expected, each followed by <CODE>=</CODE>
+and then a macro body enclosed in an arbitrary quotation character
+to start and end the body.
+A sequence of definitions is terminated by a period <CODE>.</CODE>.
+Macro bodies can be inspected by a '@'
+which causes the names of the defined macros
+and their bodies to be typed out.
+Finally, macros are used by just writing their name.
+Macro bodies are always read from the input file,
+but one macro M1 may contain calls to another macro M2.
+If this happens, then the body that will be
+substituted for M2 will be whatever M2 is defined to be
+at the time M1 is being expanded,
+and not what it was when M1 was being defined.
+However, use before definition is not permitted.
+The macro mechanism of this program is the part
+that is most visible to the user;
+the other parts are described later in this section.
+<P>
+<EM>The demonstration</EM>:
+In the following demonstration,
+the first two parts exercise the macro mechanism
+about as much as one would normally want to use it.
+The second part solves the puzzle of Portia's caskets,
+it is described in more detail below.
+The next part illustrates the semantic semantic tableau
+with the "trunk before branch" optimisation,
+which of course is not really visible to the user.
+The last part traces the stack of the bottom up parser and translator
+that is used here.
+<P>
+<EM>Portia's caskets</EM>:
+The second part of the demonstration solves the puzzle
+given at the end of Chapter 10.
+We need to find a formula <CODE>F</CODE> which describes
+all aspects of the puzzle and then
+use the program to find an assignment of truth values
+to the atomic formulas of <CODE>F</CODE> which will make <CODE>F</CODE> true
+and thereby solve the puzzle.
+Since the program tests whether a formula is a tautology
+and reports countermodels if it is not,
+we must submit the negation of <CODE>F</CODE> to the program.
+Any countermodel to that negation is a model of F.
+<P>
+To construct the required formula F,
+we need atomic formulas as follows:
+<XMP>
+        a  =  the portrait is in the gold casket
+        b  =  the portrait is in the silver casket
+        c  =  the portrait is in the lead casket
+        d  =  the inscription on the gold casket is true
+        e  =  the inscription on the silver casket is true
+        f  =  the inscription on the lead casket is true
+</XMP>
+The required formula <CODE>F</CODE> is best constructed in parts:
+<XMP>
+        A  =  the portrait is in one of the caskets
+        B  =  at most one inscription is true
+        C  =  the 3 cues given by the inscriptions on the caskets
+</XMP>
+Subformula <CODE>A</CODE> is simply a threefold disjunction,
+each disjunct says that the portrait is in one of the caskets
+and not in the others.
+Subformula <CODE>B</CODE> is a fourfold disjunction,
+the first three say that one of the inscriptions is true
+and the others are false, and the fourth says that all
+inscriptions are false.
+Subformula <CODE>C</CODE> has to capture the meaning of the inscriptions,
+so it is a conjunction of three formulas:
+the first says that the inscription on the gold casket is true
+if and only if the portrait is in the gold casket,
+the second says that the inscription on the silver casket is true
+if and only if the portrait is not in the silver casket,
+and the third says that the inscription on the lead casket is true
+if and only if the portrait is not in the gold casket.
+The required formula <CODE>F</CODE>
+is just the conjunction <CODE>(A & B & C)</CODE>,
+and its negation, <CODE>-F</CODE>, has to be submitted to the program.
+One countermodel of <CODE>-F</CODE> is found, so it is a model of <CODE>F</CODE>.
+In that model we see that <CODE>b</CODE> is true
+whereas <CODE>a</CODE> and <CODE>c</CODE> are false --- so the portrait is in the silver casket.
+We also see that <CODE>f</CODE> is true whereas <CODE>d</CODE> and <CODE>e</CODE> are false ---
+so the inscription on the lead casket is true.
+The puzzle is solved, and Portia has to marry the computer.
+<P>
+Here is the demonstration:
+<XMP>
+
+?-  !
+A  =  "(p # q)"     B  =  "(p > r)"     C  =  "(q > s)"
+D  =  "(r # s)"     E  =  "(r & s)"     X  =  "(A & B & C)".
+ X > D.
+tautology
+
+?-  X > E.
+not tautology,  countermodels:
+1:    -p +q -r +s
+2:    +p -q +r -s
+
+?-  @
+defined macros:
+A = (p#q)
+B = (p>r)
+C = (q>s)
+D = (r#s)
+E = (r&s)
+X = (A&B&C)
+ !
+A = '((a & -b & -c) # (-a & b & -c) # (-a & -b & c))'
+B = '((d & -e & -f) # (-d & e & -f) # (-d & -e & f) # (-d & -e & -f))'
+C = '((d = a) & (e = -b) & (f = -a))'
+F = '(A & B & C)'.
+ -F.
+not tautology,  countermodels:
+1:    -a +b -c -d -e +f
+
+?-   -( (p # q # r # s) & a & b & c & d ).
+not tautology,  countermodels:
+1:    +a +b +c +d +p
+2:    +a +b +c +d +q
+3:    +a +b +c +d +r
+4:    +a +b +c +d +s
+
+?-   ?
+    "("    -shift
+(    "p"    -shift
+(p    ">"    -reduce
+(F    ">"    -reduce
+(T    ">"    -reduce
+(E    ">"    -shift
+(E>    "q"    -shift
+(E>q    ")"    -reduce
+(E>F    ")"    -reduce
+(E>T    ")"    -reduce
+(E>E    ")"    -reduce
+(E>B    ")"    -reduce
+(B    ")"    -shift
+(B)    "#"    -reduce
+F    "#"    -reduce
+T    "#"    -reduce
+E    "#"    -shift
+E#    "("    -shift
+E#(    "q"    -shift
+E#(q    ">"    -reduce
+E#(F    ">"    -reduce
+E#(T    ">"    -reduce
+E#(E    ">"    -shift
+E#(E>    "p"    -shift
+E#(E>p    ")"    -reduce
+E#(E>F    ")"    -reduce
+E#(E>T    ")"    -reduce
+E#(E>E    ")"    -reduce
+E#(E>B    ")"    -reduce
+E#(B    ")"    -shift
+
+E#(B)    "."    -reduce
+E#F    "."    -reduce
+E#T    "."    -reduce
+E    "."    -reduce
+B    "."    -shift
+tautology
+
+?-
+</XMP>
+<P>
+The macro mechanism is implemented in the scanner,
+procedure <CODE>getch</CODE>,
+whose sole function is to produce the next character for the parser to process.
+Without the macro mechanism,
+this procedure would be just a  <CODE>REPEAT</CODE> loop which reads
+one ore more characters from the input file
+until the last character read is a printing character.
+However, when a macro is being expanded,
+the next character is to come not from the input file
+but from the body of the macro.
+In that case the macro memory is consulted,
+it consists essentially of a large array of characters
+together with one integer pointer that is incremented
+each time a character is taken from the body of a macro.
+If the end of the current macro is reached,
+then a stack of current macro calls is popped
+and the next lower macro is continued.
+At this point a character has been
+obtained from either the input file
+by reading or from a macro body by retrieval from the
+array of characters.
+In most cases it will have been a character that
+is to be passed on to the parser for further processing.
+However, it could also be a <CODE>!</CODE> to signal
+one or more macro definitions to follow,
+or it could be an uppercase letter to signal
+a macro to be called.
+For the definitions,
+a series of uppercase letters is expected, each followed by <CODE>=</CODE>
+and then a macro body enclosed in an arbitrary quote.
+For a macro call,
+a check has to be made that the uppercase letter seen
+does indeed denote a defined macro,
+so for every uppercase letter there
+are two integer variables denoting the start and finish
+of that macro in the string space.
+If the finish is less than the start, this would indicate
+that the macro is not defined.
+Furthermore, a check has to be made
+that the call is not directly or indirectly recursive,
+so a set variable is consulted to determine
+whether the macro is already active.
+If these two tests have been passed,
+the details of the macro being called are
+pushed onto the macro call stack.
+These details are the letter which is the name
+of the macro, and the start and finish of the body
+of the macro in the string space.
+The scanner now starts to extract from
+the string space.
+<P>
+<EM>The LR1 parser</EM>:
+This part of the program replaces the recursive descent parser
+with a (non-recursive) bottom up parser as suggested in
+an exercise in Chapter 6.
+The input language presented to the parser
+after it has been processed by the macro mechanism
+is still extremely simple.
+Hence it becomes possible to use a very simple parsing stack
+containing just characters.
+Some of the characters are just input characters ---
+lowercase letters, the operators and parentheses.
+In reduction steps some items on the stack are replaced by
+uppercase letters representing non-terminals that have been recognised:
+<CODE>F</CODE> for factor, <CODE>T</CODE> for term, <CODE>E</CODE> for expression
+and <CODE>B</CODE> for Boolean formula.
+In the demonstration,
+the last formula was being parsed with tracing switched on by the <CODE>?</CODE>.
+The following lines then represent, on the left,
+the stack growing to the right,
+then after a few spaces, the current input character enclosed
+in double quotes
+and finally the shift or reduce action
+to be executed at this configuration.
+<P>
+The LR1 parser works as follows:
+Since it is not recursive,
+the entire code can be made part of the main program,
+at the position where a recursive descent parser
+would contain a call to read a formula
+for translation into internal code.
+Essentially the parser consists of a <CODE>REPEAT</CODE> loop
+containing a <CODE>CASE</CODE> statement which dispatches
+on the kind of item that is on the top of the stack.
+The exact action may also depend on the current input character
+and on the second or even third item on the stack.
+There are three possible actions:
+1. to shift the input character onto the stack,
+2. to reduce the stack by replacing some of the items on the top
+of the stack by something else,
+or 3. to report an error and abandon the processing of the current formula.
+The details of the <CODE>CASE</CODE> statement are essentially derived
+from the grammar,
+but the derivation is tedious and error prone.
+For example,
+the productions
+<XMP>
+        1               factor  ::=  '-' factor
+        2               term    ::=  term '&' factor
+        3               term    ::=  factor
+</XMP>
+all deal with what has to be done when the last non-terminal
+that has been recognised was a factor.
+So the case for factors looks essentially like this:
+<XMP>
+CASE
+    ...
+    'F' (for factor) :
+        If the second symbol below the 'F' is a '-'
+            then reduce by production 1:
+                pop the two items, push 'F' (for factor)
+        If the second symbol below the 'F' is a '&'
+                and below that is a 'T' (for term)
+            then reduce by production 2:
+                pop the three items, push 'T' (for term)
+        Else reduce by production 3:
+                pop the one item, push 'T' (for term)
+</XMP>
+<P>
+<EM>The internal code</EM>:
+Code generation is handled entirely
+during reduction steps,
+and the code generating procedure can even be hidden
+inside the reduction procedure.
+The code that has to be generated is again
+binary tree code.
+But whereas previous programs used
+an ARRAY of RECORDs of operators and two integer indices
+into that same array,
+for variety this program uses Pascal <EM>pointer</EM>s.
+So in the main declaration section
+the type of such pointers has to be declared
+together with the type of the records to which they point.
+One solitary global pointer variable
+is declared and always made to point to the last
+formula tree that has been generated.
+The actual code generation procedure
+is very similar to the corresponding ones
+in earlier programs;
+the main difference is that the left and right
+fields are not integers but pointers,
+and instead of incrementing
+an index in the code array
+to obtain a new record,
+the Pascal procedure <CODE>new</CODE> is called.
+It is also necessary to obtain the correct linkage
+of the various nodes.
+In a recursive descent translator
+it was possible to use local variables
+on the recursion stack for this purpose.
+However, since we are using an explicit stack
+for the parsing,
+the saving of earlier nodes has to done
+on that stack, too.
+Actually, the technique is similar
+to the one used in the non-recursive top down predictive parser
+used in Chapter 10.
+We augment the explicit parsing stack
+with additional fields containing the last code
+generated in reduction steps.
+Then, for example production 2
+discussed above,
+when popping <CODE>T</CODE> <CODE>&</CODE> <CODE>F</CODE>
+will generate a node with <CODE>&</CODE> as the operator,
+and what was saved beside the <CODE>T</CODE> as the left
+and what was saved beside the <CODE>F</CODE> as the right.
+Then the <CODE>E</CODE> is pushed as required by the production,
+together with a pointer to the node just generated.
+<P>
+In previous programs all node records of binary trees
+were automatically recycled when a new formula was being read,
+because the integer index into the code array
+was always set to zero at the start of the main loop.
+This method is not possible when one is using pointers.
+Instead it is necessary to reclaim the space used
+by disposing of the tree properly.
+This is done by a recursive procedure
+which takes a tree as a parameter.
+If the tree is not <CODE>nil</CODE>,
+then it calls itself recursively on the left and the right
+subtree and then uses Pascal's <CODE>dispose</CODE>
+to recycle the record.
+<P>
+The use of pointers has one advantage:
+it is no longer necessary to set an arbitrary limit
+to the amount of internal code that can be generated.
+But there is also a disadvantage:
+it is not possible to write pointer values,
+hence the code that has been generated cannot be checked
+so easily - essentially one has to get it right without checking.
+Also,
+it is necessary to (recursively) dispose of the tree when
+it is no longer needed.
+It may be worth repeating that the use of pointers for the binary tree
+code has nothing to do with whether the translating
+mechanism uses recursive descent or a non-recursive predictive
+top down method, or, as here, a bottom up method.
+<P>
+<EM>The "trunk before branch" optimisation</EM>:
+When a formula has been read successfully,
+the internal code that has been generated
+is passed to the semantic tableau interpreter.
+While the overall structure is the same as
+for the one in Chapter 10,
+there are several differences.
+<P>
+The first difference is quite minor:
+There are no longer two procedures,
+one for making a formula true and one for making a formula false.
+Instead there is only one procedure <CODE>make</CODE>
+with an extra Boolean parameter indicating whether
+the formula is to be made true or false.
+<P>
+Secondly, the two set parameters which contain
+the formulas that have been made true or false
+have been replaced by two global variables.
+This requires a slightly more elaborate treatment
+of atoms.
+If the atomic formula that is to be made true or false
+already has the opposite truth value,
+then "the path closes", and the procedure does nothing.
+Otherwise the path can be continued,
+and there are two possibilities that arise:
+1. the atom already has the required truth value,
+and in that case the procedure calls its continuation, or
+2. the atom does not yet have the value required,
+and in that case the set representing the value
+has to be augmented by the atom,
+the continuation called,
+and when that returns the atom has to be removed again.
+Procedure <CODE>show</CODE> then uses these two globals
+to display the model that it has constructed.
+<P>
+But the most difficult difference concerns the
+"trunk before branch" optimisation.
+Probably you should not even attempt to understand this
+unless you have done a few semantic tableaux by hand
+and have learnt to appreciate the sometimes quite
+spectacular saving in effort which the optimisation produces.
+The idea behind the computer implementation is quite simple:
+whenever the procedure which makes formulas true or false
+comes across a formula that could be made true or false
+in two ways,
+it delays this task and first continues with other tasks.
+This happens for example when a disjunction is to be made true
+or a conjunction is to be made false.
+The other tasks are of course the continuations that have
+accumulated so far.
+So, in a situation like that,
+the continuation procedure is called,
+but it now has a procedure parameter which is a further
+continuation --- namely the handling of the formula
+that was to be delayed.
+<P>
+The <CODE>delay</CODE> procedure has no parameters.
+Its body is essentially a <CODE>CASE</CODE> statement
+which looks at the formula which <EM>was</EM> the parameter
+of the call to the <CODE>make</CODE> procedure which gave rise
+to this formula being delayed and now being executed.
+The individual cases are exactly what they would
+have been if the formula had been processed when seen the first time.
+<P>
+To take as an example a disjunction,
+here is how it will be processed by procedure <CODE>make</CODE>:
+<XMP>
+CASE operator OF
+    ...
+    or : IF the goal is to make the formula true,
+            THEN call the continuation which was a parameter,
+                giving as its actual parameter
+                    the local delay procedure
+            ELSE recursively call the make procedure
+                to make the left disjunct false, and
+                as a continuation a local procedure to make
+                the right disjunct false.
+</XMP>
+If the local <CODE>delay</CODE> procedure is ever called,
+then the following part of its body becomes operative:
+<XMP>
+CASE operator OF
+    ...
+    or : call make recursively to make the left disjunct true,
+         call make recursively to make the right disjunct true.
+</XMP>
+Both calls pass on as continuations the two procedures which
+were parameters of the call to <CODE>make</CODE> which originally
+gave rise to this disjunction being delayed.
+<P>
+The source is as follows:
+<XMP>
+PROGRAM truthtableau(input,output);
+(* text macros handled by getch *)
+(* LR1 compiler producing tree code with pointers *)
+(* recursive interpreter with continuations *)
+(* "trunk before branch" optimisation *)
+
+LABEL 10, 99;
+
+CONST
+    maxmemory = 1000;
+    maxmacrostack = 10;
+    debug_macros = false;
+    maxlr1stack = 20;
+TYPE
+    message = PACKED ARRAY [1..30] OF char;
+    bintree = ^node;
+    node =  RECORD op : char; left,right : bintree END;
+
+VAR
+    (* scanner and macro expander *)
+    ch   : char;
+    macros : ARRAY ['A'..'Z'] OF RECORD start,finish : integer END;
+    memory : ARRAY [1..maxmemory] OF char;
+    lastmem : integer;
+    macrostack : ARRAY [1..maxmacrostack] OF
+                    RECORD name : char; position, last  : integer END;
+    macrostackpointer : integer;
+    called : SET OF 'A'..'Z';
+    trace : boolean;
+    (* LR1 parser *)
+    stack : ARRAY [1..maxlr1stack] OF
+                RECORD c : char; code : bintree END;
+    sp : integer;
+    finished : boolean;
+    (* tree code and models *)
+    last : bintree;
+    i : integer;
+    vars : ARRAY [boolean] OF SET OF 'a'..'z';
+    num_models : integer;
+
+PROCEDURE error(mes : message);
+BEGIN
+writeln('error: seen "',ch,'" when ',mes);
+readln; GOTO 10
+END; (* error *)
+
+(* - - - - -   M A C R O   M E C H A N I S M   - - - - - *)
+
+PROCEDURE getch;
+VAR current,quote : char;
+
+    PROCEDURE readch;
+    BEGIN
+    REPEAT
+        IF eof THEN GOTO 99;
+        read(ch); IF NOT trace THEN write(ch);
+        IF eoln THEN BEGIN readln; writeln END
+        UNTIL ch > ' '
+    END; (* readch *)
+
+BEGIN (* getch *)
+REPEAT (* till we have a printing character *)
+    IF macrostackpointer = 0 THEN readch ELSE
+        WITH macrostack[macrostackpointer] DO
+            BEGIN
+            IF position > last THEN
+                BEGIN
+                called := called - [name];
+                macrostackpointer := macrostackpointer - 1;
+                ch := ' '
+                END
+              ELSE
+                BEGIN
+                ch := memory[position];
+                position := position + 1
+                END
+            END;
+    IF ch = '!' THEN (* macro definitions *)
+        BEGIN
+        readch;
+        REPEAT
+            IF NOT(ch IN ['A'..'Z']) THEN
+                error('"A" .."Z" expected            ');
+            current := ch; readch;
+            IF ch &lt;> '=' THEN
+                error('"=" expected                  ');
+            readch; quote := ch; readch;
+            macros[current].start := lastmem + 1;
+            WHILE ch &lt;> quote DO
+                BEGIN (* macro body *)
+                IF lastmem = maxmemory THEN
+                    error('string space exhausted        ');
+                lastmem := lastmem + 1;
+                memory[lastmem] := ch; readch
+                END;
+            macros[current].finish := lastmem;
+            readch
+            UNTIL ch = '.';
+        ch := ' '
+        END
+      ELSE IF ch IN ['A'..'Z'] THEN (* macro use *)
+        BEGIN
+        WITH macros[ch] DO
+            BEGIN
+            IF start > finish THEN
+                error('undefined macro               ');
+            IF debug_macros THEN
+                BEGIN
+                write('seeing "',ch,'" = "');
+                FOR i := start TO finish DO write(memory[i]);
+                writeln('"')
+                END;
+            IF ch IN called THEN
+                error('recursive macro call          ');
+            called := called + [ch];
+            macrostackpointer := macrostackpointer + 1;
+            WITH macrostack[macrostackpointer] DO
+              BEGIN name := ch; position := start; last := finish END
+            END; (* WITH *)
+        ch := ' '
+        END (* ELSE, macro use *)
+      ELSE IF ch = '@' THEN
+        BEGIN
+        writeln('defined macros:');
+        FOR ch := 'A' TO 'Z' DO
+            WITH macros[ch] DO
+                IF start < finish THEN
+                    BEGIN
+                    write(ch,' = ');
+                    FOR i := start TO finish DO write(memory[i]);
+                    writeln
+                    END;
+        ch := ' '
+        END
+      ELSE IF ch = '?' THEN
+        BEGIN trace := NOT trace; ch := ' ' END
+    UNTIL ch &lt;> ' '
+END; (* getch *)
+
+(* - - - - -  I N T E R P R E T E R  - - - - - *)
+
+PROCEDURE show;
+VAR c : char;
+BEGIN (* show *)
+IF num_models = 0 THEN
+    writeln('not tautology,  countermodels:');
+num_models := num_models + 1;
+write(num_models:0,':   ');
+FOR c := 'a' TO 'z' DO
+    IF c IN vars[true] THEN write(' +',c) ELSE
+    IF c IN vars[false] THEN write(' -',c);
+writeln
+END; (* show *)
+
+PROCEDURE call(PROCEDURE c);
+BEGIN c END;
+
+PROCEDURE make(g:boolean; f:bintree;
+               PROCEDURE cp(PROCEDURE c);
+               PROCEDURE ccp);
+
+    PROCEDURE sameright(PROCEDURE c);
+    BEGIN make(g,f^.right,cp,c) END;
+
+    PROCEDURE delay;
+
+        PROCEDURE trueright(PROCEDURE c);
+        BEGIN make(true,f^.right,cp,c) END;
+
+        PROCEDURE falseright(PROCEDURE c);
+        BEGIN make(false,f^.right,cp,c) END;
+
+    BEGIN (* delay *)
+    WITH f^ DO
+        CASE op OF
+            '&' :
+                BEGIN
+                make(false,left,cp,ccp);
+                make(false,right,cp,ccp)
+                END;
+            '#' :
+                BEGIN
+                make(true,left,cp,ccp);
+                make(true,right,cp,ccp)
+                END;
+            '>' :
+                BEGIN
+                make(false,left,cp,ccp);
+                make(true,right,cp,ccp)
+                END;
+            '=' :
+                BEGIN
+                make(g,left,trueright,ccp);
+                make(NOT g,left,falseright,ccp)
+                END;
+            END (* CASE *)
+    END; (* delay *)
+
+BEGIN (* make *)
+WITH f^ DO
+    CASE op OF
+        'a'..'z' :
+            IF NOT (op IN vars[NOT g]) THEN
+              IF op IN vars[g] THEN cp(ccp) ELSE
+                BEGIN
+                vars[g] := vars[g] + [op];
+                cp(ccp);
+                vars[g] := vars[g] - [op]
+                END;
+        '0','1' :
+            IF (op = '1') = g THEN cp(ccp);
+        '-' :
+            make(NOT g, right, cp,ccp);
+        '&' :
+            IF g THEN make(true,left,sameright,ccp) ELSE cp(delay);
+        '#' :
+            IF g THEN cp(delay) ELSE make(false,left,sameright,ccp);
+        '>' :
+            IF g THEN cp(delay) ELSE make(true,left,sameright,ccp);
+        '=' :
+            cp(delay);
+        END (* CASE *)
+END; (* make *)
+
+(* - - - - -  M A I N,  T R A N S L A T O R   - - - - - *)
+
+PROCEDURE shift;
+BEGIN (* shift *)
+IF trace THEN writeln('-shift');
+IF ch &lt;> '.' THEN
+    BEGIN
+    sp := sp + 1; stack[sp].c := ch;
+    getch
+    END
+  ELSE finished := true
+END; (* shift *)
+
+PROCEDURE reduce(n : integer; c0 : char);
+
+    PROCEDURE generate(o  : char; l,r : bintree);
+    BEGIN (* generate *)
+    new(last);
+    WITH last^ DO
+        BEGIN op := o; left := l; right := r END
+    END; (* generate *)
+
+BEGIN (* reduce *)
+IF trace THEN writeln('-reduce');
+IF (n = 1) AND (c0 = 'F') THEN
+    generate(stack[sp].c,nil,nil);
+IF n = 2 THEN
+    generate('-',nil,stack[sp].code);
+IF (n = 3) AND (c0 &lt;> 'F') THEN
+    generate(stack[sp-1].c,stack[sp-2].code,stack[sp].code);
+sp := sp - n + 1;
+WITH stack[sp] DO
+    BEGIN c := c0; code := last END
+END; (* reduce *)
+
+PROCEDURE disposetree(t : bintree);
+BEGIN
+IF t &lt;> nil THEN
+    BEGIN
+    WITH t^ DO
+        BEGIN disposetree(left); disposetree(right) END;
+    dispose(t)
+    END
+END; (* disposetree *)
+
+BEGIN (* main *)
+(* initialise macro mechanism *)
+FOR ch := 'A' TO 'Z' DO
+    WITH macros[ch] DO
+        BEGIN start := 0; finish := -1 END;
+trace := false; lastmem := 0;
+(* initialise truth tableau mechanism *)
+vars[true] := []; vars[false] := [];
+10:
+REPEAT
+    writeln;
+    write('?-  ');
+    macrostackpointer := 0; called := []; getch;
+
+    (* BEGIN LR1 shift-reduce translator *)
+    FOR i := 1 TO 3  DO stack[i].c := '$';
+    sp := 3; finished := false; last := nil;
+    REPEAT
+        IF trace THEN
+            BEGIN
+            FOR i := 4 TO sp DO write(stack[i].c);
+            write('    ','"',ch,'"    ')
+            END;
+        CASE stack[sp].c OF
+            '$','-','&','#','>','=','(' :
+                IF ch IN ['a'..'z','-','(']
+                    THEN shift
+                    ELSE error('factor expected               ');
+            'a'..'z' :
+                IF ch IN [')','-','&','#','>','=','.']
+                    THEN reduce(1,'F')
+                    ELSE error('illegal after atom           ');
+            'F' :
+                IF stack[sp-1].c = '-' THEN reduce(2,'F') ELSE
+                IF (stack[sp-1].c = '&') AND (stack[sp-2].c = 'T')
+                    THEN reduce(3,'T')
+                ELSE reduce(1,'T');
+            'T' :
+                IF ch = '&' THEN shift ELSE
+                IF (stack[sp-1].c = '#') AND (stack[sp-2].c = 'E')
+                    THEN reduce(3,'E')
+                ELSE reduce(1,'E');
+            'E' :
+                IF ch IN ['#','>','='] THEN shift ELSE
+                IF (stack[sp-1].c IN ['>','=']) AND
+                   (stack[sp-2].c = 'B')
+                    THEN reduce(3,'B')
+                ELSE reduce(1,'B');
+            'B' :
+                IF (stack[sp-1].c IN ['>','=']) AND
+                   (stack[sp-2].c = 'E')
+                    THEN reduce(3,'B')
+                    ELSE shift;
+            ')' :
+                IF (stack[sp-1].c = 'B') AND (stack[sp-2].c = '(')
+                    THEN reduce(3,'F')
+                ELSE shift;
+            OTHERWISE
+                BEGIN
+                writeln('internal error: top = ',
+                        stack[sp].c,' ch = ',ch);
+                GOTO 99
+                END;
+            END (* CASE *)
+        UNTIL finished;
+    (* END LR1 shift-reduce translator *)
+
+    IF ch &lt;> '.' THEN writeln('seen "',ch,'" when "." assumed');
+    num_models := 0; make(false,last,call,show);
+    IF num_models = 0 THEN writeln('tautology');
+    disposetree(last)
+    UNTIL false;
+99:
+END.
+</XMP>
+<!-- Begin nav_bottom.php -->
+<!--  G L O B A L  F O O T E R  -->
+<div id="globalFooter">
+  <ul id="policies">
+    <li><a href="http://www.latrobe.edu.au/statements/accessibility">Accessibility</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/privacy">Privacy</a></li>
+    <li><a href="http://www.latrobe.edu.au/statements/copyright">Copyright and disclaimer</a></li>
+  </ul>
+  <ul id="copyright">
+    <li>CRICOS provider number: 00115M</li>
+    <!-- <li>CRICOS Provider Numbers: Bundoora, Albury-Wodonga 00115M; Bendigo 00119G</li>-->
+    <li>&copy; La Trobe University 2011</li>
+  </ul>
+</div>
+<!-- Begin Webstat Code -->
+<noscript>
+<div><img src="//webstat.latrobe.edu.au/i.latrobe" alt="" /></div>
+</noscript>
+<script type="text/javascript" src="//webstat.latrobe.edu.au/jscripts/latrobe.js"></script>
+<!-- End Webstat Code -->
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-4495795-1']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+<!-- End nav_bottom.php -->
+</body>
+
+</HTML>
+
