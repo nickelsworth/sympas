@@ -1,0 +1,2102 @@
+#+title: Chapter 15 : A theorem prover for monadic logic
+
+* <<intro>>
+
+In this chapter we extend the program of Chapter 10 to handle monadic logic.  This is a language in which one can have as atomic formulas not only =p=, =q=, =raining= and so on, but also subject-predicate formulas such as =john IS tall=, =peter IS A plumber=, =mary whistles=.  In addition there are quantified formulas such as =ALL rabbits ARE vegetarians=, =SOME expensive THINGS ARE pretty=, and =NOTHING IS (red AND green)=.  The program to be developed here can determine whether formulas in this language are logical truths and whether arguments in this language are valid.  The program also handles definitions such as =bachelor = adult AND male AND NOT married=.
+
+* Monadic logic
+
+In between propositional logic and full predicate logic there lies an interesting intermediate form called /monadic logic/.  It is a restricted form of predicate logic in which all predicates (=F=, =G=, =H= and so on) take only one parameter, they are unary or monadic predicates.  In addition there can be propositions (=p=, =q=, =r= and so on), and frequently they are regarded as predicates taking no parameters, they are nullary or zero-adic predicates.  The parameters of the monadic predicates are either names (=a=, =b=, =c= and so on) of individuals, or they are variables (=x=, =y=, =z= and so on) ranging over individuals.  Hence the atomic propositions are either nullary atoms (=p=, =q= and so on) or monadic atoms (=Fa=, =Fb=, =Ga= and so on).  Formulas containing predicates with variables may be quantified using one of the two quantifiers =FOR ALL x= or =FOR SOME x=.  In addition, there are the connectives =NOT=, =AND=, =OR=, =IMP= and =IFF=, which have their usual meaning.  It so turns out that all formulas can be expressed using only one individual variable, say =x=.
+
+An /interpretation/ consists of a set of individuals, called the /domain/, and associated with each nullary atom a truth value, associated with each monadic predicate a subset of the domain, and associated with each individual constant a member of the domain.  We now define a subsidiary notion --- of what it is for an individual in the domain to /satisfy/ a formula.  A given individual satisfies =Fx= if the individual is in the subset of the domain associated with =F=.  A given individual satisfies =Fa= irrespective of what the given individual is, but depending on whether the (typically different) individual associated with =a= is in the subset of the domain associated with =F=.  A given individual satisfies =p= irrespective of what the given individual is, but depending on whether =p= is associated with the truth value =true=.  An individual satisfies a negated formula iff the individual satisfies the negand, an individual satisfies a conjunction iff it satisfies both conjuncts, an individual satisfies a disjunction iff it satisfies at least one disjunct, and similarly for the other truth functional connectives.  An individual satisfies an existentially quantified formula =FOR SOME x ...= irrespective of what the individual is, but depending on whether there is some individual which satisfies the formula =(...)= which is being quantified.  An individual satisfies a universally quantified formula =FOR ALL x ...= irrespective of what the individual is, but depending on whether all individuals in the domain satisfy the formula =(...)= which is being quantified.  A formula is said to be /true/ in a particular interpretation iff it is satisfied by all individuals in the domain of the interpretation, and said to be /false/ in a particular interpretation iff it is satisfied by no individuals in the domain of the interpretation.  An interpretation is said to be a /model/ of a formula iff the formula is true in that interpretation, and it is said to be a /countermodel/ of a formula iff the formula is false in that interpretation.  A formula is a /logical truth/ iff it is true in all interpretations, and an argument consisting of one or more premises and a conclusion is said to be /valid/ if there is no interpretation in which all the premises are true and the conclusion is false.  An interpretation is a countermodel of an argument iff it is a model of the premises but a countermodel of the conclusion.
+
+In monadic logic it so happens that if a formula is true in all interpretations over finite domains then it is true in all interpretations and hence a logical truth.  Similarly, if there is no interpretation over a finite domain in which the premises of an argument are true and the conclusion is false then that argument is valid.  In the program to be developed here the interpretations are always over a finite domain consisting of an initial subset of the positive integers: 1, 2, 3 and so on.
+
+Full predicate logic is undecidable, in the sense that there is no decision procedure for determining whether an arbitrary formula is a logical truth or whether an arbitrary argument is valid.  Propositional logic is decidable, with either the truth table method or the semantic tableau method.  For a formula or argument with N propositional atoms, a total of 2^N lines might be needed in the truth table, and this order of complexity is no different for the semantic tableau method.  In monadic logic at most finite countermodels are required to show that a given formula is a logical truth or that a given argument is valid.  In fact it can be shown that for $N$ monadic predicates at most 2^(2^N) individuals are required to produce a countermodel if there is one at all.  So, there is a decision procedure for monadic logic, but it has hyperexponential time complexity.  No implementation of monadic logic will be able to avoid this.
+
+* Outline of the system
+
+Because predicates are at most unary, only one variable =x= is needed, so it could really be eliminated completely from any formula without ambiguity.  Natural languages manage this even for much more complicated formulas, but for our purposes the following translations are useful.  First consider the formula:
+
+#+begin_example
+        FOR SOME x: (Fx AND Gx)
+#+end_example
+
+#+begin_example
+which has the forms:             and the natural language instances:
+ SOMETHING IS (F AND G)           SOMETHING IS red AND round
+ SOME F ARE G                     SOME birds ARE white
+ SOME F THINGS ARE G              SOME expensive THINGS ARE pretty
+ SOME F G                         SOME plumbers whistle
+#+end_example
+
+In the same way, other formulas of monadic logic have simple forms and instances in natural language.  Here are some more examples of formulas and instances (we omit the forms):
+
+#+begin_example
+formulas:                         instances:
+ FOR SOME x: (Fx AND NOT Gx)       SOME birds ARE NOT green
+ FOR ALL x: (Fx IMP Gx)            ALL ravens ARE black
+ FOR ALL x: (Fx IMP  NOT Gx)       No ostriches fly
+ FOR ALL x: (Fx IMP (Gx OR Hx))    ALL carS ARE (expensive OR dangerous)
+ Fa                                john IS tall
+ Fa AND Ga                         peter IS (A scholar AND A gentleman)
+ Fa OR Ga OR Ha                    mary (works OR eats OR sleeps)
+#+end_example
+
+The expressive power of monadic logic is increased a little by adding the identity relation, written =a = b=, which is a very special binary predicate.  Since it is binary, its inclusion in the logic makes the logic no longer strictly monadic.  However, the very special properties of identity warrant its inclusion; for example the following is a valid argument:
+
+#+begin_example
+        william IS tall, william = bill
+        ---
+        bill IS tall
+#+end_example
+
+We also have to add to the definition of satisfaction: A given individual satisfies the formulas =a = x= and =x = a= if the given individual is identical with the one which is associated with the individual constant =a=.  A given individual satisfies the formula =a = b= irrespective of what the given individual is, but depending on whether the individuals associated with the individual constants =a= and =b= are identical.  We also add =a # b= as short for =NOT (a = b)=.
+
+In the remainder of this chapter we shall write a program which reads either single formulas or arguments consisting of premises and a conclusion which are formulas.  All the formulas are expressed in a stylised form of English, they are either similar to the instances of monadic logic given earlier, or they are identity statements.  For each single formula the program determines whether it is a logical truth, for each argument it determines whether it is valid.  If a given formula is not a logical truth, the program constructs one or more interpretations in which the formula is not true.  If a given argument is not valid, the program constructs one or more interpretations in which the premises are true and the conclusion is false.  More precisely, the program constructs /partial/ interpretations: if it does not matter whether a particular individual is in the extension of a particular predicate or not, then the program makes no unnecessary commitments.  In addition, the program allows users to write definitions of predicates and of propositions; thereafter the defined predicates or propositions act as short-hand for what they have been defined to be.  This is similar to defining procedures in a sequential language, or to defining functions in a functional language, or to defining non-terminals of a grammar.
+
+When trying to find countermodels for a formula or an argument there is a choice to be made between two strategies.  The first strategy would initially keep the domain as small as possible, it would try to find countermodels using the small domain, and add new individuals only later.  The second strategy would initially add new individuals whenever an instance of a predicate or an extension of an individual constant is needed, it would try to find countermodels using the large domain, and would try to make do with fewer individuals only later.  The two strategies will eventually find the same countermodels, but in a different order.  However, if the search is terminated after the first countermodel is found, then the first countermodel will differ for the two strategies.  For some formulas or arguments which do have countermodels, the choice of strategy can make a big difference in the time it takes to find the first countermodel.  Sometimes users might wish to exercise some control over which of the two strategies is to be adopted.  For this purpose the program accepts two directives, =SMALL= and =LARGE= which switch the strategy to first trying small domains or to first trying large domains.  
+
+* An example run
+
+This section contains a record of a long single run of the program MONDEF.  The output consists of echoed user input (formulas, arguments and definitions), and output from the program (for formulas and arguments only).  For arguments the premises are separated by commas, and the conclusion is signalled by a line of dashes or (to save space) by a single slash.  The output says whether the input formula is a logical truth or whether the input argument is valid.  If the input formula is not a logical truth, or the input argument is not valid, then the program displays one or more (sequentially numbered) interpretations over a domain ={1 2 ..}=.  If a formula or argument is terminated with a period =.= then all countermodels will be displayed, if it is terminated by a question mark =?= then at most one countermodel will be displayed.  Each display of an interpretation consists of lines beginning with the atomic propositions, predicates and individual constants followed by their associated values in the interpretation.  For propositions the values are =T= or =F=; for predicates the values are two sets marked =T= and =F=, containing the individuals (numbers) which are and are not in the set associated with the predicate; for individual constants the value is a single individual (number).  In any interpretation displayed the given formula will be false, or the premises of the given argument will be true pand the conclusion false.  If the value of a proposition, predicate or individual constant is not needed, then the value will not be displayed.  So the interpretations displayed are often only partial interpretations.
+
+#+begin_example
+EVERYBODY IS (rich OR humble),
+ALL rich PEOPLE ARE envied,
+ALL humble PEOPLE ARE friendly
+-----
+EVERYBODY IS (envied OR friendly).
+ ... is a valid argument
+
+EVERYBODY IS (rich OR humble),
+ALL rich PEOPLE ARE envied,
+ALL humble PEOPLE ARE friendly
+-----
+EVERYBODY IS (envied AND friendly).
+ ... is not a valid argument, countermodel(s) -
+1:
+    rich  =  F:{ 1 }
+    humble  =  T:{ 1 }
+    envied  =  F:{ 1 }
+    friendly  =  T:{ 1 }
+2:
+    rich  =  T:{ 1 }
+    humble  =  F:{ 1 }
+    envied  =  T:{ 1 }
+    friendly  =  F:{ 1 }
+
+SOMEBODY IS rich AND SOMEBODY IS humble,
+EVERYBODY IS (rich OR humble),
+ALL rich PEOPLE ARE envied,
+ALL humble PEOPLE ARE friendly
+-----
+EVERYBODY IS (envied AND friendly)?
+ ... is not a valid argument, countermodel -
+    rich  =  F:{ 2 3 }  T:{ 1 }
+    humble  =  F:{ 1 }  T:{ 2 3 }
+    envied  =  F:{ 3 }  T:{ 1 }
+    friendly  =  T:{ 2 3 }
+
+william = bill AND william IS tall
+-----
+bill IS tall.
+ ... is a valid argument
+
+william # bill AND william IS tall
+-----
+bill IS tall.
+ ... is not a valid argument, countermodel(s) -
+1:
+    william  =  2
+    bill  =  3
+    tall  =  F:{ 3 }  T:{ 2 }
+2:
+    william  =  2
+    bill  =  1
+    tall  =  F:{ 1 }  T:{ 2 }
+3:
+    william  =  1
+    bill  =  2
+    tall  =  F:{ 2 }  T:{ 1 }
+
+(*
+The following is taken from "The Mind of the Year" competition
+in The Weekend Australian, September 8-9 1990, p 10.
+
+At a quadruple marriage ceremony four men Arthur, Bill, Charlie and
+Don were marrying Erica, Fanny, Georgina and Helen, though not
+necessarily in that order.
+
+Consider the folowing statements:
+
+If Fanny is not marrying Arthur, then Georgina is not marrying Charlie.
+If either Georgina or Helen is marrying Bill, then Arthur is marrying Fanny.
+If Charlie is not marrying Erica, then Bill is marrying Helen.
+If Georgina is marrying Don, then Bill is not marrying Fanny.
+IF Don is not marrying Fanny, then Fanny is marrying Bill.
+
+Who is marrying whom?
+
+We can use MONDEF to find an interpretation which
+shows that a certain statement is not a logical truth.
+We use 'a' to indicate Arthur's marriage, 'e' to indicate
+Erica's marriage. So "a=e" is not a contradiction.
+*)
+SMALL
+NOT(
+                                (* all the men are distinct *)
+      a # b AND a # c AND a # d AND
+      b # c AND b # d AND
+      c # d AND
+                                (* all the women are distinct *)
+      e # f AND e # g AND e # h AND
+      f # g AND f # h AND
+      g # h AND
+                                (* now the five clues *)
+      (f # a IMP g # c) AND
+      (g = b OR h = b IMP a = f) AND
+      (c # e IMP b = h) AND
+      (g = d IMP b # f) AND
+      (d # f IMP f = b) )?
+ ... is not a logical truth, countermodel -
+    a  =  1
+    b  =  2
+    c  =  3
+    d  =  4
+    e  =  3
+    f  =  2
+    g  =  1
+    h  =  4
+
+(* the dog-cat-canary puzzle *)
+
+SMALL
+NOT( dog # cat AND dog # canary AND cat # canary AND
+    (dog = brutus OR dog = sylvestre OR dog = tweety) AND
+    (cat = brutus OR cat = sylvestre OR cat = tweety) AND
+    (canary = brutus OR canary = sylvestre OR canary = tweety) AND
+    (brutus = young OR brutus = middling OR brutus = old) AND
+    (sylvestre = young OR sylvestre = middling OR sylvestre = old) AND
+    (tweety = young OR tweety = middling OR tweety = old) AND
+
+    dog # brutus AND brutus # old AND old # cat AND
+    cat # sylvestre AND sylvestre # young AND young # canary AND
+    canary # tweety AND tweety # middling AND middling # dog AND
+    dog # old)?
+ ... is not a logical truth, countermodel -
+    dog  =  1
+    cat  =  2
+    canary  =  3
+    brutus  =  2
+    sylvestre  =  3
+    tweety  =  1
+    young  =  1
+    middling  =  2
+    old  =  3
+
+(* colouring the map of parts of Europe *)
+SMALL
+NOT (portugal # spain AND spain  # france AND france # belgium AND
+france # luxembourg AND france # germany AND france # switzerland AND
+france # italy AND belgium # holland AND belgium # germany AND
+belgium # luxembourg AND luxembourg # germany AND germany # holland AND
+germany # denmark AND germany # poland AND germany # czechoslovakia AND
+germany # austria AND germany # switzerland AND
+poland # czechoslovakia AND czechoslovakia  # austria AND
+czechoslovakia # hungary AND hungary # austria AND
+austria # switzerland AND austria  # italy AND switzerland # italy)?
+ ... is not a logical truth, countermodel -
+    portugal  =  1
+    spain  =  2
+    france  =  1
+    belgium  =  2
+    luxembourg  =  3
+    germany  =  4
+    switzerland  =  2
+    italy  =  3
+    holland  =  1
+    denmark  =  1
+    poland  =  1
+    czechoslovakia  =  2
+    austria  =  1
+    hungary  =  3
+LARGE
+
+ALL (rich OR young) PEOPLE ARE lucky,
+john IS rich  AND mary IS young
+-----
+john IS lucky AND mary IS lucky.
+ ... is a valid argument
+
+ALL (rich AND young) PEOPLE ARE lucky,
+john IS rich  AND mary IS young
+-----
+john IS lucky OR mary IS lucky.
+ ... is not a valid argument, countermodel(s) -
+1:
+    rich  =  F:{ 2 }  T:{ 1 }
+    young  =  F:{ 1 }  T:{ 2 }
+    lucky  =  F:{ 1 2 }
+    john  =  1
+    mary  =  2
+
+(* quantifier equivalences: *)
+
+ALL f ARE g             IFF     EVERYTHING IS (f IMP g).
+ ... is a logical truth
+SOME f ARE g            IFF     SOMETHING IS (f AND g).
+ ... is a logical truth
+NO f ARE g              IFF     NOTHING IS (f AND g).
+ ... is a logical truth
+
+NOTHING IS f            IFF     EVERYTHING IS NOT f.
+ ... is a logical truth
+SOMETHING IS f          IFF     NOT EVERYTHING IS NOT f.
+ ... is a logical truth
+
+(* THE 15 VALID ARISTOTELIAN SYLLOGISMS (without weakening)     *)
+
+(* Figure 1:            m p, s m / s p  *)
+
+(* barbara      *)  ALL m ARE p, ALL s ARE m / ALL s ARE p.
+ ... is a valid argument
+(* darii        *)  ALL m ARE p, SOME s ARE m / SOME s ARE p.
+ ... is a valid argument
+(* celarent     *)  NO m ARE p, ALL s ARE m / NO s ARE p.
+ ... is a valid argument
+(* ferio        *)  NO m ARE p, SOME s ARE m / SOME s ARE NOT p.
+ ... is a valid argument
+
+(* Figure 2:            p m, s m / s p  *)
+
+(* camestres    *)  ALL p ARE m, NO s ARE m / NO s ARE p.
+ ... is a valid argument
+(* baroco       *)  ALL p ARE m, SOME s ARE NOT m / SOME s ARE NOT p.
+ ... is a valid argument
+(* cesare       *)  NO p ARE m, ALL s ARE m / NO s ARE p.
+ ... is a valid argument
+(* festino      *)  NO p ARE m, SOME s ARE m / SOME s ARE NOT p.
+ ... is a valid argument
+
+(* Figure 3:            m p, m s / s p  *)
+
+(* datisi       *)  ALL m ARE p, SOME m ARE s / SOME s ARE p.
+ ... is a valid argument
+(* ferison      *)  NO m ARE p, SOME m ARE s / SOME s ARE NOT p.
+ ... is a valid argument
+(* disamis      *)  SOME m ARE p, ALL m ARE s / SOME s ARE p.
+ ... is a valid argument
+(* bocardo      *)  SOME m ARE NOT p, ALL m ARE s / SOME s ARE NOT p.
+ ... is a valid argument
+
+(* Figure 4:            p m, m s / s p  *)
+
+(* camenes      *)  ALL p ARE m, NO m ARE s / NO s ARE p.
+ ... is a valid argument
+(* dimaris      *)  SOME p ARE m, ALL m ARE s / SOME s ARE p.
+ ... is a valid argument
+(* frerison     *)  NO p ARE m, SOME m ARE s / SOME s ARE NOT p.
+ ... is a valid argument
+
+john IS A farmer AND john IS A poet / SOME farmerS ARE poetS?
+ ... is a valid argument
+
+john IS A farmer AND mary IS A poet / SOME farmerS ARE poetS?
+ ... is not a valid argument, countermodel -
+    john  =  1
+    farmer  =  F:{ 2 }  T:{ 1 }
+    mary  =  2
+    poet  =  F:{ 1 }  T:{ 2 }
+
+NOBODY IS (lazy AND rich),
+peter IS lazy AND paul IS rich AND mary IS (rich OR tall)
+-----
+peter IS NOT rich AND paul IS NOT lazy AND mary IS (tall OR NOT lazy)?
+ ... is a valid argument
+
+NOBODY IS (lazy AND rich),
+peter IS lazy AND paul IS rich AND mary IS (rich OR tall)
+-----
+peter IS NOT rich AND paul IS NOT lazy AND mary IS (tall AND NOT lazy)?
+ ... is not a valid argument, countermodel -
+    lazy  =  F:{ 2 3 }  T:{ 1 }
+    rich  =  F:{ 1 }  T:{ 2 3 }
+    peter  =  1
+    paul  =  2
+    mary  =  3
+    tall  =  F:{ 3 }
+
+john IS tall AND john IS jolly
+-----
+SOMEBODY IS (tall AND jolly)?
+ ... is a valid argument
+
+SOMEBODY IS tall AND SOMEBODY IS jolly
+-----
+SOMEBODY IS (tall AND jolly)?
+ ... is not a valid argument, countermodel -
+    tall  =  F:{ 2 }  T:{ 1 }
+    jolly  =  F:{ 1 }  T:{ 2 }
+
+EVERYTHING IS (red AND round)
+-----
+EVERYTHING IS red AND EVERYTHING IS round?
+ ... is a valid argument
+
+EVERYTHING IS (red OR round)
+-----
+EVERYTHING IS red OR EVERYTHING IS round?
+ ... is not a valid argument, countermodel -
+    red  =  F:{ 1 }  T:{ 2 }
+    round  =  F:{ 2 }  T:{ 1 }
+
+EVERYBODY (lies AND cheats) / john lies AND mary cheats?
+ ... is a valid argument
+
+EVERYBODY (lies OR cheats) / john lies OR mary cheats?
+ ... is not a valid argument, countermodel -
+    lies  =  F:{ 1 }  T:{ 2 }
+    cheats  =  F:{ 2 }  T:{ 1 }
+    john  =  1
+    mary  =  2
+
+a IS f OR b IS f OR c IS f / SOMETHING IS f?
+ ... is a valid argument
+
+(* Illustrating the difference between SMALL and LARGE *)
+
+SMALL
+a IS f AND b IS f AND c IS f / EVERYTHING IS f?
+ ... is not a valid argument, countermodel -
+    a  =  1
+    f  =  F:{ 2 }  T:{ 1 }
+    b  =  1
+    c  =  1
+
+LARGE
+a IS f AND b IS f AND c IS f / EVERYTHING IS f?
+ ... is not a valid argument, countermodel -
+    a  =  1
+    f  =  F:{ 4 }  T:{ 1 2 3 }
+    b  =  2
+    c  =  3
+
+NOBODY IS A saint, mary IS A (saint OR sinner) / mary IS A sinner.
+ ... is a valid argument
+
+(* paradox of validity - inconsistent premises: *)
+NOBODY IS A saint, mary IS A (saint AND sinner) / john IS A plumber.
+ ... is a valid argument
+
+(* paradox of validity - logically true conclusion: *)
+peter whistles / EVERYBODY IS A saint OR SOMEBODY IS NOT A saint.
+ ... is a valid argument
+
+(* DEFINING PREDICATES : *)
+
+PREDICATE
+  lucky = young OR rich;
+  bachelor = adult AND male AND NOT married.
+
+john IS lucky / john IS rich.
+ ... is not a valid argument, countermodel(s) -
+1:
+    young  =  T:{ 1 }
+    rich  =  F:{ 1 }
+    john  =  1
+john IS (rich AND A bachelor) / john IS (lucky AND NOT married).
+ ... is a valid argument
+
+(* DEFINING PROPOSITIONS : *)
+
+PROPOSITION
+  zoo_inclusion =
+    ALL rabbitS ARE mammalS, ALL unicornS ARE mammalS,
+    ALL mammalS ARE vertebrateS,
+    ALL frogS ARE reptileS, ALL snakeS ARE reptileS,
+    ALL reptileS ARE vertebrateS;
+  zoo_exclusion =
+    NO rabbitS ARE frogS, NO rabbitS ARE snakeS,
+    NO frogS ARE snakeS;
+  zoo_universal =
+    zoo_exclusion AND zoo_inclusion;
+  zoo_existential =
+    SOMETHING IS A rabbit, SOMETHING IS A frog, SOMETHING IS A snake;
+  zoology =
+    zoo_existential AND zoo_universal.
+
+zoo_universal / SOMETHING IS A vertebrate?
+ ... is not a valid argument, countermodel -
+    rabbit  =  F:{ 1 }
+    mammal  =  F:{ 1 }
+    unicorn  =  F:{ 1 }
+    vertebrate  =  F:{ 1 }
+    frog  =  F:{ 1 }
+    reptile  =  F:{ 1 }
+    snake  =  F:{ 1 }
+
+zoology / SOMETHING IS A vertebrate?
+ ... is a valid argument
+
+zoology / SOMETHING IS A unicorn?
+ ... is not a valid argument, countermodel -
+    rabbit  =  F:{ 2 3 }  T:{ 1 }
+    mammal  =  F:{ 2 3 }  T:{ 1 }
+    unicorn  =  F:{ 1 2 3 }
+    vertebrate  =  T:{ 1 2 3 }
+    frog  =  F:{ 1 3 }  T:{ 2 }
+    reptile  =  F:{ 1 }  T:{ 2 3 }
+    snake  =  F:{ 1 2 }  T:{ 3 }
+
+(* ERRORS : *)
+
+john IS / rich.
+*** line 239  error: seen "/" when beginning of factor expected
+
+(p AND q.
+*** line 241  error: seen "." when ")" expected
+
+mary writeS AND john smithS AND jones gardenS AND smith sleepS.
+*** line 243  error: seen "smith" when wrong object
+
+(* TRACING : *)
+
+? john IS (rich AND wise) / SOMEBODY IS rich AND SOMEBODY IS wise.
+
+code to be executed:
+  58         ATOM_       3     0  rich
+  59         ATOM_      21     0  wise
+  60          AND_      58    59
+  61           IS_      20    60  john
+  62         ATOM_       3     0  rich
+  63    SOMETHING_       0    62
+  64         ATOM_      21     0  wise
+  65    SOMETHING_       0    64
+  66          AND_      63    65
+  67          IMP_      61    66
+
+executing ..
+F 0 [0]   67          IMP_      61    66
+T 0 [0]   61           IS_      20    60  john
+T 1 [1]   60          AND_      58    59
+T 1 [1]   58         ATOM_       3     0  rich
+T 1 [1]   59         ATOM_      21     0  wise
+F 0 [1]   66          AND_      63    65
+F 0 [1]   63    SOMETHING_       0    62
+F 0 [1]   63    SOMETHING_       0    62
+F 1 [1]   62         ATOM_       3     0  rich
+F 0 [1]   65    SOMETHING_       0    64
+F 0 [1]   65    SOMETHING_       0    64
+F 1 [1]   64         ATOM_      21     0  wise
+ ... is a valid argument
+total CPU time for this session : 320 milliseconds
+#+end_example
+
+The staggering growth rate of the hyperexponential formula
+2^(2^N), where N is the number of predicates,
+prohibits extending the zoological data base
+by adding another species, say dogs, distinct from all the
+others.
+But for applications of this kind
+one does not want a theorem prover
+which allows arbitrary disjunctions as premises,
+and which tries to construct countermodels.
+Instead one needs a system which reads in an interpretation
+and then determines whether particular formulas
+are true or false in that interpretation.
+The big difference is that interpretations
+are never disjunctive in the way premises of an argument can be.
+Such a system will be constructed in Chapter 19.
+
+* Designing the implementation
+
+In structure the program is similar
+to those in several previous chapters,
+in particular to the program in Chapter 10
+which implements the semantic tableau method for propositional logic.
+The principal difference is that
+the scanner has to recognise multi-character reserved words
+and multi-character identifiers,
+and the parser and the interpreter are much more elaborate because
+not only propositions but also monadic predicates,
+quantifiers, identity and
+individual constants have to be handled,
+and there are definitions of propositions and predicates.
+
+It is left as an exercise to write a /BNF grammar/
+and a manual for the monadic language.
+
+** The main program
+
+The main program has to start by initialising a small table
+of reserved words which later have to be recognised by the scanner.
+One robust method of initialisation
+uses one call of a procedure for each word.
+The procedure takes two value parameters,
+one for the external representation which is a string,
+and one for the internal representation which is an enumeration type.
+To make a binary search by the scanner possible,
+the calls have to be in the alphabetical order of their
+external representation.
+The procedure enters the two representations into the table.
+The procedure also increments a global counter,
+initialised to zero,
+so that after the last call of the procedure this counter
+can be used by the scanner to initiate the search.
+This method of initialisation is robust in that during
+program development it is easy to add new entries
+in the appropriate place.
+The reserved words to be entered are
+the truthfunctional connectives,
+the quantifiers such as =EVERYTHING=
+and their external variants such as =EVERYBODY=,
+the optional predicators =ARE= and =IS=,
+and buzz words such as =A=, =PEOPLE=, =S= and =THINGS=.
+
+After the initialisation the program enters a =REPEAT= loop
+to start reading from the input file and to process what it has read.
+If the first symbol is =SMALL= or =LARGE=
+then a Boolean variable is set which will affect
+the strategy used by the interpreter
+in its search for a countermodel.
+If the first symbol is =PROPOSITION= or =PREDICATE=
+then a sequence of definitions is accepted.
+In all other cases
+a single formula or an argument is accepted and will be evaluated.
+
+/Definitions/:
+In the first case the sequence of definitions is handled by a =WHILE= loop
+which is entered for every identifier seen.
+Each such identifier has to be recorded in the symbol table
+of user declared identifiers ---
+this table is distinct from the table of reserved words.
+The identifiers are recorded as being defined propositions
+or defined predicates.
+After the test for ===,
+a parsing procedure for sequences of formulas is called.
+This will generate a tree of code for that sequence,
+and the last node, the root of that tree,
+has to be recorded in the symbol table beside
+the identifier that is being defined.
+Later references to that identifier
+then generate an instruction to call that tree of code
+as identified by the root.
+
+/Evaluation/:
+In the last case a formula or an argument is to be evaluated.
+First it has to be read by the procedure for reading
+sequences of formulas,
+and this will generate code that will be passed to the interpreter.
+Depending on the terminator ='.'= or ='?'=,
+if there are any countermodels at all,
+then either all,
+or only the first are to be displayed.
+Before the actual evaluation
+three important global variables have to be initialised:
+1) an integer variable to indicate that so far the domain is empty,
+2) another integer variable to indicate that so far no countermodels
+have been found, and
+3) a Boolean variable that will be explained in the section
+on the interpreter.
+Then comes the call to the interpreter
+which attempts to find countermodels.
+If none were found,
+the main program writes a message saying
+that what had been read was a logical truth or a valid argument,
+depending on whether it contained
+a version of the therefore-symbol.
+
+** Scanner and compiler
+
+The /scanner/, procedure =getsym=,
+has a familiar structure.
+It uses a subsidiary procedure =getch=
+which keeps track of the current line number:
+when an end of line is encountered
+that number is incremented and a blank is returned
+in the global variable =ch=.
+Procedure =getsym= first skips any white space
+and then enters one of three branches
+depending on the first printing character found:
+
+1. If the character is an uppercase letter,
+then it and any further uppercase letters are gathered in a string variable.
+Then a binary search through the table of reserved words is conducted;
+this table has been initialised in the main program.
+If the search fails,
+then an error is reported,
+otherwise the global variable sym is set to what was found in the table.
+
+2. If the character is a lowercase letter,
+then it and any further lowercase letters are gathered in a string variable.
+Then a linear search through the symbol table of user
+introduced identifiers is conducted.
+If the identifier has not been seen before,
+then it is entered at the top of the table,
+marked =undefined=.
+Only the parser can determine how
+it is to be marked eventually.
+
+3. If the character is not a letter,
+then it must be a special character;
+a =CASE= statement is used to assign the appropriate value
+to the global variable sym.
+There are two exceptions:
+1) Hyphens can be repeated to form an arbitrarily long therefore-symbol.
+2) Left parentheses followed by a star mark the beginning of /comments/
+that have to be skipped up to the end of comment,
+and then control jumps back to the start of getsym.
+
+The /parser/ consists of several procedures
+nested for visibility as follows:
+Outermost is a procedure for parsing sequences of formulas,
+it handles the comma separator between premises,
+and for code generation it treats it like a conjunction.
+It also handles the optional therefore-symbol,
+and for code generation it treats it like implication.
+Then follow the familiar procedures for formulas, expressions and terms.Ð
+Innermost is procedure =factor=,
+it is described in detail below.
+
+All the parsing procedures take a value parameter of type symbol,
+in each case it indicates whether a proposition, a predicate or an individual
+is expected.
+In the main program the normal call to the outermost procedure
+sets this parameter to proposition,
+but in definitions it may be set to proposition or predicate
+depending on what is being defined.
+The procedures for parsing sequences, formulas, expressions and terms
+merely pass this parameter along,
+only procedure =factor= makes use of it,
+and only procedure =factor= sets it to individual.
+
+Procedure / factor/ handles negation and parentheses in the usual way,
+but it also has to handle the various quantifiers
+and the various atomic formulas.
+For /quantifiers/ two forms may be distinguished,
+they are accepted only if a proposition is expected:
+
+#+begin_example
+1.      ('ALL' | 'SOME' | 'NO' | 'ONLY')  factor  {'ARE'}  factor
+2.      ('EVERYTHING' | 'SOMETHING' | 'NOTHING')  {'IS'}  factor
+#+end_example
+
+Each of these calls to =factor= expects predicates.
+For both forms,
+code is generated after the last call of =factor=.
+For the first form it is like that for the binary truth functional
+operators,
+for the second form it is like that for negation.
+For both forms the actual opcode
+is determined by the leading quantifier,
+except that =ONLY f ARE g= is treated like =ALL g ARE f=.
+
+The various /atomic/ formulas are the most difficult.
+This is because the language does not insist on declarations
+of identifiers;
+the only declarations are for defined propositions or predicates.
+So, when an identifier is being used in a =factor= for the first time,
+it has to be decided here whether it is a proposition,
+a predicate or an individual constant.
+The forms of factors that have to be recognised are:
+
+#+begin_example
+1.      proposition
+2.      predicate
+3.      individual-constant                     (second part of 4)
+4.      individual-constant  ('=' | '#')  individual-constant
+5.      individual-constant  {'IS'}  factor
+#+end_example
+
+If an identifier has been used before,
+then for any later occurrences the symbol table entry can be used
+to check whether the occurrence is correct in the current context.
+However, if it is being used for the first time,
+then the symbol table entry =undefined=,
+as returned by the scanner,
+has to be updated on the basis of information that is now available.
+There are two sources of such information:
+the next symbol in the input,
+and the parameter indicating whether what is
+expected is a proposition, a predicate or an individual constant.
+If what is expected is an individual constant,
+then the symbol table is updated to that effect.
+If the next symbol is an identifier
+or one of =IS=, =(=, === or =#=,
+then the symbol table is also updated to individual constant.
+In all other cases it is updated to what the parameter expects:
+proposition or predicate.
+
+At this point code can be generated for the first three forms,
+but further parsing is needed for the two others.
+1a and 2a: If the object is a proposition or a predicate that has
+been defined,
+then the code is essentially a call instruction,
+using the address retrieved from the symbol table.
+1b and 2b: If the object is a proposition or predicate
+that has not been defined,
+then the code has to be an instruction that handles such atoms.
+3: If the expected object was an individual,
+then we are dealing with the =b= in =a=b= or =a#b=.
+The code for === or =#= has already been generated,
+in 4 below, only the right field of that instruction
+has to be updated with the address of =b=.
+4: The fourth form arises when the current symbol
+is === or =#= in =a=b= or =a#b=.
+A binary instruction has to be generated,
+depending on the symbol,
+with the right field unspecified.
+After reading the next symbol,
+which must be an identifier,
+procedure =factor= is called expecting an individual.
+This call of =factor= will be of form 3,
+and it will update the binary instruction with the address of =b=.
+5: The only other form is predication.
+An optional =IS= is skipped,
+and =factor= is called expecting a predicate.
+Note that this predicate may be compound,
+as in =a IS (f OR g)=.
+Finally a special binary predication instruction is generated,
+containing the location
+of the individual and the code for the factor.
+
+** The interpreter --- outline
+
+The interpreter implements the semantic tableau method
+for logic with primitive propositions,
+monadic predicates, quantifiers,
+identity and defined propositions and defined predicates.
+It is similar to the interpreter used in Chapter 10
+to implement the semantic tableau method for propositional logic.
+Its major procedure takes a formula as its principal parameter
+and tries to construct an interpretation
+in which that formula is true or false as required.
+So it has to construct a domain of individuals
+and associate with each proposition a truth value,
+with each predicate a subset of the domain,
+which each individual constant a member of the domain.
+As pointed out earlier,
+only finite domains are needed,
+we take initial subsets of the positive integers:
+=1=, =2=, =3= and so on.
+In attempting to construct a model or countermodel for a formula,
+the interpreter starts with an empty domain.
+For each existentially quantified subformula
+it tries to make that subformula true by
+using one of the existing individuals
+and tries by using a newly created individual.
+The order of the two attempts
+depends on the current strategy.
+The same method is used for making universally quantified
+subformulas false.
+
+A different method is needed for making universally quantified
+subformulas true and for making existentially quantified subformulas false.
+In a complex formula it is not sufficient to merely use the domain as it is
+at that point to make such a subformula true or false.
+This is because during later processing of that complex formula,
+but still on the same branch of the semantic tableau,
+further individuals might have to be added to the domain.
+This extension of the domain can go on several times.
+The subformula has to be made true or false in this extended domain,
+not merely in the domain as it was when the subformula
+was first encountered.
+There are two ways of handling the problem.
+One way is to attempt to make such subformulas true or false
+as they are encountered,
+but to keep track of them so that every time a new individual
+is introduced all the subformulas of this kind can be checked.
+Another way is to /delay/ the processing of such subformulas
+completely until the domain contains all the individuals it needs
+to make existentially quantified subformulas true and
+universally quantified subformulas false.
+This second way appears to be simpler.
+
+To implement the delaying,
+we can use a technique already familiar from several
+programs that use backtracking.
+Recall that in the programs for expanding regular expressions,
+for the semantic tableau method
+and for parsing in accordance with a context free grammar,
+we used continuation procedures as parameters.
+These continuations served to accumulate
+further tasks to be attempted:
+conjuncts to be made true,
+disjuncts to be made false,
+concatenands to be generated or parsed.
+The same method of continuations can be used here to accumulate
+those subformulas whose processing is to be delayed.
+So here we shall need /two/ sorts of continuations:
+those which accumulate conjuncts to be made true
+and disjuncts to be made false and so on,
+and those which accumulate universally quantified
+subformulas to be made true and existentially quantified
+subformulas to be made false.
+
+The two kinds of continuations have to be kept quite separate.
+Those of the first kind become activated when
+an atomic formula either already has or can be made to have
+the required truth value.
+Those of the second kind become activated when the domain
+cannot grow any further,
+when all existentially quantified subformulas have been
+made true and all universally quantified subformulas have been
+made false.
+It follows that continuations of the first kind
+are activated before any continuations of the second kind
+are activated.
+This activation pattern is achieved by making continuations
+of the second kind serve as continuations to continuations
+of the first kind.
+We already know that
+the major procedure of the interpreter takes
+as one parameter a formula.
+We now see that this major procedure must take
+two additional parameters:
+a continuation procedure of the first kind
+and a continuation procedure of the second kind,
+where the continuation of the first kind takes as a parameter
+a continuation of the second kind.
+To avoid having one major procedure
+for making formulas true and another for making formulas false,
+a further parameter of type Boolean is provided to indicate the required
+truth value.
+Such a method was already suggested as an exercise in Chapter 10.
+
+But this is not all.
+In the semantic tableau method for propositional logic one of the fundamental
+operations is that of attempting to make an atomic formula
+true or false,
+where that atomic formula can only be a primitive proposition.
+For monadic logic the atomic formulas can be of the form
+=a IS f= or even =a IS (f AND (g OR h))=.
+Such predication formulas consist of an individual constant
+and a possibly complex predicate,
+and the code generated is binary.
+Any complex predicate is broken down to atomic predicates,
+by distributing the predication:
+=a IS f AND (a IS g OR a IS h)=.
+But ultimately formulas with atomic predicates have to be handled.
+They involve not just a primitive proposition as in propositional
+logic, but a unary predicate and an individual.
+So this individual, a small number,
+has to be known to the interpreter,
+and the best way is to provide it as a  further parameter.
+
+Of course many formulas passed to the interpreter to be made true
+or false do not refer to any particular individual;
+primitive propositions are the prime example.
+They are readily assimilated to the same format
+by inventing a dummy individual,
+say the number 0, which serves as the dummy subject.
+This is like taking a primitive proposition such as =raining=
+to mean =it IS raining=, where =it= stands for a dummy individual,
+perhaps the weather.
+That dummy individual is also used as the relevant parameter
+for all other formulas that are not of the subject-predicate form.
+The device has the welcome effect that the interpreter
+need not make any distinction between
+truthfunctional operators acting on formulas and
+the same operators acting on predicates.
+
+To summarise,
+the interpreter has as its main component a procedure
+which takes the following formal parameters:
+1. a Boolean indicating whether a formula or a predicate
+is to be made true or false,
+2. a dummy or a real individual from the domain,
+3. a formula or a predicate to be made true or false of the individual,
+4. a continuation of accumulated conjuncts to be made true
+or disjuncts to be made false and so on, and
+5. a continuation of accumulated universals to be made true
+or existentials to be made false.
+
+The first call of this procedure occurs
+in the main program when a formula or an argument has been read
+and is to be evaluated.
+Since the program has to find countermodels,
+the first actual parameter is set to false.
+Since formulas and arguments are not predicates,
+the second actual parameter has to be the dummy individual.
+The last node created by the code generator
+is the root node of this formula or argument,
+so the address of this node is the third actual parameter.
+Since no conjuncts or disjuncts etc. have been accumulated so far,
+the fourth actual parameter is a global procedure;
+when reached for processing it has to
+signal that quantified formulas need not be delayed further
+and then it has to call its own continuation.
+Since no delayed quantified formulas have been accumulated so far,
+the fifth actual parameter is another global procedure;
+when reached for processing it has to display
+the partial interpretation that has been constructed.
+
+In propositional logic an interpretation associates with every
+atomic proposition a truth value, but an open path in a semantic tableau
+may leave it undetermined whether a particular atom is to be made true or false.
+In Chapter 10 we had to use two sets of atoms, the true ones and the
+false ones.
+Since the two sets are really quite small data structures,
+they were there passed as explicit parameters.
+
+In monadic logic an interpretation associates with every monadic predicate
+a subset of the domain.
+An open path in a semantic tableau may leave it undetermined whether a particular
+individual in the domain is or is not in the set associated with
+a predicate.
+So again, for our purposes we have to associate with every predicate
+two sets of individuals:
+those that definitely are in the set and those that
+definitely are not.
+For simplicity nullary predicates are assimilated to this pattern
+by associating with them two sets which can contain at most
+the dummy individual.
+For monadic predicates
+the potential members of the two sets are drawn from the domain,
+an initial subset of =1=, =2=, and so on.
+There are too many such sets to be passed on as parameters,
+but for every predicate
+the two associated sets easily fit into another two fields
+of the records in the symbol table,
+beside the fields containing the external string representation
+and the field indicating whether the string
+represents a proposition, a predicate or an individual constant.
+For the constants, the extension consists
+of either a member from the domain,
+or the dummy individual --- indicating that the constant
+does not (yet) name an individual.
+These additional fields in the symbol table
+are initialised when the propositions, predicates
+or individual constants are first encountered,
+inside procedure =factor=.
+These fields are modified by the interpreter
+and possibly displayed when an open path is found.
+But it is important that any modifications by the interpreter
+are later undone --- the interpreter has to 'clean up after itself'.
+
+When an open path has been found,
+the extensions of the relevant propositions, predicates
+and individual constants have to be displayed.
+This is done by a global procedure which in the initial call
+of the interpreter is the second continuation parameter.
+This procedure is only ever called indirectly,
+as a continuation to the first continuation.
+The first time it is called for a particular formula or argument,
+it has to state that the formula is not a logical truth
+or that the argument is not valid.
+Then it has to step through the symbol table
+and for each proposition, predicate or individual constant
+it has to display their external string representation
+and their extension,
+but only if that extension is non-trivial.
+Thus, if an atomic proposition has been made true or false,
+then the proposition has to be written out together with its value.
+If the positive or negative extensions of a predicate
+are non-empty,
+then the predicate and its non-empty extensions have to be written.
+If the extension of an individual constant is not the dummy individual
+but a real one, then the constant and its extension are written.
+
+** The interpreter --- details
+
+We now look at the semantic processor in detail.
+It consists of a recursive procedure /make/,
+with parameters as already outlined,
+together with a few local procedures which have to access
+the parameters of procedure =make=,
+and also a few global procedures.
+The body of procedure =make= consists of a =CASE= statement
+which first examines the kind of node presented by the formula
+parameter.
+Six groups may be distinguished:
+
+/1. Defined propositions and predicates/:
+These are the simplest cases,
+they are similar to calls of procedures in Chapter 7
+and calls of non-terminals in Chapter 11.
+The code that has been generated contains a pointer to the
+symbol table where a pointer to code is to be found.
+Procedure =make= calls itself recursively,
+with the code used as the formula parameter ---
+all other parameters are passed on.
+
+/2. Truthfunctional Connectives/:
+These are essentially the same as the corresponding cases
+in procedures =verify= and =falsify= in Chapter 10,
+but note that the cases now handle
+connectives between propositions and connectives between predicates.
+Small differences concern the parameters of procedure =make=.
+The first parameter indicates whether the formula parameter
+is to be made true or false,
+so for a negated formula procedure =make= just calls itself
+with the first parameter negated.
+For a conjunction to be made true or a disjunction to be made false,
+procedure =make= calls itself, using the left subformula
+as the formula parameter,
+and using as its fourth parameter
+a continuation, a local procedure to process the right subformula.
+For a conjunction to be made false
+or a disjunction to be made true,
+procedure =make= calls itself twice,
+using the left and the right subformula respectively.
+For implications and equivalences the cases are analogous.
+The continuation procedures for right subformulas are local
+to procedure =make= because they have to access that right subformula
+by accessing the original formula.
+But unlike the corresponding local procedures
+of =verify= and =falsify= of Chapter 10,
+they take a continuation parameter of possibly
+accumulated quantified formulas.
+When they call procedure =make= for the right subformula,
+this continuation is passed on.
+
+/3. Atoms/:
+This is the case in which a particular individual
+is to be made part of the extension of an atomic predicate.
+The individual is given by the second parameter;
+it is either the dummy individual or a real one from the domain,
+the two cases are treated identically.
+First a test has to be made that the individual is not already
+in the opposite extension of the predicate.
+If this consistency test fails, then nothing happens,
+procedure =make= just returns,
+and hence backtracking occurs.
+Otherwise, if the individual is already
+in the required extension,
+then the continuation procedure for accumulated right subformulas
+is called,
+using as the actual parameter for that call the continuation
+procedure for accumulated quantified formulas.
+On the other hand,
+if the individual is not already in the required extension,
+then the same continuation call is made,
+but preceded by putting the individual into the extension
+and followed by removing it.
+In this way procedure =make= always 'cleans up after itself'.
+
+/4. Predications/:
+These are nodes generated by input formulas such as
+=a IS f= and =a IS (f AND (g OR h))=.
+It is necessary to find an individual as the extension
+for the individual constant =a=
+and then to make the simple predicate =f=
+or the compound predicate =f AND (g OR h)= true of that individual.
+Extensions of individual constants are recorded in the symbol
+table as small numbers =1=, =2=, and so on.
+If an extension is already recorded,
+then that individual is used as the second parameter in a recursive
+call of procedure =make=.
+The other part of the node,
+the simple or compound predicate,
+becomes the formula parameter.
+On the other hand,
+if no extension for the individual constant has been recorded
+in the symbol table,
+then an extension has to be assigned.
+This extension can either be an individual which already exists
+in the domain, or it might have to be created for the purpose.
+The order of the two attempts depends on the current strategy.
+To try the individuals which already exist,
+a =FOR= loop can be used which steps through all
+the existing individuals.
+The body of the loop first assigns the current individual
+as the extension of the individual constant,
+and then calls procedure =make= recursively,
+using that same individual as the individual parameter
+and using the code of the predicate expression as the formula parameter.
+The other parameters are just passed on.
+To try a newly created individual,
+the size of the domain has to be incremented by one,
+the new individual becomes the extension of the individual constant,
+and another recursive call of procedure =make= is attempted.
+To clean up, on return the extension of the individual constant
+has to be set back to undefined
+and the size of the domain decremented.
+
+/5. Identities/:
+For formulas of the forms =a=b= and =a#b=
+a total of eight subcases arise,
+depending on whether the required relation is === or =#=,
+depending on whether =a= has an extension or not,
+and depending on whether =b= has an extension or not.
+The required relation is of course determined by
+the actual predicate and by whether the formula
+is to be made true or false.
+If both individual constants already have an extension,
+then it is a simple matter to check that these extensions
+are identical or distinct as required.
+If this test fails, then nothing happens.
+Otherwise the continuation for accumulated right subformulas
+is called, using as its actual parameter
+the continuation of accumulated quantified formulas.
+If only one of the two individual constants has an extension
+and it is required that the other be identical to it,
+then the extension of the one is made the extension of the other,
+the continuation with a continuation is called,
+and the extension of the one is set back to undefined.
+If only one of the constants has an extension
+and it is required that the other be distinct from it,
+then an attempt is made to give an extension to the other
+by using each of the existing individuals of the domain,
+and by creating a new one,
+in an order depending on the current strategy.
+If neither of the two constants has an extension,
+then one of them is given as its extension either an existing
+individual or a new one,
+in an order determined by the strategy;
+from there on the case is like the previous one.
+Several parts of the eight sub-cases are sufficiently
+similar that it is worth introducing procedures
+local to procedure =make= to handle this.
+
+/6. Quantifiers/:
+There are three unary quantifiers
+and three binary quantifiers,
+and for any such node it may be required to make a formula true
+or to make it false.
+As explained in the previous section,
+some such formulas are handled immediately,
+and others are initially delayed by accumulating them in
+continuation procedures and processing them only when the domain
+is complete.
+The cases to be handled immediately are those in which existentially
+quantified formulas are to be made true and universally quantified
+formulas are to be made false.
+For these formulas an attempt is made to make them true or false
+by using an existing individual and one by creating a new individual,
+the order depends on the strategy.
+The details vary depending on whether the quantifier
+is unary or binary.
+For the unary quantifiers the recursive call of procedure =make=
+uses the predicate expression being quantified as its formula parameter.
+For the binary quantifiers the recursive call uses the left predicate
+as its formula parameter and as its first continuation a local
+procedure which will result in another recursive call
+using the right predicate expression.
+All other formulas are initially delayed.
+The decision whether to delay them or not is based on an inspection
+of a global variable which was set to true
+before the initial call to procedure =make=.
+When such formulas are still to be delayed,
+the first continuation is called,
+using as its continuation a local procedure.
+This local procedure has to call
+procedure =make= using the previously delayed node
+which will be processed this time.
+For this call the first continuation procedure
+can be a procedure with one continuation,
+it does nothing but call that continuation.
+
+Eventually the global procedure which in the initial call
+of procedure =make= was the first continuation
+will be called.
+Its main function is to set the variable which affects
+delaying to false.
+Then it has to call its own continuation,
+a parameterless procedure.
+In fact this will be a call that results
+in the processing of all previously delayed formulas.
+Of course, to clean up,
+the variable for delaying has to be set back to true.
+In procedure =make=,
+for the quantified formulas that are first delayed,
+eventually delaying is no longer called for.
+Now all the formulas that have been delayed must be processed.
+We have to check that all the delayed formulas
+can indeed be made true or false as required,
+for all the individuals in the domain that exist at this point.
+It is not possible to use a =FOR= loop
+to step through all the individuals,
+because with a continuation control structure
+such a =FOR= loop would amount to a disjunctive test.
+To obtain a conjunctive test, recursion has to be used,
+by way of a parameterless procedure which is local to
+procedure =make= because it has to access the code that was
+initially delayed and has to be processed now.
+Before this procedure is called,
+the equivalent of a =FOR= loop variable has to be initialised,
+and there is no harm in using the individual parameter
+instead of a special local variable.
+So this parameter is set to the dummy individual
+and then that parameterless procedure is called.
+Its body first increments the loop variable,
+calls procedure =make=,
+and finally decrements the loop variable again.
+For the calls to procedure =make= it uses
+the value of the loop variable as the individual parameter,
+and as the second continuation procedure it uses itself.
+The details of the calls also depend on whether
+the quantifier was unary or binary.
+For the binary ones,
+such as =ALL f ARE g=,
+procedure =make= is called twice,
+corresponding to the fact that such a formula
+can be made true of an individual
+by either making =f= false of it
+or by making =g= true of it.
+
+
+* The program
+
+The following is the standard Pascal source program for MONDEF:
+
+#+begin_example
+PROGRAM mondef(input,output);
+
+LABEL 1, 99;
+
+CONST
+    interactive = false;
+    maxtab = 100;
+    maxcode = 500;
+
+    alfalength = 16;
+    emptyalfa = '                '; (* 16 blanks *)
+    maxreswords = 30;
+    maxinds = 31;
+    dummy_ind = 0;
+    first_ind = 1;
+
+TYPE
+    alfa = PACKED ARRAY [1..alfalength] OF char;
+    message = PACKED ARRAY [1..30] OF char;
+    symbol =
+        (ident_,all_,some_,no_,only_,s_,are_,
+         everything_,something_,nothing_,
+         atom_,is_,a_,not_,and_,or_,imp_,iff_,
+         lpar_,rpar_, comma_,therefore_,eql_,neq_,
+         badchar_,badres_,period_,query_,semicol_,
+         proposition,def_prop, (* retain order *)
+         predicate,def_pred, (* retain order *)
+         ind_const,undefined,small_,large_);
+
+VAR
+    linenumber : integer;
+    ch,lastch   : char;
+    al : alfa;
+    sym : symbol;
+    reswords : ARRAY [1 ..maxreswords] OF
+        RECORD alf : alfa; symb : symbol END;
+    lastresword : integer;
+    table : ARRAY [0..maxtab] OF
+        RECORD
+            alf : alfa;
+            CASE obj : symbol OF
+                proposition,predicate :
+                    (ext : ARRAY[boolean] OF SET OF 0..maxinds);
+                ind_const :
+                    (ind_xt : integer );
+                def_prop,def_pred :
+                    (codeptr : integer);
+                END; (* CASE *)
+    tx,location : integer;
+    code : ARRAY [1..maxcode] OF
+        RECORD op : symbol; left,right : integer END;
+    cx : integer;
+
+    dec_sym : symbol;
+    dec_cx,dec_cx0,dec_tx,dec_location : integer;
+
+    isargment : boolean;
+    tracing : boolean;
+
+    last_ind : integer;
+    num_models,max_models : integer;
+    small_first,delaying : boolean;
+    last_clock : integer;
+
+    i : integer;
+
+PROCEDURE erw(a : alfa; s : symbol);
+BEGIN (* erw *)
+lastresword := lastresword + 1;
+WITH reswords[lastresword] DO
+    BEGIN alf := a; symb := s END
+END; (* erw *)
+
+PROCEDURE writenode(i : integer);
+BEGIN (* writenode *)
+WITH code[i] DO
+    BEGIN
+    write(i:4,'  ',op:12,'  ',left:6,right:6);
+    IF op IN [atom_,is_,eql_,neq_,def_prop,def_pred]
+        THEN write('  ',table[left].alf);
+    IF op IN [eql_,neq_]
+        THEN write('  ',table[right].alf);
+    writeln
+    END
+END; (* writenode *)
+
+(* - - - - -   R E A D E R   - - - - - *)
+
+PROCEDURE getch;
+BEGIN
+IF eof THEN GOTO 99;
+IF eoln THEN
+    BEGIN
+    linenumber := linenumber + 1;
+    readln; ch := ' ';
+    IF NOT interactive THEN writeln
+    END
+  ELSE
+    BEGIN
+    read(ch);
+    IF NOT interactive THEN write(ch)
+    END
+END;
+
+PROCEDURE print(a : alfa);
+VAR l : integer;
+BEGIN
+l := 1;
+REPEAT
+    write(a[l]); l := l + 1
+    UNTIL (l > alfalength) OR (a[l] = ' ')
+END;
+
+PROCEDURE error(mes : message);
+BEGIN
+WHILE NOT eoln DO getch; readln; writeln;
+IF NOT interactive THEN write('*** line ',linenumber:0);
+write('  error: seen "');
+IF sym IN [lpar_..semicol_] THEN write(lastch) ELSE print(al);
+writeln('" when ',mes);
+linenumber := linenumber + 1; GOTO 1
+END (* error *);
+
+PROCEDURE getsym;
+LABEL 1;
+VAR i,j,k : integer;
+BEGIN (* getsym *)
+1: WHILE ch <= ' ' DO getch;
+IF ch IN ['A'..'Z'] THEN
+    BEGIN (* reserved word *)
+    k := 0; al := emptyalfa;
+    REPEAT
+        IF k < alfalength  THEN
+            BEGIN k := k + 1; al[k] := ch  END;
+        getch
+        UNTIL NOT (ch IN ['A'..'Z']);
+    i := 1; j := lastresword;
+    REPEAT
+        k := (i + j) DIV 2;
+        IF al <= reswords[k].alf THEN j := k - 1;
+        IF al >= reswords[k].alf THEN i := k + 1
+        UNTIL i > j;
+    IF i - 1 > j THEN sym := reswords[k].symb ELSE
+        error('unknown reserved word         ')
+    END (* reserved word *)
+ELSE IF ch IN ['a'..'z'] THEN
+    BEGIN (* user declared identifier *)
+    k := 0; al := emptyalfa;
+    REPEAT
+        IF k < alfalength  THEN
+            BEGIN k := k + 1; al[k] := ch  END;
+        getch
+        UNTIL NOT (ch IN ['a'..'z','_','0'..'9']);
+    sym := ident_; table[0].alf := al; location := tx;
+    WHILE table[location].alf <> al DO location := location - 1;
+    IF location = 0 THEN
+        BEGIN
+        tx := tx + 1; location := tx;
+        WITH table[tx] DO
+            BEGIN alf := al; obj := undefined END
+        END
+    END (* user declared identifier *)
+ELSE
+    BEGIN
+    lastch := ch; getch;
+    CASE lastch OF
+        '=' : sym := eql_;
+        '#' : sym := neq_;
+        '?' : sym := query_;
+        ')' : sym := rpar_;
+        '.' : sym := period_;
+        ';' : sym := semicol_;
+        ',' : sym := comma_;
+        '/' : sym := therefore_;
+        '-' :
+            BEGIN
+            sym := therefore_;
+            WHILE ch = '-' DO getch
+            END;
+        '(' :
+            IF ch <> '*' THEN sym := lpar_ ELSE
+                BEGIN
+                getch;
+                REPEAT
+                    WHILE ch <> '*' DO getch;
+                    getch;
+                    UNTIL ch = ')';
+                getch; GOTO 1
+                END;
+        OTHERWISE
+            BEGIN
+            sym := badchar_;
+            error('this character is illegal     ')
+            END
+        END (* CASE *)
+    END (* ELSE *)
+END  (* getsym *);
+
+PROCEDURE generate(o : symbol; l,r : integer);
+BEGIN (* generate *)
+IF cx = maxcode THEN
+    BEGIN writeln('too much code'); GOTO 99 END;
+cx  :=  cx + 1;
+WITH code[cx] DO
+    BEGIN op := o; left := l; right := r END
+END; (* generate *)
+
+PROCEDURE f_sequence(expected_ob : symbol);
+VAR left : integer;
+
+    PROCEDURE formula(expected_ob : symbol);
+    VAR left : integer; localop : symbol;
+
+        PROCEDURE expression(expected_ob : symbol);
+        VAR left : integer;
+
+          PROCEDURE term(expected_ob : symbol);
+          VAR left : integer;
+
+            PROCEDURE factor(expected_ob : symbol);
+            VAR loc,left : integer; oper : symbol;
+            BEGIN (* factor *)
+            IF sym = a_ THEN
+                IF expected_ob = predicate THEN getsym;
+            CASE sym of
+                ident_ :
+                    BEGIN
+                    loc := location;
+                    WITH table[loc] DO
+                      BEGIN
+                      IF obj IN [proposition,predicate] THEN
+                        IF expected_ob <> obj THEN
+                          error('wrong object                  ');
+                      getsym;
+                      IF obj = undefined THEN
+                        IF (sym IN [ident_,is_,lpar_,eql_,neq_])
+                            OR (expected_ob = ind_const) THEN
+                          BEGIN (* ind_const *)
+                          obj := ind_const;
+                          ind_xt := dummy_ind
+                          END
+                         ELSE
+                          BEGIN (* proposition or predicate *)
+                          obj := expected_ob;
+                          ext[false] := []; ext[true] := []
+                          END;
+                      IF obj IN [def_prop,def_pred] THEN
+                          generate(obj,loc,0)
+                      ELSE IF obj <> ind_const THEN
+                          generate(atom_,loc,0)
+                      ELSE IF expected_ob = ind_const THEN
+                          code[cx].right := loc (* fix *)
+                      ELSE IF sym IN [eql_,neq_] THEN
+                          BEGIN (* identity *)
+                          oper := sym; getsym;
+                          generate(oper,loc,99999); (* to be fixed *)
+                          IF sym <> ident_ THEN
+                            error('identifier expected           ');
+                          factor(ind_const)
+                          END
+                      ELSE
+                          BEGIN (* predication *)
+                          IF sym = is_ THEN getsym;
+                          factor(predicate);
+                          generate(is_,loc,cx)
+                          END
+                      END (* WITH *)
+                    END; (* ident_ *)
+                all_,some_,no_,only_ :
+                    BEGIN
+                    oper := sym; getsym;
+                    factor(predicate);
+                    left := cx;
+                    IF sym = are_ THEN getsym;
+                    factor(predicate);
+                    IF oper = only_
+                        THEN generate(all_,cx,left)
+                        ELSE generate(oper,left,cx)
+                    END;
+                everything_,something_,nothing_ :
+                    BEGIN
+                    oper := sym; getsym; IF sym = is_ THEN getsym;
+                    factor(predicate); generate(oper,0,cx)
+                    END;
+                not_ :
+                    BEGIN
+                    getsym; IF sym = a_ THEN getsym;
+                    factor(expected_ob); generate(not_,0,cx)
+                    END;
+                lpar_ :
+                    BEGIN
+                    getsym; formula(expected_ob);
+                    IF sym = rpar_ THEN getsym ELSE
+                        error('")" expected                  ')
+                    END;
+                OTHERWISE
+                    error('beginning of factor expected  ')
+                END; (* CASE *)
+            IF sym = s_ THEN
+                IF expected_ob = predicate THEN getsym;
+            END; (* factor *)
+
+          BEGIN (* term *)
+          factor(expected_ob);
+          WHILE sym = and_ DO
+              BEGIN
+              getsym; left := cx; factor(expected_ob);
+              generate(and_,left,cx)
+              END (* WHILE *)
+          END; (* term *)
+
+        BEGIN (* expression *)
+        term(expected_ob);
+        WHILE sym = or_ DO
+            BEGIN
+            getsym; left := cx; term(expected_ob);
+            generate(or_,left,cx)
+            END (* WHILE *)
+        END; (* expression *)
+
+    BEGIN (* formula *)
+    expression(expected_ob);
+    IF sym IN [imp_,iff_] THEN
+        BEGIN
+        localop := sym; getsym; left := cx; formula(expected_ob);
+        generate(localop,left,cx)
+        END (* WHILE *)
+    END; (* formula *)
+
+BEGIN (* f_sequence *)
+formula(expected_ob);
+WHILE sym = comma_ DO
+    BEGIN
+    getsym; left := cx; formula(expected_ob);
+    generate(and_,left,cx)
+    END; (* WHILE *)
+IF sym = therefore_ THEN
+    BEGIN
+    isargment := true; getsym; left := cx; formula(proposition);
+    generate(imp_,left,cx)
+    END; (* IF *)
+IF tracing THEN
+    BEGIN
+    writeln; writeln('code to be executed:');
+    FOR i := dec_cx + 1 TO cx DO writenode(i)
+    END
+END; (* f_sequence *)
+
+(* - - - - -   I N T E R P R E T E R   - - - - - *)
+
+PROCEDURE stop_delaying(PROCEDURE cp);
+VAR savedelaying : boolean; savelast_ind : integer;
+BEGIN (* stop_delaying *)
+savedelaying := delaying; savelast_ind := last_ind;
+delaying := false;
+IF last_ind = dummy_ind THEN
+    last_ind := first_ind; (* no empty universes *)
+cp;
+delaying := savedelaying; last_ind := savelast_ind
+END; (* stop_delaying *)
+
+PROCEDURE show;
+VAR i,j : integer; b : boolean;
+BEGIN (* show *)
+num_models := num_models + 1;
+IF num_models = 1 THEN
+    BEGIN
+    IF isargment
+        THEN write(' ... is not a valid argument, countermodel')
+        ELSE write(' ... is not a logical truth, countermodel');
+    IF max_models = 1 THEN writeln(' - ') ELSE writeln('(s) - ')
+    END;
+IF max_models > 1 THEN writeln(num_models:0,':');
+FOR i := 1 TO tx DO
+    WITH table[i] DO
+        CASE obj OF
+            proposition :
+                IF ext[false] + ext[true] <> [] THEN
+                    BEGIN
+                    write('    '); print(alf); write('  =  ');
+                    IF dummy_ind IN ext[false] THEN writeln('F') ELSE
+                    IF dummy_ind IN ext[true ] THEN writeln('T')
+                    END;
+            predicate :
+                IF ext[false] + ext[true] <> [] THEN
+                    BEGIN
+                    write('    '); print(alf); write('  =  ');
+                    FOR b := false TO true DO
+                        IF ext[b] <> [] THEN
+                            BEGIN
+                            write(b:1,':{ ');
+                            FOR j := 1 TO last_ind DO
+                                IF j IN ext[b] THEN write(j:0,' ');
+                            write('}  ')
+                            END;
+                    writeln
+                    END;
+            ind_const :
+                IF ind_xt <> dummy_ind THEN
+                    BEGIN
+                    write('    '); print(alf);
+                    writeln('  =  ',ind_xt:0)
+                    END;
+            END (* CASE *)
+END; (* show *)
+
+PROCEDURE make(
+        g : boolean;                    (* the goal *)
+        x : integer;                    (* the individual *)
+        f : integer;                    (* the formula *)
+        PROCEDURE cp(PROCEDURE c);      (* first cont *)
+        PROCEDURE ccp);                 (* second cont *)
+
+(* NOTE THAT THE PARAMETER x IS ALSO USED AS A FOR-LOOP VARIABLE *)
+
+    PROCEDURE assign(v,val : integer);
+    BEGIN
+    table[v].ind_xt := val;
+    make(g,x,f,cp,ccp);
+    table[v].ind_xt := dummy_ind
+    END;
+
+    PROCEDURE assignany(v : integer);
+    VAR i : integer;
+    BEGIN
+    IF last_ind = dummy_ind THEN
+        last_ind := first_ind; (* no empty universes *)
+    IF SMALL_FIRST THEN
+        FOR i := first_ind TO last_ind DO assign(v,i);
+    last_ind := last_ind + 1;
+    assign(v,last_ind);
+    last_ind := last_ind - 1;
+    IF NOT SMALL_FIRST THEN
+        FOR i := first_ind TO last_ind DO assign(v,i)
+    END;
+
+    PROCEDURE delayed;
+        PROCEDURE call(PROCEDURE p);
+        BEGIN p END;
+    BEGIN
+    make(g,x,f,call,ccp)
+    END;
+
+    PROCEDURE universal;
+    BEGIN (* universal *)
+    IF x = last_ind THEN cp(ccp) ELSE
+        BEGIN
+        x := x + 1;
+        WITH code[f] DO
+            BEGIN
+            IF op IN [all_,some_,no_] THEN
+                make(false,x,left,cp,universal);
+            make(g,x,right,cp,universal);
+            END;
+        x := x - 1
+        END
+    END; (* universal *)
+
+    PROCEDURE goalright(PROCEDURE p);
+    BEGIN make(g,x,code[f].right,cp,p) END;
+
+    PROCEDURE trueright(PROCEDURE p);
+    BEGIN make(true,x,code[f].right,cp,p) END;
+
+    PROCEDURE falseright(PROCEDURE p);
+    BEGIN make(false,x,code[f].right,cp,p) END;
+
+BEGIN (* make *)
+IF num_models < max_models THEN
+  WITH code[f] DO
+    BEGIN
+    IF tracing THEN
+        BEGIN
+        write(g:1,' ',x:0,' [',last_ind:0,'] ');
+        writenode(f)
+        END;
+    CASE op OF
+        eql_,neq_ :
+            CASE 4 * ord( (op<eql_) = g ) +
+                 2 * ord(table[left].ind_xt = dummy_ind) +
+                     ord(table[right].ind_xt = dummy_ind)
+            OF
+                0   : IF table[left].ind_xt = table[right].ind_xt
+                        THEN cp(ccp);
+                1   : assign(right,table[left].ind_xt);
+                2   : assign(left,table[right].ind_xt);
+                3   : assignany(left);
+                4   : IF table[left].ind_xt <> table[right].ind_xt
+                        THEN cp(ccp);
+                5   : assignany(right);
+                6,7 : assignany(left)
+                END;
+        atom_ :
+            WITH table[left] DO
+                IF NOT (x IN ext[NOT g]) THEN
+                    IF x IN ext[g] THEN cp(ccp) ELSE
+                        BEGIN
+                        ext[g] := ext[g] + [x];
+                        cp(ccp);
+                        ext[g] := ext[g] - [x]
+                        END;
+        is_ :
+            WITH table[left] DO
+                IF ind_xt <> dummy_ind THEN
+                    make(g,ind_xt,right,cp,ccp)
+                  ELSE
+                    BEGIN
+                    IF SMALL_FIRST THEN
+                        FOR x := 1 TO last_ind DO
+                            BEGIN
+                            ind_xt := x;
+                            make(g,x,right,cp,ccp)
+                            END;
+                    last_ind := last_ind + 1;
+                    ind_xt := last_ind;
+                    make(g,last_ind,right,cp,ccp);
+                    ind_xt := dummy_ind;
+                    last_ind := last_ind - 1;
+                    IF NOT SMALL_FIRST THEN
+                        FOR x := 1 TO last_ind DO
+                            BEGIN
+                            ind_xt := x;
+                            make(g,x,right,cp,ccp)
+                            END
+                    END;
+        def_prop,def_pred :
+              make(g,x,table[left].codeptr,cp,ccp);
+        not_ :
+            make(NOT g,x,right,cp,ccp);
+        and_,or_ :
+            IF (op = and_) = g THEN
+                make(g,x,left,goalright,ccp)
+              ELSE
+                BEGIN
+                make(g,x,left,cp,ccp);
+                make(g,x,right,cp,ccp)
+                END;
+        imp_ :
+            IF g THEN
+                BEGIN
+                make(false,x,left,cp,ccp);
+                make(true,x,right,cp,ccp)
+                END
+              ELSE
+                make(true,x,left,falseright,ccp);
+        iff_ :
+            BEGIN
+            make(g,x,left,trueright,ccp);
+            make(NOT g,x,left,falseright,ccp)
+            END;
+        everything_,something_,nothing_,
+        all_,some_,no_ :
+            IF (op IN [something_,some_]) = g THEN
+                BEGIN (* existential *)
+                g := NOT (op IN [everything_,all_]);
+                IF SMALL_FIRST THEN
+                    FOR x := first_ind TO last_ind DO
+                        IF op IN [everything_,something_,nothing_]
+                            THEN make(g,x,right,cp,ccp)
+                            ELSE make(true,x,left,goalright,ccp);
+                last_ind := last_ind + 1;
+                x := last_ind; (* needed for goalright *)
+                IF op IN [everything_,something_,nothing_]
+                    THEN make(g,x,right,cp,ccp)
+                    ELSE make(true,x,left,goalright,ccp);
+                last_ind := last_ind - 1;
+                IF NOT SMALL_FIRST THEN
+                    FOR x := first_ind TO last_ind DO
+                        IF op IN [everything_,something_,nothing_]
+                            THEN make(g,x,right,cp,ccp)
+                            ELSE make(true,x,left,goalright,ccp)
+                END
+              ELSE
+                IF delaying THEN cp(delayed) ELSE
+                    BEGIN
+                    x := dummy_ind;
+                    g := op IN [everything_,all_];
+                    universal
+                    END;
+        OTHERWISE
+            BEGIN
+            writeln('unknown case in make, op = ',op);
+            GOTO 99
+            END
+        END (* CASE *)
+    END (* WITH *)
+END; (* make *)
+
+(* - - - - -   M A I N   - - - - - *)
+
+BEGIN (* main, mondef *)
+IF interactive THEN writeln('mondef ...');
+lastresword := 0;
+erw('A               ',a_);
+erw('ALL             ',all_);
+erw('AN              ',a_);
+erw('AND             ',and_);
+erw('ARE             ',are_);
+erw('EVERYBODY       ',everything_);
+erw('EVERYTHING      ',everything_);
+erw('IFF             ',iff_);
+erw('IMP             ',imp_);
+erw('IS              ',is_);
+erw('LARGE           ',large_);
+erw('NO              ',no_);
+erw('NOBODY          ',nothing_);
+erw('NOT             ',not_);
+erw('NOTHING         ',nothing_);
+erw('ONLY            ',only_);
+erw('OR              ',or_);
+erw('PEOPLE          ',s_);
+erw('PREDICATE       ',def_pred);
+erw('PROPOSITION     ',def_prop);
+erw('S               ',s_);
+erw('SMALL           ',small_);
+erw('SOME            ',some_);
+erw('SOMEBODY        ',something_);
+erw('SOMETHING       ',something_);
+erw('THINGS          ',s_);
+linenumber := 1; dec_cx := 0; dec_tx := 0;
+small_first := false;
+1:
+REPEAT
+    IF interactive THEN write('?-   ');
+    ch := ' '; cx := dec_cx; tx := dec_tx; last_clock := clock;
+    getsym;
+    IF sym <> query_ THEN tracing := false ELSE
+        BEGIN tracing := true; getsym END;
+    IF sym IN [large_,small_] THEN
+        small_first := sym = small_
+    ELSE IF sym IN [def_pred,def_prop] THEN
+        BEGIN (* declarations *)
+        dec_sym := sym; getsym;
+        WHILE sym = ident_ DO
+            BEGIN
+            dec_location := location;
+            table[dec_location].obj := dec_sym;
+            getsym;
+            IF sym = eql_ THEN getsym ELSE
+                error('"=" expected                  ');
+            dec_cx0 := cx;
+            f_sequence(pred(dec_sym));
+            table[dec_location].codeptr := cx;
+            IF tracing THEN
+                BEGIN
+                write('code for "');
+                print(table[dec_location].alf); writeln('":');
+                FOR i := dec_cx0 + 1 TO cx DO writenode(i)
+                END;
+            IF sym = semicol_ THEN getsym
+            END;
+        dec_cx := cx; dec_tx := tx
+        END (* declarations *)
+      ELSE
+        BEGIN (* evaluating *)
+        isargment := false;
+        f_sequence(proposition);
+        IF NOT (sym IN [period_,query_]) THEN
+            error('terminator expected           ');
+        IF sym = period_
+            THEN max_models := maxint
+            ELSE max_models := 1;
+        IF tracing THEN
+            BEGIN writeln; writeln('executing ..') END;
+        last_ind := dummy_ind; num_models := 0; delaying := true;
+        make(false,dummy_ind,cx,stop_delaying,show);
+        IF num_models = 0 THEN
+            IF isargment
+                THEN writeln(' ... is a valid argument')
+                ELSE writeln(' ... is a logical truth')
+        END; (* evaluating *)
+    IF clock - last_clock > 200
+        THEN writeln(clock - last_clock:0,' milliseconds')
+    UNTIL false;
+99:
+writeln('total CPU time for this session : ',clock:0,' milliseconds')
+END.
+#+end_example
+
+
+
+* Exercises and reading
+
+** /Strategies/:
+Construct several formulas or arguments which do have countermodels such that the =SMALL=-first strategy works substantially faster then the other in finding the first countermodel.  Construct several formulas or arguments which do have countermodels such that the =LARGE=-first strategy works substantially faster then the other in finding the first countermodel.
+
+** /Manual/:
+Write a BNF grammar and a complete user manual for the program.
+
+** /Trivial extensions/:
+Add more buzz-words to the language, and implement them.  The truth-functional operator =IF-THEN-ELSE= fits in well with the program; implement it either by using existing internal code or by introducing a special new one.  Add a facility for writing =THERE ARE f, g, (h AND i) ..= instead of =SOMETHING IS f, SOMETHING IS g, SOMETHING IS (h AND i) ..=.
+
+** /File inclusion/:
+Modify the program so that a disk file of definitions of propositions and predicates can be read before the start of the main session from standard input; the modification occurs partly in the main program and partly in the scanner.  Alternatively, add a facility for including another file and to resume reading from the input only when the end of that file is reached; such a facility only requires changes to the scanner.
+
+** /Some simplifications/:
+As tested in the demonstration, =ALL f ARE g= is logically equivalent to =EVERYTHING IS (f IMP g)=.  =SOME f ARE g= is logically equivalent to =SOMETHING IS (f AND g)=.  =NO f ARE g= is logically equivalent to =NOTHING IS (f AND g)=.  Simplify the interpreter by removing the codes for the binary quantifiers =ALL=, =SOME= and =NO=, at the expense of making the code generation marginally more complicated by substituting code for the unary quantifiers =EVERYTHING=, =SOMETHING= and =NOTHING=, and adding the binary truth-functional code for =IMP= and =AND= as appropriate.  Furthermore, =NOTHING IS f= is logically equivalent to =EVERYTHING IS NOT f=.  Simplify the interpreter accordingly, at the expense of making the code slightly more complicated.  One can go on a little further: =SOMETHING IS f= is logically equivalent to =NOT EVERYTHING IS NOT f=; simplify the interpreter accordingly.  So the only quantifier that is needed is =EVERYTHING=, but =SOMETHING= would do equally well as the only primitive.
+
+** /Another syntax/:
+Rewrite the program to accept a different input language.  Atoms are =raining=, =rich(x)=, =tall(john)=, =bob = robert=, truthfunctional connectives are =-=, =&=, =v=, =>= and =<>= (to avoid the potential clash with ===), quantifiers are =ALL x= and =SOME x=.  This exercise is best combined with the previous one which simplifies the interpreter.
+
+** /Delay branching/:
+Implement the /trunk before branch/ optimisation given as an exercise in Chapter 10.  Collect some timing information to compare the simple and the optimised version.
+
+** /Declarations of distinct individuals/:
+In many contexts it is understood that distinct individual constants refer to distinct individuals.  This happens, for example, in many database applications.  Then the difference between individuals and individual constants becomes blurred.  (This method is used in Chapter 19).  In monadic logic one can state explicitly: =john # mary=, =john # london=, =mary # london= and so on, but it is cumbersome.  For n distinct individuals one needs n*(n-1)/2 such distinctness statements.  Modify the program in one of two ways: 1: make distinct individual constants always refer to distinct individuals --- this will make all identity statements of the form =a=b= false and hence it becomes pointless to have them at all.  2: retain the identity relation, but allow declarations of the form =INDIVIDUALS john mary london ..= which enforces their distinctness.
+
+** /Declarations of Families of Predicates/:
+Some predicates of natural language are pairwise exclusive: for example nothing can be red and green, and jointly exhaustive: everything has one colour or other.  To express this one would need many premises such as =NOTHING IS (red AND green)=, =NOTHING IS (red AND blue)=, =NOTHING IS (green AND blue)= and so on, and another: =EVERYTHING IS (red OR green OR blue OR ..)=.  As for the problem of distinct individuals, the number of necessary premises of the first kind grows very quickly, at a quadratic rate.  For the user it would be convenient to be able to define a family of, say, colour predicates which the system then takes to be mutually exclusive and jointly exhaustive.  For the semantic processor it would also be more efficient, because internally it could treat =a IS red= as =colour(a) = red=.  (This method is used in Chapter 19.)  Ordinary predicates can then be taken to be a special case: =a IS happy= becomes =happy(a) = true=.  To implement families of predicates, the first parameter of procedure =make= should then be changed from Boolean to (small) integer.
+
+** /Functions/:
+Modify the program to handle functions.  The program should then be able to handle atomic propositions such as =THE father OF mary IS tall=, =THE mother OF THE employer OF john whistles=, =bruce = THE teacher OF jane= and even =bruce IS THE teacher OF jane=.  But note that this last =IS= is not predication, it is identity in disguise.  To implement this, each function will need for its extension a portion of an =ARRAY= of function extensions.  A portion is as large as the maximum possible number of individuals, say 32.  Each portion can potentially contain, for each individual, the value of that function for that individual.
+
+** /Relations/:
+Modify the program to handle binary relations.  The program should then be able to handle propositions such as:
+
+#+begin_example
+        john likes mary,
+        SOMEBODY likes EVERYBODY,
+        john hates SOMEBODY WHO likes jane,
+        mary likes EVERYBODY WHO knows SOMEBODY WHO knows peter.
+#+end_example
+
+To implement this,
+each relation will need for its extension a portion of an =ARRAY=
+of Boolean values.
+If the maximum number of individuals in the domain is N,
+then each portion will be of size $N*N$.
+Each portion can indicate,
+for each pair of individuals,
+whether that pair is a member of the relation.
+
+/Reading/:
+A systematic analysis of monadic logic is given in
+Hughes and Londey (1965, chapters 23 - 38).
+Cohen and Nagel (1934, chapters II to V)
+give an exposition of that part of monadic logic
+known as traditional or Aristotelian logic.
+Colmerauer (1982) in his paper 'An interesting Subset
+of Natural Language' gives hints that might be useful for a project
+involving the addition of functions and relations.
+
+/Theory/:
+If you have some experience in abstract algebra
+or relational structures or model theory,
+you will have come across the notion of a homomorphism.
+Define homomorphisms between interpretations
+of monadic logic.
+Show that any countermodel of a formula or argument
+is a homomorphic image of the first countermodel
+of that formula or argument found by the strategy
+which constructs =LARGE= domains first.
+Dually, show that the first countermodel of a formula
+or argument found by the strategy which constructs =SMALL= domains first
+is a homomorphic image of any countermodel of that formula or argument.
+In category theory the first countermodel found by the =LARGE=-first strategy
+is called the /initial/ object, and the
+first countermodel found by the =SMALL=-first strategy
+is called the /terminal/ object.
+The morphisms of the category are the homomorphisms between
+interpretations.
+
+/Modal Logic/:
+Write a theorem prover for one of the modal propositional logics.
+See Hughes and Cresswell (1972) for the principal systems.
+To keep the syntax simple, use =a= .. =z= as propositional atoms,
+=&=, =v=, =>= and === as binary operators
+with conventional precedences and meaning, and
+=-=, =N= and =P= as unary operators
+for negation, necessity and possibility.
+Probably the S5 modal logic is the easiest to implement
+since it is isomorphic to monadic logic.
+(Hint: where the theorem prover for monadic logic
+used an individual as the second parameter of procedure make,
+the theorem prover for S5 should use a possible world.)
+
+/Temporal Logic/:
+Write a theorem prover for one of the temporal propositional logics.
+See Emerson and Srinivasan  (1989)
+or Manna and Pnueli (1989), both in the same volume,
+for some recent references.
+For a text book on temporal logic and its
+application in computer science, see Galton (1987);
+the first chapter gives a good overview.
+In temporal logic the possible worlds of modal logic
+are moments of time;
+these moments are either linearly or at least partially ordered
+in time.
+A given set of moments can be ordered in many ways,
+so the search for countermodels can take much longer
+than it does in modal logic.
+
+/DAT1LOG/:
+Maier and Warren (1988 part II) describe what they call DATALOG,
+a polyadic language like Prolog but without compound terms
+as parameters to predicates.
+If you are familiar with Prolog and you have done the
+exercise on PROPLOG suggested in Chapter 11,
+then you should have no difficulty in implementing
+DAT1LOG, the monadic subset of DATALOG.
+Full DATALOG is implemented in the next chapter,
+but you might like to attempt an implementation
+of the monadic subset now.
+
+** /Predicate Logic/:
+Almost all textbooks on logic provide an account of full predicate logic, and many present the tableau or tree method.  Reeves and Clarke (1990, pp 236 - 242) give a tableau prover written in the functional language ML.
+
+* A theorem prover for algebra
+
+The method of semantic tableaux lends itself to handle symbolic arithmetic expressions rather than logical ones.  The basic idea is that an expression yields something like a tableau, and an equation is valid if the paths in the tableaux from the two expressions cancel out.
+
+In outline the method works as follows: Branching occurs for addition and subtraction.  To distinguish the two, every expression has a sign which is positive or negative.  Addition passes the sign on as it is, subtraction inverts for the right subexpression.  No branching occurs for multiplication and division, the two subexpressions have to be expanded serially.  To distinguish the two, every expression has an exponent which is positive or negative, and division inverts it for the right subexpression.  Eventually atomic expressions will be reached, they are algebraic variables.  Each occurrence of such a variable increments or decrements the power of that variable in a global buffer.  The powers of the variables correspond to assignments of truth values to propositional variables in semantic tableaux.  These powers are collected as paths are constructed, initially they are all set to zero.  (You might want to pursue the similarity with entailment as briefly described in a part of section 4 of Chapter 10.)
+
+Unlike logic, there is no notion of a path closing off because of a contradiction.  So all paths 'remain open'.  For each path the assignment of powers to variables is collected in a further global table of powers of variables.  When the processing of the equation is completed, any assignments of powers from the left and the right expression might have cancelled --- this happens when each assignment has occured with the same number of positive and negative signs.  In that case the equation is valid, otherwise it is not.  So, whereas in logic a path may close in itself and hence disappear, here two paths may cancel because of opposite signs.
+
+To implement this, you should first write a grammar, along these lines: input consists of any number of equations, and for each equation the system responds by stating whether the equation is valid.  An equation consists of two expressions separated by an equality sign, and the second expressions is followed by some terminator.  An expression consists of one or more terms separated by addition or subtraction symbols.  A term consists of one or more factors separated by multiplication or division symbols, if no explicit symbol is given then multiplication is assumed.  A factor is either a variable or a parenthesised expression.  If you take variables to be lower case letters, then the entire grammar can be based on single characters.  Writing a recursive descent compiler which produces tree code should be routine.
+
+The interpreter has to traverse that tree in a way that is similar to the way the interpreter for semantic tableaux operates.  It uses recursive calls to implement the arithmetic operators, in the manner outlined above.  For the variables it increments or decrements the power of the given variable in the global buffer, which has to be initialised to zero for each variable.  Then it calls the continuation, and on return restores the buffer.  Since there is no notion of a path closing, the continuation will always be called.
+
+The continuation that is passed on in the initial call is a global procedure which makes use of the buffer and of a further global datastructure, a table of assignments of powers with additional coefficients.  If the current power assignment in the buffer already occurs in the table, then its coefficient, an integer, is incremented or decremented as required, otherwise a new entry for that power assignment is made into the table, with the coefficient set as required.
+
+When the entire equation has been processed, the table of assignments of powers is traversed to check that all assignments have a coefficient that is zero.  This will mean that every path has been cancelled by an opposite path, and the equation is valid.  If not, then the equation is invalid.
+
+Other features you might consider are these:
+
+1) A factor can also be a small number. In that case you have to generate a numeric tree node, and the interpreter needs a case to handle such a node.  You should restrict it to small numbers of one or perhaps two digits.
+
+2) A useful operation to have is exponentiation. This means that a factor can be followed by an exponentiation symbol, say the up-arrow =^=, which is followed by a small number.  Examples are =a^2= and =(b - c)^3=.  The interpreter will have to understand exponentiation nodes.  It will come as a surprise to observe that exponentiation will behave very similar to verifying universally quantified formulas in tableaux for monadic logic.
+
+3) If two terminators are made available, then one can be used to indicate that for invalid equations a countermodel is requested.  You will have to think of a way in which countermodels are to be specified.
+
+The following is a sample input file of equations.  Some are valid, some are not.  For the last few the terminator is ='!'= to request countermodels in case the equations is invalid.
+
+#+begin_example
+a * b + c - d  =  c + b * a - d.
+a * b + c - d  =  c - b * a + d.
+(p - q) * (r - s)  =  pr - ps - qr + qs.
+(p - q) * (r - s)  =  pr - ps - sr + sq.
+pppq * qr * ssr  =  pppqqrrss.
+pppq * qr * sssr  =  pppqqrrss.
+(2 + 3) * 4  =  8 + 12.
+(2 + 3) * 4  =  21.
+(2a + 3b) * 4c  =  8ac + 12bc.
+(2a + 3b) * 4c  =  8ac + 15bc.
+(aaa + aab)/(aa)  =  a + b.
+(aaaa + aab)/(aa)  =  a + b.
+(a^2 + 2ab + b^2) ^ 3   =   (a + b) ^ 6.
+(a^2 + ab + b^2) ^ 3   =   (a + b) ^ 6.
+abbccc - c^3 b^2 a  =  0 !
+abbccc - c^2 b^2 a^2  =  0 !
+(a^3 b^2 - (bc)^3) ^ 4  =
+        6 * (a^6 b^10 c^6)  +  b^12 c^12  +  a^12 b^8
+      - 4 * (a^9 b^9 c^3)   -  4 * (a^3 b^11 c^9) !
+(a^3 b^2 - (bc)^3) ^ 4  =
+        6 * (a^6 b^10 c^6)  +  b^10 c^15  +  a^8 b^10
+      - 2 * (a^9 b^9 c^3)   -  4 * (a^3 b^11 c^9) !
+#+end_example
+

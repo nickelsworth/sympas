@@ -1,0 +1,471 @@
+#+title: Chapter 3 : Infix Evaluator
+
+* <<intro>>
+
+In the previous chapter we wrote a translator,
+in this chapter we shall write an evaluator.
+Arithmetical expressions such as =2 + 3= have a value, here =5=;
+and expressions such as =x + y= have a value which depends
+on the values of the variables.
+The same holds of logical formulas such as =p & q=,
+which is true if p is true and q is true, otherwise it is false.
+To avoid complications with propositional variables,
+we shall only use two constants: =0= and =1=,
+for =FALSE= and =TRUE=.
+Then for example the formula =1 & 0= is false,
+and we say that its value is =0=.
+The evaluator uses infix notation,
+but to keep the implementation as simple as possible,
+outer parentheses may not be omitted.
+
+* User manual
+
+The program INFEVL evaluates logical formulas in infix notation.
+When the program is ready to read a formula,
+it provides the prompt:
+
+#+begin_example
+        Formula :
+#+end_example
+
+and then it expects a formula of propositional logic
+
+#+begin_example
+formula  ::=
+        '0' | '1' |
+        '-' formula |
+        '(' formula ( 'v' | '&' | '>' | '=' ) formula ')'
+#+end_example
+
+The program ignores white space such as blanks, tabs or newlines.
+When the reading of the formula is completed,
+the program writes the value of the formula in the form
+
+#+begin_example
+        Value  : x
+#+end_example
+
+where x is either =0= or =1=.
+Then the program writes a new prompt.
+Evaluation of formulas is defined recursively,
+for atomic and for compound formulas.
+Atomic formulas =0= and =1= evaluate to themselves.
+Compound formulas are evaluated in accordance with the
+following truth tables,
+where =p= and =q= are arbitrary formulas,
+and the columns below give their values:
+
+#+begin_example
+Unary Operator
+    p   |       -p
+    ----+---------
+    0   |       1
+    1   |       0
+#+end_example
+
+#+begin_example
+Binary Operators
+    p q   |     p v q   p & q   p > q   p = q
+    ------+----------------------------------
+    0 0   |       0       0       1       1
+    0 1   |       1       0       1       0
+    1 0   |       1       0       0       0
+    1 1   |       1       1       1       1
+#+end_example
+
+If during the reading of a formula an error is detected,
+an error message is given.
+If the offending character is ="X"=,
+then the message will be one of
+
+#+begin_example
+Error : seen "X" when "&","v",">" or "=" expected
+Error : seen "X" when "0","1","-" or "(" expected
+Error : seen "X" when ")" expected
+#+end_example
+
+depending on where in the parse the error occurs.
+The program terminates when it reaches
+the end of the input file;
+if this occurs in the middle of a formula then no error
+message is given.
+The following is an example run of the program.
+The second last formula is here written over several lines,
+and the last input line contains an intentional error.
+
+#+begin_example
+Formula : 1
+Value   : 1
+Formula : (1 & (1 > 0))
+Value   : 0
+Formula : (             0 =     (1 = 0  ) )
+Value   : 1
+Formula : (
+            (1 = 1)
+          &
+            (1 > 0)
+          )
+Value   : 0
+Formula : ( 1 ? 0 )
+  Error : seen "?" when "v","&",">" or "=" expected
+#+end_example
+
+To exit the program one types =^C= (control-=C=).
+
+* Designing the implementation
+
+If you have understood our previous program,
+then this one should not be difficult.
+But perhaps you should read about
+parameters of procedures, both value parameters and variable parameters.
+Also, you need to know about type declarations.
+The main program is very simple --- essentially it is just a loop
+for writing the prompt, reading and evaluating a formula,
+and writing the value.
+Nominally the loop goes on forever.
+Before and after the loop we need two labels to jump
+to: the first when an error has been detected,
+the second when the end of the file has been reached.
+The reading and the evaluating of a formula is done by
+a procedure called =infix=.
+It is best to design it first without the evaluation part in mind.
+
+In infix notation there are essentially three places
+where a user might have inserted blanks:
+before a formula, before an infix operator,
+and before a closing parenthesis.
+At each of these places procedure =infix=
+must be prepared to skip characters up to the next
+printing character.
+This is best done by a local procedure =getch=,
+when it returns the last printing character is in a local variable.
+The body of =infix= follows the BNF grammar for infix notation
+almost to the letter.
+But there are three places where errors can occur:
+at the beginning of a formula, where an infix operator
+should be, and where a closing parenthesis =)= should be.
+The error reporting is best done by a local
+procedure =error=,
+which has to be told what the specific error message is.
+The two local procedures =getch= and =error=
+have bodies that are essentially familiar
+from our previous program.
+The procedure =error= has a (value) parameter
+which is that part of the error message
+which differs on its three possible calls.
+Note that the type of the message parameter
+has to be given globally in a type declaration.
+
+As described up to this point,
+procedure =infix= does not do any evaluating.
+If you are writing the program yourself,
+you are strongly urged to write the program
+exactly up to here ---
+all it can do is eat up characters and sometimes complain.
+The evaluation part then comes as a refinement which
+we describe next.
+To begin with,
+every subformula has a value,
+and the whole formula has a value.
+Procedure =infix= has to compute this value,
+and when it has done so,
+it has to put the value somewhere
+for use later --- by itself if the call was recursive,
+by the main program if the call was from the main program.
+So we give procedure =infix= a so-called variable or
+=VAR= parameter
+which has to be of type Boolean.
+When =infix= reads an atom
+it sets this parameter to false or true respectively.
+When =infix= reads a negation,
+it calls itself,
+but with a local variable of type boolean,
+and when that returns it sets the parameter to the opposite
+value of what that local value is.
+When =infix= reads a parenthesis,
+it calls itself with one local variable,
+then it has to read the infix operator and remember it,
+then it calls itself with another local variable.
+Depending on what the remembered operator was,
+it then sets the parameter to a value
+computed from the two local variables.
+
+Beginning programmers often have difficulty with
+computing Boolean values,
+probably because they do a lot of numeric programming
+and encounter Boolean expressions only inside
+=IF='s and =WHILE='s, and then in the form =i = 0= or the like.
+In the infix evaluator,
+suppose the parameter to be set is =x=,
+and the two local variables are =y= and =z=.
+Then for the remembered operator for material equivalence ===,
+a logically correct way of setting the parameter
+to its value computed from the two local variables is this:
+
+#+begin_example
+        IF  y = true AND z = true  OR  y = false AND z = false
+            THEN x := true
+            ELSE x := false
+#+end_example
+
+Apart from syntax errors which the Pascal compiler will pick up,
+the statement reveals three independent and deep misunderstandings
+of the data type Boolean.
+If you cannot spot all four points,
+you should consult a good text book.
+
+For the remembered material equivalence operator =>=
+the situation is very similar.
+You might initially write a complex =IF= statement
+when actually a simple assignment statement will do.
+
+* The program
+
+The following is the standard Pascal source program
+for the infix evaluator.
+
+#+begin_example
+PROGRAM infix_evaluator(input,output);
+
+LABEL 1, 99;
+
+VAR
+    value : boolean;
+
+PROCEDURE infix(VAR x : boolean);
+
+TYPE   message = PACKED ARRAY [1..30] OF char;
+
+VAR ch,oper : char; y,z : boolean;
+
+    PROCEDURE getch;
+    BEGIN (* getch *)
+    REPEAT
+        IF eof THEN GOTO 99;
+        read(ch)
+        UNTIL ch > ' '
+    END; (* getch *)
+
+    PROCEDURE error(mes : message);
+    BEGIN (* error *)
+    writeln('  ERROR : seen "',ch,'" when ',mes);
+    readln;
+    GOTO 1
+    END; (* error *)
+
+BEGIN (* infix *)
+getch;
+CASE ch OF
+    '0' :
+        x := false;
+    '1' :
+        x := true;
+    '-' :
+        BEGIN
+        infix(z);
+        x := NOT z
+        END;
+    '(' :
+        BEGIN
+        infix(y);
+        getch;
+        IF NOT (ch IN ['&','v','>','=']) THEN
+            error('"&","v",">" or "=" expected   ');
+        oper := ch;
+        infix(z);
+        getch;
+        IF ch <> ')' THEN
+            error('")" expected                  ');
+        CASE oper OF
+            '&' : x := y AND z;
+            'v' : x := y OR z;
+            '>' : X := y <= z;
+            '=' : x := y = z;
+            END (* CASE *)
+        END;
+    OTHERWISE
+        error('"0","1","-" or "(" expected   ');
+    END (* CASE *)
+END; (* infix *)
+
+BEGIN (* main *)
+1: REPEAT
+    write('Formula : ');
+    infix(value);
+    writeln('Value   : ', ord(value):1)
+    UNTIL false;
+99:
+END.
+#+end_example
+
+Strictly speaking it is not necessary to have the two local variables
+=y= and =z= in procedure =infix=,
+just one will do, say =z=.
+Then for the formulas beginning with a parenthesis
+the first recursive call has to be made =infix(x)=,
+and the four cases changed accordingly.
+But the saving does not justify even these few lines of explanation.
+\fi
+
+* Exercises and reading
+
+/No GOTO/:
+Rewrite the program without GOTO.
+
+/Prefix notation/:
+Write an evaluator for logical expressions in prefix
+notation.
+You should write the parser first,
+and you might well do so by /cannibalising/
+the program from the previous chapter.
+Of course you will have to replace the atoms =a= .. =z=
+by =0= and =1=.
+Write a manual, too.
+A more ambitious project is to write an evaluator
+for Cambridge notation.
+
+/End of file/:
+Neither this program nor the one in the previous chapter
+treats end of file inside a formula well:
+there really should be an error message.
+But how can you then deal with end of file
+when the user has finished?
+Devise some method and implement it.
+Change the manual where appropriate.
+
+/Translator/:
+Write a translator from fully parenthesised
+infix notation to prefix notation.
+This is one of the translation problems mentioned at the end
+of the previous chapter which involved shifting operators
+forward.
+>From fully parenthesised infix notation it is not all that hard.
+
+/No outermost parentheses/:
+It would be nice if the outermost parentheses of formulas
+could be omitted. What problems do you foresee?
+You should keep in mind that users might want to write
+a formula over several lines,
+and also that they write trailing blanks on the same line.
+Discuss these problems, and propose a solution.
+
+/Minimising Parentheses/:
+When there are long conjunctions etc.
+the infix notation used here forces users to write
+a Lot of Irritating Silly Parentheses.
+For example, assuming that
+=p=, =q=, =r=, =s= are formulas,
+instead of =p & q & r & s=
+one has to write =((p & q) & (r & s))=
+or something like that.
+Can you fix the program
+so that it allows operator precedences
+described in the exercises of the previous chapter?
+Does your method work for =p > q > r > s=,
+which users would want to read as =p > (q > (r > s))=?
+If you cannot change the program,
+at least change the manual.
+
+/An evaluation grammar/:
+In the previous chapter we saw
+a translation grammar for simultaneously specifying
+the syntax of one language and its translation into another.
+Try to devise a method
+which can be used to simultaneously specify both the syntax
+of infix formulas and their value.
+For some advanced reading,
+see Lewis, Rosenkrantz and Stearns (1978) on translation grammars
+and attribute grammars.
+For an exceptionally successful attempt at writing
+semi-formal specifications without much need for explaining
+the specification language,
+see Lieberman (1987).
+Another excellent self-explanatory semi-formal technique,
+this time for a functional language,
+is used throughout the book by
+Glaser, Hankin and Till (1984).
+
+/Values of subformulas/:
+Change either the basic evaluator or any of its
+more elaborate versions so that it writes
+the value of /each/ subformula underneath its operator.
+
+/Arithmetic/:
+Write an evaluator for arithmetical expressions
+with just a few basic operations.
+You should ensure that all possible user errors
+are treated properly.
+Write a manual.
+
+/A Small APL/:
+A sophisticated language with heavy emphasis on array processing
+is APL.
+For example, the expression =1 2 3 + 10 20 30=
+denotes the addition of two arrays of three numbers each,
+and its value is the array =11 22 33=.
+Study a manual for APL (but do not be put off by the fancy characterset),
+and then design and implement a very small subset,
+but including at least array operations as in the example.
+Note that whereas for evaluators of logical or arithmetical
+expressions the values can always be returned in =VAR=
+parameters,
+this technique does not work when the values are
+arrays of arbitrary sizes.
+
+/A SET evaluator/:
+Design a notation for expressions in which the basic values
+are not truth values or numbers or arrays of numbers,
+but sets of lower case letters.
+You need notations for sets given by enumeration of their members,
+for the nullset and the universal set,
+for complementation, intersection, union and difference.
+The four last mentioned operations should have some
+reasonable precedences to minimise the need for parentheses.
+Write a manual, design the program, write the program.
+
+As a further refinement, add relational operators
+for inclusion and equivalence of sets ---
+note that these return logical values.
+Once there are logical values,
+it seems natural to add the truth functional connectives, too.
+Give a lot of thought to the precedences
+of 1)~the logical connectives,
+2)~the relational operators,
+and 3)~the set operations.
+
+/Evaluators in other domains/:
+You are in a city in which all streets run either north-south
+or east-west.
+Any movement you can make is in one of the four directions,
+north, south, east and west --- taken to mean up to the next
+intersection.
+Call these moves =N=, =S=, =E= and =W=,
+and a sequence of moves is written in the order of the moves,
+e.g. =NES= means moving north, then east, then south.
+Clearly that move is equivalent to just moving east.
+Similarly, =NENWWS= is equivalent to =WN=.
+Write a program which reads sequences of moves
+and then writes a minimal sequence which is equivalent to it.
+Note that often there will be several equivalent minimal sequences,
+so some decision is needed as to which of the
+equivalent minimal sequences is written out.
+
+In modal logic there are three unary operators,
+for negation, possibility and necessity.
+Assume that they are written as the characters =-=, =P= and =N=.
+In some modal logics different sequences of the unary operators
+can be equivalent,
+in the sense that when they operate on the same formula
+then the resulting formulas are logically equivalent.
+For example, in most modal logics =-N-= is equivalent to =P=,
+and =-P-= is equivalent to =N=,
+and in many modal logics =NP= and =PP= are equivalent to =P=.
+Study some modal system, and write a program
+which reduces sequences of unary operators to an equivalent minimal form.
+Alternatively, write a program which does the same for
+a temporal logic, in which the unary operators
+are negation, always (in the future), sometimes (in the future)
+and next (instant in time).
+The idea of writing a program for reducing modalities
+was suggested to me by Rory Deutsch.
+

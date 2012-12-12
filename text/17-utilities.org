@@ -1,0 +1,637 @@
+#+title: Chapter 17 : Some utilities
+
+* <<intro>>
+
+In previous chapters we have seen a variety of utility procedures for initialising symbol tables, for reading numbers, identifiers and special characters, for reporting errors and for other purposes.  To keep the programs short, only minimal utilities were provided.  In no two programs were the utilities sufficiently large /and/ sufficiently complex to warrant collecting them in a common library of utilities.  The payoff becomes different when the utilities are large and useful in several different programs.  In fact, one may taylor the programs to use as many portions of the utilities as possible, and to accept that some portions will not be used.  This is the approach we shall use in the remainder of this book.  In this chapter we design and implement some general utilities, in the remaining chapters we use them.
+
+* Desirable utilities
+
+** /A scanner/:
+The core of the utilities is a scanner, a procedure which reads characters from the input file, assembles short groups of them into symbols such as numbers in decimal or other notation, quoted single characters, quoted strings of characters, identifiers, reserved words and sequences of special characters such as punctuation and other symbols.  Reserved words and sequences of special symbols should be looked up in a table; identifiers should not be looked up because the required details are likely to vary in different applications.  The scanner must also handle comments.
+
+** /Directives/:
+For many purposes it is useful to let the scanner handle directives.  These are special purpose instructions to the scanner to affect its behaviour.  They are not passed on to the parser, indeed as far as the parser is concerned they are invisible just like comments.  One important directive is the =INCLUDE= directive which tells the scanner to suspend reading from the input file and to start reading from another.  When the end of that file is reached, reading resumes from the previous file.  It should be possible to nest such inclusions.  Also useful is a =LISTING= directive which can set an internal variable so that any input is copied to a listing file and any output goes not only to the output file but is also copied to the listing file.  In special cases one might want the listing file to contain debugging information, so it is desirable to have levels of listing.  As in any programming language, a conditional =IF= directive can be useful.  The kind chosen here is the simplest, it applies only to lines in the input file.  When the =IF= part evaluates to true, the remainder of the input line is processed, otherwise it is skipped.  A collection of variables =A .. Z= can have integer values assigned to them with the =SET= directive.  For numbers in alternative notation, the radix can be set to any value between 2 and 36 inclusive.
+
+** /Errors/:
+Any error messages should in the first place go to the output file, which may be the user terminal or a disk file.  But, if a listing is being produced, error messages should also go to the listing file.  It is best if error messages actually point to where in the input line the error occurred.  So, for errors reported to the output file, the input line should be repeated and a pointer placed under the position of the error.  In the listing file the line should not be repeated if it is the first error in that line.  However, for second and later errors in the same line it is more informative if the line is repeated in the output file and the listing file.  In the listing file all lines that are copied from the input should be given line numbers, and all error reports should give the offending line together with its line number.
+
+** /Other utilities/:
+Any program that uses the scanner will have to enter reserved words into a table; it is useful to include a procedure which enters one reserved word per call (and checks for overflow).  A similar procedure is useful for user declared identifiers.  Programs that make use of the utilities should not have to bother about the listing file.  Any output should be handled by the utilities, writing to the output file and, if necessary, to the listing file.
+
+To make the utilities flexible, some declarations have to occur before the file of utilities can be read in.  These declarations are specific to the particular use to which the utilities are being put.  Hence these declarations have to occur in the program which uses the utilities, before the utilities file is being included.  The details should be apparent in the programs in the next three chapters.
+
+* The implementation
+
+Many of the names or identifiers are similar to those in PLZERO of Wirth (1976) and Wirth's PASCALS decribed in Berry(1982).
+
+** The scanner
+
+By far the largest procedure is the scanner, procedure =getsym=.  It reads characters from the current input file and assembles them into symbols.  The reading is actually done by a local procedure =getch= which is described below.  Procedure =getsym= begins by skipping any non-printing characters and then uses a =CASE= statement to dispatch on the current character in the global variable =ch=.  Some of the cases are familiar from previous programs.  Each of the cases assigns a value to the global variable =sym= which is of the enumeration type symbol.  Some of the cases also assign an integer value to the global variable num.  These two variables constitute the principal output of the scanner.
+
+*** /Single characters/:
+If =ch= is a single quote character, then this signals a character constant.  Following the quote is normally an ordinary character, and then the global variable =num= is set to the ordinal value of that character.  However, if the character following is the backslash =\=, then the ordinal value returned in variable =num= is given by a numeric scan-time expression.  In most cases this will be a literal number, for example ='\65= is equivalent to ='A=.  However, following the backslash can be an expression computed at scan-time by a local function =value= described below.
+
+*** /Character strings/:
+If =ch= is a double quote character, then what is being read is a string constant.  While the next character is not the terminating double quote character, further characters are read and stored in a large array of characters which is made to hold all strings that are read.  The start position of the current string is recorded in a further integer array of starting positions, and the next value in this array gives the starting position of the next string that will be read.  The index in this integer array is assigned to the global variable num.  Hence the length and content of the currently read string can be determined by using the value of =num= and =num+1= as indices into the integer array.  The values recorded there can then be used to retrieve the string from the large character array.  This part of the scanner is not being used in the three programs in this book which use the utilities, but it has been used elsewhere.
+
+*** /Parentheses and comments/:
+These are handled as in previous programs: =(*= signals a comment and causes skipping up to the closing =*)= and a =GOTO= the beginning of the scanner.  A left parenthesis character without a following asterisk is just a parenthesis symbol.
+
+*** /Signed numbers and hyphens/:
+If =ch= is a decimal digit character or a hyphen =-=, then the symbol is either just the hyphen symbol in case it is not followed by digits, or it is a negative number in case it is followed by digits, or it is a positive number in case there is no preceding =-=.  So, if there is no leading =-=, then the number being read is not to be negated, and a Boolean flag is set to that effect.  Otherwise the flag is set to eventually negate the number being read, if indeed there is one.  If there are no digits immediately after the =-=, then the symbol is just a hyphen, and a =GOTO= the end of the scanner is effected.  Otherwise a string of decimal digits is read as normal, and the number is possibly negated.
+
+*** /Numbers in alternative radix/:
+For some purposes it is useful to be able to read numbers in other than decimal notation but in a different radix.  Such numerals are signalled by a leading =&=.  The default alternative radix is 2, but it can be set by a directive =%RADIX N=, where N is a scan-time expression whose value is between 2 and 36 inclusive.  Digits beyond =9= are taken to be =A= .. =Z=; so hexadecimal uses =A= .. =F=.  Reading successive digits is very similar to reading decimal notation, instead of multiplying values by 10 they have to be multiplied by the alternative radix.  A minor complication arises because in ASCII the character sequence =0= ..=9= is not immediately followed by =A= .. =Z=, there is a gap which has to be taken care of.  If a digit exceeds the maximum allowed for the current radix, then an error has to be signalled.
+
+*** /Identifiers/:
+If =ch= is a lowercase letter, the symbol being read is an identifier.  The letter and any further lowercase letters, digits and underscores are collected into a short variable of type ident which are strings whose length is determined by a =CONST= defined in the program which includes the utilities.  No lookup is performed.
+
+*** /Directives/:
+If =ch= is a =%=, then procedure =directive= is called, see below.
+
+*** /Other cases/:
+If =ch= is anything else, a catch-all case is entered.  If =ch= is an uppercase letter, then it and any further letters, digits and underscores are collected into a string.  If =ch= is any other special character, then it together with any further special characters that are likely to occur as further characters in combinations such as =:==, =<== or =..= are collected into a string.  The string starting with an uppercase letter or a special character is then used to search a table of reserved words.  If it is found there, then the variable =sym= is set to what is recorded in the table, otherwise it is treated just like an identifier starting with a lowercase letter.  The various directives have been implemented as a cascade of =IF-THEN-ELSE-IF..= statements in Pascal.  It would have been possible and more efficient to use a binary search through a table of directives.  However, directives do not occur often, hence their efficiency is a minor issue.  The method used here is just a little simpler to implement.
+
+This completes the cases of the body of the scanner.  There are three routines local to the scanner: a procedure for obtaining the next character, a function for computing values of scan-time expressions, and a procedure for executing directives.
+
+*** /Procedure getch/:
+The scanner =getsym= does not read the input file directly but obtains the next character from a procedure which deposits a new character in a global variable =ch=.  Because error messages to the output file should point to the position in the current input line, it is necessary to retain all of the current input line in a global string buffer.  Two global integer variables are made to point into this buffer, one records the total length, the other the current position.  Procedure =getch= starts by examining whether the buffer is empty.  This will be true if the current position is equal to the total length.  If it is, a new line will have to be read into the buffer.  But first an adjustment might have to be made to the current line number in case the immediately preceding directive was an =INCLUDE= directive, or in case the preceding line was the last line in an included file.  In the first case the line number is set to zero.  In the second case it has to be set back to what it was in the file containing the =INCLUDE= directive which originally caused the inclusion.  Because inclusions can be nested, a small global stack is used for names of included files, the last line number in the file, and, most importantly, the file variable itself.  Only after this adjustment can the line number be incremented, and buffer length and position be set to zero.  The line buffer is then filled from the current input file, but the details vary depending on whether this is the initial input file or an included file.  If the stack of included files is empty, the reading occurs from the initial input file.  If the end of file has been reached, an error is signalled.  Otherwise characters are read into the line buffer until the end of line is encountered.  On the other hand, if the stack of included files is not empty, then reading occurs from the current included file.  No error is reported if the end of that file is reached.  But if after the line has been read the end of file is reached, then the included file is closed and the adjustment flag is set to pop the stack of included files when the next line is read.  This concludes the steps that have to be taken when =getch= finds the line buffer empty.  At any rate, the line buffer will not be empty now.  The current position is incremented, and =ch= is assigned the character value from the buffer at the current position.
+
+*** /Function value/:
+This function computes integer values of scan-time expressions written in prefix notation.  It is called by the scanner when handling the backslash =\= in character constants and string constants, and by the procedure which handles directives.  The function calls =getch= until =ch= is a printing character.  If it is a character that can start a number or a single character, then it calls =getsym= recursively and returns whatever =getsym= deposits in the global variable num.  If the character is an uppercase letter, then it returns the value retrieved from an array of integer values that would have been assigned there by a previous =SET= directive.  Parentheses can be used for readability, but are not necessary for prefix notation.  The special characters =+=, =-=, =*= and =/= have their obvious meaning as binary arithmetic operators, they result in two recursive calls to the function and then a computation of the value.  The characters ===, =>= and =<= are interpreted as relational operators returning 1 or 0 for true and false.  Finally, =?= causes a number to be read from the input file.  Any other character produces an error.
+
+*** /Procedure directive/:
+This procedure is called from one case in the scanner when it sees the character =%=; since the procedure is only called there its body might have been incorporated there.  The procedure reads letters into a string and then examines the string.  For the IF directive the function =value= is called, if that returns a value less than 1, the remainder of the current input line is to be skipped.  This is done by setting the position variable of the line buffer to the length of the line buffer --- this will cause procedure =getch= to read from a new line.  For the =SET= directive the expected syntax is =%SET V = value=, where =V= is an uppercase letter.  Errors occur when =V= is not an uppercase letter or when === is missing.  Function =value= is called to assign an integer to the array of scan-time variables at position =V=.  For the PUT directive the remainder of the input line is copied from the line buffer to the output file --- this is useful only if the input comes from a disk file.  The other three directives, =LISTING=, =STATISTICS= and =RADIX= simply set global variables to an integer returned by the function =value=.
+
+This completes the scanning procedure =getsym=
+
+** Error reporting
+
+The procedure for reporting errors takes two value parameters: a single character and a string.  The single character serves to indicate the kind of error, the string is the actual error message.  The procedure has to write the position in the input line where the error occurred, and then, on a separate line, an error mark that is defined as a (short) string constant in the program which uses the utilities, then the character indicating the kind of error, and then the error message.  All this has to be written to the output file, and, if a listing is being written, to the listing file.
+
+Several complications arise.  Firstly, the line which contains the error can be in an included file.  In that case it is not informative if the line number given is simply the ordinal number of the line that has been processed.  Instead it is better if the error report states the name of the file and the line number in terms of that file.  Secondly, in the listing file it is not necessary to repeat an input line if the current error is the first error in that line.  So the scanning procedure =getsym= and the error reporting procedure have to cooperate in a number of ways.  It is necessary to keep track of line numbers and names of included files.  This is done by the small explicit global stack already mentioned in the description of procedure =getch=.
+
+The body of the error reporting procedure increments the global error count in all cases except when the character parameter is an =I=, indicating a merely informational message.  Programs using the utilities can access the error count for reporting, and they can set it back to zero.  Then the procedure handles any writing to the output file, and any writing to the listing file.  For the output file, if the error occurs in an include file, this is indicated by a remark and the name of the include file.  Then the procedure calls a local procedure =point_to_symbol= to do the actual error reporting to the output file.  If a listing is being produced, that same local procedure is called again, this time to report to the listing file.
+
+The local procedure takes a file variable as formal parameter.  It does all its writing to that file.  A second Boolean value parameter indicates whether the current input line is to be repeated.  If it is, then the current line number, the separator between line numbers and text, and then the line buffer are written as one line to the parameter file.  In any case, for the next line it writes firstly a mark under the previous line number, secondly sufficient spaces to reach the error position in the input line, and thirdly the pointer =^=.  On the following line it writes the error mark, the character indicating the kind of error, and the actual error message.
+
+** Other Utilities
+
+All the other utilities are relatively minor.
+
+** /Initialisation/:
+There is one procedure to initialise all the global variables used by the utilities; most of them are integers that have to be set to zero.  A program which uses the utilities would normally begin by calling this initialisation procedure.  Such a program might then re-assign some of these variables, for example the default alternative radix or the set of special characters that can occur in second or later positions in reserved words such as =<== and =::==.  There are two procedures for entering reserved words and standard identifiers into tables.  The sizes of these tables are given by constants in the program that uses the utilities, and the two procedures will check for overflow and produce appropriate error messages.  A program which uses the utilities would call the entering procedures once for each reserved word or identifier that is to be entered.  The scanner will know about the last reserved word that has been entered, and it will perform the lookup correctly even if the table is not filled completely.  No lookup is performed for standard identifiers and no such procedure is provided; this is because the method that is required is likely to vary widely between applications.
+
+** /Parsing/:
+To facilitate parsing there are two procedures.  One checks whether the last symbol returned by the scanner is identical with one of its parameters, otherwise an error is reported using a string parameter as the message.  The other tests whether the last symbol is a member of one of its parameters, a set of symbols.  If it is not, then an error is reported and symbols are skipped until the symbol is in the first set or in another set that is a further parameter.
+
+** /Output/:
+There are three principal output procedures.  One is for writing signed integers, internally it uses a recursive procedure to convert an integer into a sequence of digit characters.  The other two write strings of the size of reserved words and standard identifiers; since these may have different lengths, separate procedures are used.  All three first check whether the item to be written really fits onto the line, and if it does not fit, then a subsidiary procedure for ending a line is called first.  This procedure will do a writeln to the output file, and, if a listing is being written, to the listing file.  It also sets a variable to keep track of the length of the output line.  The three principal procedures output characters by calling another subsidiary procedure for writing a single character.  This writes the character to the output file.  If a listing is being produced, it also writes the character to the listing file; but if a new line had just been started it first writes to the listing file as many spaces as there are in a line number and the separator between the line number and the following text.  It also increments the counter which keeps track of the length of the output line --- except that if the character to be written is the newline character, =chr(13)=, it sets the counter to zero.  One last output utility, used for finalising a run, writes to the output file and potentially to the listing file the CPU time in milliseconds taken by this run.
+
+* The program
+
+The following is the standard Pascal source program for the utilities.
+
+#+begin_src pascal
+(* File: Included file for scan utilities *)
+VAR listing : text;
+
+CONST
+
+maxincludelevel = 5;
+maxlinelength = 132;
+linenumwidth = 4; linenumspace = '    ';
+linenumsep = '    ';
+underliner = '****    ';
+tab_in_listing = '    ----    ';
+maxoutlinelength = 60;
+messagelength = 30;
+
+initial_alternative_radix = 2;
+
+maxchartab = 1000;
+maxstringtab = 100;
+maxnodtab = 1000;
+
+TYPE
+
+identalfa = PACKED ARRAY [1..identlength] OF char;
+resalfa = PACKED ARRAY [1..reslength] OF char;
+message = PACKED ARRAY [1 .. messagelength] OF char;
+toops = RECORD symbols,types,strings,chars : integer END;
+symset = SET OF symbol;
+
+VAR
+
+inputs : ARRAY [1..maxincludelevel] OF
+    RECORD fil : text; nam : identalfa; lastlinenumber : integer END;
+includelevel,adjustment : integer;
+writelisting : integer;
+must_repeat_line : boolean;
+
+scantimevariables : ARRAY ['A'..'Z'] OF integer;
+alternative_radix : integer;
+linenumber : integer;
+line : ARRAY [1..maxlinelength] OF char;
+cc,ll : integer;
+ch : char;
+ident : identalfa;
+id : standardident;
+res : resalfa;
+specials_repeat : SET OF char;
+sym : symbol;
+num : integer;
+reswords : ARRAY [1..maxrestab] OF
+    RECORD alf : resalfa; symb : symbol END;
+lastresword : integer;
+stdidents : ARRAY [1..maxstdidenttab] OF
+    RECORD alf : identalfa; symb : standardident END;
+laststdident : integer;
+resword_inverse : ARRAY [symbol] OF 0..maxrestab;
+trace : integer;
+stringtab : ARRAY [1..maxstringtab] OF integer;
+chartab : PACKED ARRAY [1..maxchartab] OF char;
+
+toop : toops;
+
+errorcount : integer;
+outlinelength : integer;
+statistics : integer;
+start_clock : integer;
+
+(* - - - - -   MODULE ERROR    - - - - - *)
+
+PROCEDURE point(diag : char; mes : message);
+
+    PROCEDURE point_to_symbol(repeatline : boolean; VAR f : text);
+    VAR i : integer; c : char;
+    BEGIN (* point_to_symbol *)
+    IF repeatline THEN
+        BEGIN
+        write(f,linenumber:linenumwidth,linenumsep);
+        FOR i := 1 TO ll DO write(f,line[i]); writeln(f);
+        END;
+    write(f,underliner);
+    FOR i := 1 TO cc - 2 DO
+        BEGIN
+        c := line[i];
+        IF c < ' '  THEN write(f,c) ELSE write(f,' ')
+        END;
+    writeln(f,'^ ');
+    writeln(f,errormark,'-',diag,'  ',mes);
+    IF diag = 'F' THEN writeln(f,'execution aborted')
+    END; (* point_to_symbol *)
+
+BEGIN (* point *)
+IF diag <> 'I' THEN errorcount := errorcount + 1;
+IF includelevel > 0 THEN
+    writeln(output,'INCLUDE file : "',inputs[includelevel].nam,'"');
+point_to_symbol(true,output);
+IF writelisting > 0 THEN
+    BEGIN
+    point_to_symbol(must_repeat_line,listing);
+    must_repeat_line := true
+    END;
+IF diag = 'F' THEN GOTO 99
+END; (* point *)
+
+(* - - - - -   MODULE SCANNER    - - - - - *)
+
+PROCEDURE iniscanner;
+VAR c : char;
+BEGIN (* iniscanner *)
+start_clock := clock;
+open(listing,list_filename,NEW);
+rewrite(listing);
+writelisting := 0;
+ch := ' '; linenumber := 0;
+cc := 1; ll := 1; (* to enable fatal message during initialisation *)
+specials_repeat := []; (* default: no repeats *)
+includelevel := 0; adjustment := 0;
+alternative_radix := initial_alternative_radix;
+lastresword := 0;
+laststdident := 0;
+outlinelength := 0;
+FOR c := 'A' TO 'Z' DO scantimevariables[c] := 0;
+errorcount := 0;
+must_repeat_line := false;
+END; (* iniscanner *)
+
+PROCEDURE erw(a : resalfa; s : symbol);
+BEGIN (* erw *)
+lastresword := lastresword + 1;
+IF lastresword > maxrestab THEN
+    point('F','too many reserved words       ');
+WITH reswords[lastresword] DO
+        BEGIN alf := a; symb := s END;
+resword_inverse[s] := lastresword
+END; (* erw *)
+
+PROCEDURE est(a : identalfa; s : standardident);
+BEGIN (* est *)
+laststdident := laststdident + 1;
+IF laststdident > maxstdidenttab THEN
+    point('F','too many identifiers          ');
+WITH stdidents[laststdident] DO
+        BEGIN alf := a; symb := s END
+END; (* est *)
+
+PROCEDURE newfile(a : identalfa);
+BEGIN (* newfile *)
+WITH inputs[includelevel + 1] DO
+        BEGIN
+        nam := a;
+        lastlinenumber := linenumber;
+(* PYRAMID-UNIX:
+                reset(fil,a)
+     VAX-VMS:
+                open(fil,a,OLD);
+                reset(fil)
+*)
+                open(fil,a,OLD);
+                reset(fil)
+                END;
+adjustment := 1;
+END; (* newfile *)
+
+PROCEDURE endfile;
+BEGIN cc := ll; adjustment := -1 END;
+
+PROCEDURE getsym;
+LABEL 1,9;
+VAR i,j,k : integer; c0 : char; negated : boolean;
+
+    PROCEDURE perhapslisting;
+    VAR i : integer;
+    BEGIN
+    IF writelisting > 0 THEN
+        BEGIN
+        write(listing,linenumber:linenumwidth,linenumsep);
+        FOR i := 1 TO ll DO write(listing,line[i]);
+        writeln(listing);
+        must_repeat_line := false
+        END
+    END;
+
+    PROCEDURE getch;
+    BEGIN (* getch *)
+    IF cc = ll THEN
+        BEGIN
+        IF adjustment <> 0 THEN
+            BEGIN
+            IF adjustment = -1
+                THEN linenumber := inputs[includelevel].lastlinenumber
+                ELSE linenumber := 0;
+            includelevel := includelevel + adjustment; adjustment := 0
+            END;
+        linenumber := linenumber + 1;
+        ll := 0; cc := 0;
+        IF includelevel = 0 THEN
+            BEGIN
+            IF eof(input) THEN
+                point('F','unexpected end of file        ');
+            WHILE NOT eoln(input) DO
+                BEGIN
+                ll := ll + 1;
+                read(input,ch);
+                line[ll] := ch
+                end;
+            perhapslisting;
+            ll := ll + 1; read(input,line[ll])
+            END
+        ELSE
+            WITH inputs[includelevel] DO
+                BEGIN
+                WHILE NOT eoln(fil) DO
+                    BEGIN
+                    ll := ll + 1;
+                    read(fil,ch);
+                    line[ll] := ch
+                    END;
+                perhapslisting;
+                ll := ll + 1; read(fil,line[ll]);
+                IF eof(fil) THEN
+                    BEGIN close(fil); adjustment := -1 END;
+                END (* WITH *)
+        END; (* IF *)
+    cc := cc + 1; ch := line[cc]
+    END; (* getch *)
+
+    FUNCTION value : integer;
+    (* this is a  LL(0)  parser *)
+    VAR k,v : integer;
+    BEGIN (* value *)
+    REPEAT getch UNTIL ch > ' ';
+    IF ch IN ['&','0'..'9',''''] THEN
+        BEGIN getsym; value := num END
+    ELSE IF ch IN ['A'..'Z'] THEN
+        value := scantimevariables[ch]
+    ELSE IF ch = '(' THEN
+        BEGIN
+        value := value;
+        WHILE ch <= ' ' DO getch;
+        IF ch = ')' THEN getch ELSE
+            point('E','right parenthesis expected    ');
+        END
+    ELSE CASE ch OF
+        '+' : value := value + value;
+        '-' : value := value - value;
+        '*' : value := value * value;
+        '/' : value := value DIV value;
+        '=' : value := ord(value = value);
+        '>' : value := ord(value > value);
+        '<' : value := ord(value < value);
+        '?' : BEGIN read(v); value := v END
+        OTHERWISE
+            point('F','illegal start of scan expr    ')
+        END (* CASE *)
+    END; (* value *)
+
+    PROCEDURE directive;
+    CONST
+        emptydir = '                '; dirlength = 16;
+    VAR
+        c : char; i : integer;
+        dir : PACKED ARRAY [1 .. dirlength] OF char;
+    BEGIN (* directive *)
+    getch; i := 0; dir := emptydir;
+    REPEAT
+        IF i < dirlength THEN
+            BEGIN i := i + 1; dir[i] := ch END;
+        getch
+        UNTIL NOT (ch IN ['A'..'Z','_']);
+    IF dir = 'IF            ' THEN
+            BEGIN IF value < 1 THEN cc := ll (* readln *) END
+    ELSE IF dir = 'INCLUDE         ' THEN
+            BEGIN
+            IF includelevel = maxincludelevel THEN
+                point('F','too many include files        ');
+            WHILE ch <= ' '  DO getch;
+            k := 0; ident := emptyident;
+            REPEAT
+                IF k < identlength THEN
+                    BEGIN k := k + 1; ident[k] := ch END;
+                getch;
+                UNTIL ch <= ' ';
+            newfile(ident)
+            END
+    ELSE IF dir = 'PUT             ' THEN
+            BEGIN
+            FOR i := cc TO ll DO write(line[i]);
+            cc := ll; writeln
+            END
+    ELSE IF dir = 'SET             ' THEN
+            BEGIN
+            WHILE ch <= ' '  DO getch;
+            IF NOT (ch IN ['A'..'Z']) THEN
+                point('E','"A" .. "Z" expected           ');
+            c := ch; getch;
+            WHILE ch <= ' '  DO getch;
+            IF ch <> '=' THEN
+                point('E','"=" expected                  ');
+            scantimevariables[c] := value;
+            END
+    ELSE IF dir = 'TRACE           ' THEN
+            trace := value
+    ELSE IF dir = 'LISTING         ' THEN
+            BEGIN
+            i := writelisting;
+            writelisting := value;
+            IF i = 0 THEN perhapslisting
+            END
+    ELSE IF dir = 'STATISTICS      ' THEN
+            statistics := value
+    ELSE IF dir = 'RADIX           ' THEN
+            alternative_radix := value
+    ELSE point('F','unknown directive             ');
+    getch;
+    GOTO 1
+    END; (* directive *)
+
+BEGIN (* getsym *)
+1 :
+WHILE ch <= ' '  DO getch;
+CASE ch OF
+    '''' :
+        BEGIN
+        getch;
+        IF ch = '\' THEN num := value ELSE
+            BEGIN num := ord(ch); getch END;
+        IF ch = '''' THEN getch;
+        sym := charconst
+        END;
+    '"' :
+        BEGIN
+        WITH toop DO
+            BEGIN
+            IF strings = maxstringtab THEN
+                point('F','too many strings              ');
+            strings := strings + 1;
+            stringtab[strings] := chars + 1;
+            num := strings
+            END;
+        getch;
+        WHILE ch <> '"' DO
+            BEGIN
+            IF ch = '\' THEN c0 := chr(value) ELSE
+                 BEGIN c0 := ch; getch END;
+            WITH toop DO
+                BEGIN
+                chars := chars + 1;
+                IF chars > maxchartab THEN
+                    point('F','too many characters in strings');
+                chartab[chars] := c0
+                END;
+            END; (* WHILE *)
+        getch; stringtab[num+1] := toop.chars; sym := stringconst
+        (* FOR i := stringtab[num] TO stringtab[num+1] DO
+            write(chartab[i]) *)
+        END;
+    '(' :
+        BEGIN
+        getch;
+        IF ch <> '*' THEN sym := leftparenthesis  ELSE
+            BEGIN
+            getch;
+            REPEAT
+                WHILE ch <> '*' DO getch;
+                getch
+                UNTIL ch = ')';
+            getch; GOTO 1
+            END
+        END;
+    '-','0','1','2','3','4','5','6','7','8','9' :
+        BEGIN
+        IF ch <> '-' THEN negated := false ELSE
+            BEGIN
+            getch;
+            IF ch IN ['0'..'9'] THEN negated := true ELSE
+                BEGIN sym := hyphen;  GOTO 9 END
+            END;
+        sym := numberconst; num := 0;
+        REPEAT
+            num := 10 * num + (ord(ch) - ord('0'));
+            getch;
+            UNTIL NOT (ch IN ['0'..'9']);
+        IF negated THEN num := - num
+        END;
+    '&' : (* number in alternative radix *)
+        BEGIN
+        sym := numberconst; num := 0;
+        getch;
+        WHILE ch IN ['0'..'9','A'..'Z'] DO
+            BEGIN
+            IF ch IN ['A'..'Z'] THEN
+                ch := chr(ord(ch) + ord(succ('9')) - ord('A'));
+            IF ord(ch) >= ord('0') + alternative_radix THEN
+                 point('E','exceeding alternative radix   ');
+            num := alternative_radix * num + (ord(ch) - ord('0'));
+            getch
+            END
+        END;
+    'a','b','c','d','e','f','g','h','i',
+    'j','k','l','m','n','o','p','q','r',
+    's','t','u','v','w','x','y','z' :
+        BEGIN
+        sym := identifier; k := 0; ident := emptyident;
+        REPEAT
+            IF k < identlength THEN
+                BEGIN k := k + 1; ident[k] := ch END;
+            getch;
+            UNTIL NOT (ch IN ['a'..'z','A'..'Z','_','0'..'9'])
+        END;
+    '%' :
+        directive;
+    OTHERWISE
+        BEGIN
+        k := 1; res := emptyres; ident := emptyident;
+        IF ch IN ['A'..'Z'] THEN
+            REPEAT
+                IF k <= reslength THEN res[k] := ch;
+                IF k <= identlength THEN ident[k] := ch;
+                getch; k := k + 1
+                UNTIL NOT (ch IN ['A'..'Z','a'..'z','0'..'9','_'])
+        ELSE
+            REPEAT
+                IF k <= reslength THEN res[k] := ch;
+                IF k <= identlength THEN ident[k] := ch;
+                getch; k := k + 1
+                UNTIL NOT (ch IN specials_repeat);
+        i := 1; j := lastresword;
+        REPEAT
+            k := (i + j) div 2;
+            IF res <= reswords[k].alf THEN j := k -1;
+            IF res >= reswords[k].alf THEN i := k + 1;
+            UNTIL i > j;
+        IF i - 1 > j
+            THEN sym := reswords[k].symb
+            ELSE sym := identifier;
+        END (* OTHERWISE *)
+    END; (*  CASE *)
+9:
+END; (* getsym *)
+
+PROCEDURE check(sy : symbol; ss : symset; er : message);
+BEGIN (* check *)
+IF sym = sy THEN getsym ELSE
+    BEGIN point('E',er); IF sym IN ss THEN getsym END
+END; (* check *)
+
+PROCEDURE test(s1,s2 : symset; er : message);
+BEGIN (* test *)
+IF NOT (sym IN s1) THEN
+    BEGIN
+    point('E',er);
+    s1 := s1 + s2;
+    IF NOT (sym IN s1) THEN
+        BEGIN
+        REPEAT getsym UNTIL sym IN s1;
+        point('I','skipped symbols to here       ');
+        END
+    END
+END; (* test *)
+
+(* - - - - -   MODULE OUTPUT   - - - - - *)
+
+PROCEDURE putch(c : char);
+BEGIN
+write(output,c);
+IF writelisting > 0 THEN
+    BEGIN
+    IF outlinelength = 0 THEN
+        write(listing,linenumspace,linenumsep);
+    write(listing,c)
+    END;
+IF ord(c) = 13 (* newline character *)
+    THEN outlinelength := 0
+    ELSE outlinelength := outlinelength + 1
+END;
+
+PROCEDURE writeline;
+BEGIN
+writeln(output);
+IF writelisting > 0 THEN writeln(listing);
+outlinelength := 0
+END;
+
+PROCEDURE writeident(a : identalfa);
+VAR i,length : integer;
+BEGIN
+length := identlength;
+WHILE a[length] <= ' ' DO length := length - 1;
+IF outlinelength + length  > maxoutlinelength THEN writeline;
+FOR i := 1 TO length DO putch(a[i])
+END;
+
+PROCEDURE writeresword(a : resalfa);
+VAR i,length : integer;
+BEGIN
+length := reslength;
+WHILE a[length] <= ' ' DO length := length - 1;
+IF outlinelength + length > maxoutlinelength THEN writeline;
+FOR i := 1 TO length DO putch(a[i])
+END;
+
+PROCEDURE writeinteger(i : integer);
+
+    PROCEDURE writenatural(n : integer);
+    BEGIN
+    IF n >= 10 THEN writenatural(n DIV 10);
+    putch(chr(ord('0') + n MOD 10))
+    END;
+
+BEGIN (* writeinteger *)
+IF outlinelength + 12 > maxoutlinelength THEN writeline;
+IF i >= 0 THEN writenatural(i) ELSE
+    BEGIN putch('-'); writenatural(-i) END
+END; (* writeinteger *)
+
+PROCEDURE finalise;
+
+    PROCEDURE fin(VAR f : text);
+    BEGIN
+    IF errorcount > 0 THEN writeln(f,errorcount:0,' error(s)');
+    writeln(f,clock - start_clock:0,
+        ' milliseconds CPU')
+    END;
+
+BEGIN (* finalise *)
+fin(output);
+IF writelisting > 0 THEN fin(listing)
+END; (* finalise *)
+#+end_src
+
+* Remarks and a major project
+
+The utilities implemented here are being used by three quite disparate programs in the next three chapters.  None of the programs use all the facilities, but that is unavoidable for something as general as this.  One exercise that might be worthwhile is to make the =IF= directive more powerful by letting it operate not just on the remainder of the line but on all following lines up to an =ENDIF= directive.  Clearly an =ELSE= directive would be useful, too.  The language C has a preprocessor called cpp which does this sort of thing.  Again, being able to define constants would be useful; the preprocessor cpp for the language C has this.  Some of the reading given for Chapter 4 on macro expansion is relevant.
+
+* /A Major Project/:
+This project is not immediately tied to the utilities in this chapter, but it can use them profitably, and it has much less to do with the programs in the later chapters.
+
+Design a small procedural language.  It should include declarations of global variables, of procedures and functions which can have value parameters and local variables.  Unlike Pascal, procedure and functions cannot be nested.  Variables and parameters are to be typed, and so are the values returned by functions.  But there will be only three inbuilt types: boolean, char and integer, and no type constructors.  The statements should include assignment, call, =IF-THEN(-ELSE)= and =WHILE-DO=.  The expressions should include a reasonable collection of operations on the inbuilt types.
+
+You should begin by writing a context free grammar first.  Then write a context free parser which reports errors.  Add error recovery in accordance with Wirth (1976 pp 320 - 322) or Terry (1986 pp 208 - 211).  You should now be able to have a test program that has many context free errors.
+
+Next, add a symbol table for entering global variables, procedures and functions and their parameters and local variables.  Note that at the end of a procedure or function declaration the names of the parameters and locals have to become invisible, but the types of the parameters still have to accessible.  Take some care to avoid spurious error messages.  It helps to have an additional type =notype= in expressions.  Write a test program that has many context sensitive errors.
+
+You can now add code generation to this compiler.  There are many possibilities: to translate into some existing language, to translate into some internal language that will be interpreted either recursively or non-recursively, or to translate into some intermediate language first which can then be translated independently into several other languages.

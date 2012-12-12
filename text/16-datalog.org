@@ -1,6 +1,6 @@
-#+title: Chapter 16 Datalog - a precursor to Prolog
+#+title: Chapter 16 : Datalog - a precursor to Prolog
 
-* introduction
+* <<intro>>
 
 In Chapter 11 we considered very special kinds of grammars which generate one of two exceptional languages: the empty language containing no strings at all, or the language containing just one string, the null-string. Given a logical interpretation, this was Proplog, essentially the propositional part of Prolog. In this chapter the propositions of Proplog become predicates, they now take parameters which are either individual constants or individual variables. The resulting language is called Datalog, it is suitable for certain database applications.
 

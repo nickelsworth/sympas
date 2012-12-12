@@ -1,0 +1,1901 @@
+#+title: Chapter 18 : A miniature version of Joy, a functional language
+
+* <<intro>>
+
+Joy is a purely functional language in the spirit of pure Lisp, pure Scheme, ML and Miranda.  But whereas these languages are based on the application of functions to parameters, Joy is based on the composition of functions.  Syntactically it looks much like Forth, and one consequence is that in Joy all formal parameters of defined functions are anonymous.  However, unlike Forth, Joy also has lists which can be manipulated as data structures and, provided they are of the right kind, can be executed as programs by means of what are called /combinators/
+
+The implementation described in the latter sections of this chapter is quite minimal.  The implementation makes heavy use of the utilities developed in Chapter 17.
+
+* Introduction
+
+The first part of this introduction provides a theoretical nmotivation for the language, the second part gives a practical overview based on examples.
+
+These two parts can be read in any order; theoretically minded readers should read the first part first, practically minded readers should read the second part first.
+
+** Theoretical background
+
+In strongly typed languages the declaration of functions must include the types of the parameters and the type of the result.  For example, in Pascal one might have the following declarations for the length of a list and the concatenation of two lists:
+
+#+begin_example
+    FUNCTION length(l : list) : integer; BEGIN ... END;
+    FUNCTION concat(l1,l2 : list) : list; BEGIN ... END;
+#+end_example
+
+Strong typing allows a compiler to check that all calls to declared functions and procedures are in agreement with the types.  In weakly typed languages the checking is only done at run time; in untyped languages there is no checking at all.  Independently of what kind of typing is used, the length function takes a list as a parameter and yields an integer as a result, and the concatenation function takes two lists as parameters and yields a list as the result.  This is normally written as type information
+
+#+begin_example
+        length  :  list --> integer
+        concat  :  (list * list) --> list
+#+end_example
+
+Here the colon indicates that the function on its left is of the type indicated on its right.  A function type is given by an arrow from the source type of the parameters to the target type of the result.  For functions taking two or more parameters the source is a Cartesian product indicated by the =*=.
+
+These type assignments to the two functions are entirely abstract, they have nothing to do with the concrete syntax.  For example, the length of the concatenation of the two lists =[a b]= and =[c d e]= could be written in any of the following ways:
+
+#+begin_example
+        length([a b] concat [c d e])
+        length concat [a b] [c d e]
+        (length (concat [a b] [c d e]))
+        length(concat([a b],[c d e]))
+        length @ (concat @ ([a b],[c d e]))
+#+end_example
+
+In the last line the infix =@= is the explicit binary operation of function application; the function on its left is being applied to the parameter on its right.  For the application of concatenation the parameter is a pair.  Strictly speaking the words =length= and =concat= are used to denote functions as objects --- the only function that is being used is the binary application function, here written in infix, which takes two objects to produce a third.  Languages like this are sometimes called applicative languages (as opposed to functional languages).  There is an analogy with set theory here: whereas in predicate logic one uses all sorts of relations, in set theory the only relations used are /formal/ ones such as membership and a few others such as inclusion which are definable in terms of membership.  So the predicate symbols of logic are replaced by names of set objects.  In the same way the function symbols of functional languages can be replaced by names of function objects, and the only function symbol needed is the symbol for the formal application function.  It is worth pointing out that membership is actually a special case of application --- membership always applies parameters to a set and always yields a truth value as the third object.  This might have been a little easier to see if the notation for membership were the other way around, or if membership were uniformly replaced by its converse.
+
+Sometimes functions that take two or more parameters are interpreted as taking them one at a time --- they are then said to be /curried/.  The type assignments and the example expression now look like this:
+
+#+begin_example
+        concat  :  list --> (list --> list)
+        length @ ((concat @ [a b]) @ [c d e])
+#+end_example
+
+So, concatenation is interpreted as taking a list as a parameter and yielding a value which is a function which takes a list as a parameter and yields a list as value.  The arrow is often made right-associative and then the parentheses can be omitted.  In the expression the inner parenthesised expression denotes a function which prefixes the list =[a b]= to any list to which it is applied, here to =[c d e]=.  The application symbol is often made left-associative, and then the inner parentheses in the expression can be omitted.  However, the outer parentheses cannot be omitted, as in
+
+#+begin_example
+        length @ concat @ [a b] @ [c d e]
+#+end_example
+
+This is wrong because, restoring parentheses in accordance with the left-associativity of application, it would be the same as
+
+#+begin_example
+        (((length @ concat) @ [a b]) @ [c d e])
+#+end_example
+
+But length cannot be applied to concatenation because of a type mismatch.
+
+However, length can be /composed/ with concatenation, and the result of composing these two functions is a function which takes two lists as parameters and yields an integer as value.  Writing =o= for composition of functions we have the type assignment and the expression maximally and minimally parenthesised:
+
+#+begin_example
+        length o concat  :  list --> list --> integer
+        (((length o concat) @ [a b]) @ [c d e])
+           length o concat  @ [a b]  @ [c d e]
+#+end_example
+
+Clearly composition has to have higher precedence than application.  So, for the expression we can at least sometimes avoid the need for parentheses by introducing a further symbol for function composition.  This works well when the function on the left takes one parameter.  For example, the function which gives the square of the length of the concatenation of two lists is given by the composition
+
+#+begin_example
+        square o length o concat
+#+end_example
+
+Composition of functions is associative, hence no parentheses are needed.  When the above function is applied to one list, say =[a b]= it yields a function taking a list =L= as a parameter and giving as value =4 + (4 + length(L) * length(L)=.  If =L= is =[a b c]=, then the value is 25, as required.
+
+There is something very satisfying about composition, it is associative and it has the identity function as the left and right identity element: If =id= is the identity function, then for any function =F=,
+
+#+begin_example
+        id o F  =  F  =  F o id
+#+end_example
+
+It would be nice if the semantic binary operation and its identity element could be mapped onto an appropriate syntactic binary operation and its identity element.  Indeed, for functions taking one parameter and yielding one value the choice is obvious: function composition is mapped onto the concatenation of the sequence of symbols denoting the functions, and the identity functions is mapped onto the empty sequence of symbols.
+
+However, this does not work if any but the rightmost function takes more than one parameter.  Clearly, instead of concatenating two lists, then taking the length and then the square, one could equivalently take the lengths of the two lists, take the sum of those, and then the square of that.
+
+#+begin_example
+        square o length o concat @ [a b] @ [c d e]
+        square o sum @ (length @ [a b]) @ (length @ [c d e])
+#+end_example
+
+Now consider
+
+#+begin_example
+        square o + o length @ [a b] @ (length @ [c d e])
+#+end_example
+
+We cannot write this, because there is no way in which the parenthesised part, the length of =[c d e]=, can be supplied as a parameter to sum because that is in the middle of the composition expression.  So it seems that there is no way to have less than the two operations of application and composition, and to dodge the need for parentheses.
+
+This is all the more infuriating if we compare the notation using composition and application with ordinary Polish or prefix notation.  The two expressions are simply
+
+#+begin_example
+        square  length  concat  [a b]  [c d e]
+        square  +  length  [a b]  length  [c d e]
+#+end_example
+
+Both of these are obviously concatenations of symbols, but what does the concatenation mean?
+
+One possible answer is that it is just a bad question to ask about any notation.  For example, one would not ask this question about the infix notations
+
+#+begin_example
+        square length ([a b] concat [c d e])
+        square (length [a b]  +  length [c d e])
+#+end_example
+
+The spaces around concat and around =+= do not stand for anything semantic, it is just a way of writing terms with two parameters.  It is the term that has semantic significance, and it has no concrete syntactic properties at all.  This applies to any concrete notation, and hence the concatenations in prefix notation do not mean anything either.
+
+Another possible answer is that the concatenations in prefix notation sometimes mean composition and sometimes mean application.  In any one case the meaning depends on the number of parameters which the functions denoted require, and parentheses are restored as needed.  On this view, then, the prefix notation is just short for the versions given earlier:
+
+#+begin_example
+        square o length o concat @ [a b] @ [c d e]
+        square o sum @ (length @ [a b]) @ (length @ [c d e])
+#+end_example
+
+But there is a third possible answer, and it is the one that will be pursued in the remainder of this chapter.  This is the answer that in the prefix notation the concatenation of symbols always means composition of functions.  This is a radical view because the functions being composed will /all/ have to be unary functions.  In particular, concatenation and addition are unary and not binary, operands such as list and numerals are not nullary but unary.  On this view the prefix notation is shorthand for the composition of unary functions:
+
+#+begin_example
+        square o length o concat o [a b] o [c d e]
+        square o sum o length o [a b] o length o [c d e]
+#+end_example
+
+Both simplify to the unary function 25.  The functions denoted by these compositions will have to be applied to some suitable objects.  When applied to the same objects, the applications result in further objects which are the same in both cases.  Moreover, the applications should result in the same object as when the unary function 25 is applied.  We do not have to say anything about the objects to which the functions are applied, they can be mystery objects =M=, =M1=, =M2= ...
+
+Henceforth we omit the composition symbol =o= again, and remember that concatenation of symbols denotes composition of the unary functions denoted.  Hence we have, for all =M=, the applications
+
+#+begin_example
+        square length concat [a b] [c d e]   @   M
+        square sum length [a b] length [c d e]   @   M
+        25   @   M
+#+end_example
+
+all denote the same mystery object, one that is different from =M=.  And because the applications all result in the same object, the composed functions themselves are identical.  On this view, then, computation takes unary functions as input and produces unary functions as output.  The mystery objects can remain mysterious unless making them explicit clarifies matters.
+
+For long computations it is often helpful to be able to see the result of intermediate computations.  One starts with some input data, applies a partial computation and inspects the result.  If all went well one applies the next computation step to the result of the previous computation.  This continues until the whole computation is completed.  If at any time the result is not what was expected, one modifies the last computation step.  So the data come first, then comes computation step =S1=, ...  finally comes computation step =SN=:
+
+#+begin_example
+        D  S1  S2  ...  SN
+#+end_example
+
+with inspection steps interspersed as required.  The same is true if there are several data, say =D1= and =D2= that both have to be processed individually first, then combined, and the result processed further:
+
+#+begin_example
+        D1  S1  D2  S3  S4  S5
+#+end_example
+
+again with optional inspections.  But this is essentially postfix notation.  It is a big advantage if a notation allows inspections to be interspersed with computations without affecting the order in which the inspections are written.  For this reason we shall now reverse the notation and use postfix notation.  The two expressions are then written
+
+#+begin_example
+        [a b]  [c d e]  concat  length  square
+        [a b]  length  [c d e]  length  +  square
+#+end_example
+
+As before, the concatenation between symbols denotes composition of unary functions, but composition is now written in reverse order.  This way all functions are written in the order they are to be applied to mystery objects.  The unary functions take one mystery object as parameter and return one such object as value.  For the version of the language to be developed here, the mystery objects consist of one stack, one input file and one output file.  Further parts are possible, but the topic is not pursued further.
+
+One advantage of mapping composition onto concatenation is that it becomes easy to manipulate programs as data and then to execute them with /combinators/.  The simplest combinator is =i= which effectively removes brackets and executes what is inside.  For example, all of the following are equivalent to 25:
+
+#+begin_example
+        [a b] [c d e] concat length square
+        [a b] [c d e] [concat length square] i
+        [[a b] [c d e] concat length square] i
+        [a b] [c d e] [concat] [length square] concat i
+        [a b] [c d e] [square length concat] reverse i
+#+end_example
+
+Combinators can be used to apply a function in non-standard ways.  For example the following use the =map= combinator:
+
+#+begin_example
+        [1 2 3 4]  [square square]  map    ==   [1 16 81 256]
+        [[a b] [c d e]] [first] map   ==   [a c]
+#+end_example
+
+Much of the interest in Joy arises from combinators,
+even more so than in other functional languages.
+
+
+** Tutorial on Joy
+
+The following is a tutorial on Joy.
+
+#+begin_example
+   1    %LISTING 1
+   2    (*
+   3                    J O Y   T U T O R I A L
+   4
+   5    JOY is a functional language which uses postfix-like notation
+   6    and operates on a stack. Its base types are Booleans,
+   7    characters, integers and  symbols. A list of values
+   8    of any type is a value of type list.
+   9    *)
+  10
+  11    (* push two numbers onto stack, add them, write result *)
+  12    [  111  222  +  put  ]
+        333
+  13    (* add two numbers, add another two numbers, write product *)
+  14    [  1  2  +  3  4  +  *  put  ]
+        21
+  15    (* testing whether 2 + 2  =  2 * 2 *)
+  16    [  2  2  +  2  2  *  =  put  ]
+        true
+  17    (* testing whether  6 * 6  >  5 * 7  *)
+  18    [  6  6  *  5  7  *  >  put  ]
+        true
+  19    (* Boolean operations *)
+  20    [  true  false  or  true  and  not  put  ]
+        false
+  21
+  22    (* LISTS *)
+  23
+  24    (* push a list of numbers, reverse it, write result *)
+  25    [  [1 2 3 4 5]  reverse  put  ]
+        [5 4 3 2 1]
+  26    (* push two lists of symbols, concatenate, write result *)
+  27    [  [peter paul]  [mary jane]  concat  put  ]
+        [peter paul mary jane]
+  28    (* push a list of mixed values, write its last element *)
+  29    [  [11 false 'X 44]  last  put  ]
+        44
+  30    (* push a number and a list, determine membership *)
+  31    [  3  [1 5 3 4 2] member put  ]
+        true
+  32    (* similar *)
+  33    [  3  [1 5 6 4 2] member put  ]
+        false
+  34    (* push a list of numbers, duplicate to  find sum and product *)
+  35    [  [1 2 3 4]  dup    sum put    space put    product put  ]
+        10 24
+  36    (* push a number and a list of numbers, cons together *)
+  37    [  111  [ 222 333 ]  cons  put  ]
+        [111 222 333]
+  38    (* push a list, uncons twice, write remainder and first two *)
+  39    [  [11 22 33 44 55]  uncons  uncons  putsp putsp putsp  ]
+        [33 44 55] 22 11
+  40    (* push two lists of characters, concatenate them *)
+  41    [  [ 'a 'b ]  [ 'd 'e 'f ]  concat  ]
+  42    (* now write result, but dup first so list is not lost *)
+  43    [  dup  put  ]
+        [a b d e f]
+  44    (* insert the missing 'c *)
+  45    [  uncons uncons 'c swap cons cons cons ]
+  46    (* now check *)
+  47    [  dup  put  ]
+        [a b c d e f]
+  48    (* what is its length ? *)
+  49    [  dup  length  put  ]
+        6
+  50    (* reverse it, write its length *)
+  51    [  reverse  length  put  ]
+        6
+  52    (* So, the length of a list is also the length of its reverse:
+  53                    length  ==  reverse length
+  54    *)
+  55    (* INPUT from terminal or input file *)
+  56    [ get get + put ]
+  57    123   456
+        579
+  58    (* COMBINATORS *)
+  59
+  60    (*
+  61    Combinators are operations which expect a list on top
+  62    of the stack and then execute it as a program.
+  63    *)
+  64    (* push two numbers and a program, i-combinator to execute *)
+  65    [  111  222  [+ put]  i  ]
+        333
+  66    (* i-combinator to execute [+ put] on top of stack *)
+  67    [  111  [put +]  reverse  222  swap  i  ]
+        333
+  68    (* dip-combinator to multiply 3 and 7, then add 100 *)
+  69    [  3  7  100  [*]  dip  +  put  ]
+        121
+  70    (* step-combinator to apply program to each member of list *)
+  71    [  [1 2 3]  [dup * putsp]  step  ]
+        1 4 9
+  72
+  73    (* i-combinator, twice-combinator, thrice-combinator *)
+  74    [  2  [dup *]  i  put  ]
+        4
+  75    [  2  [dup *]  twice  put  ]
+        16
+  76    [  2  [dup *]  thrice  put ]
+        256
+  77    (* times-combinator, using definition  square  ==  dup *   *)
+  78    [  2  [square]  0 times  put  ]
+        2
+  79    [  2  [square]  1 times  put  ]
+        4
+  80    [  2  [square]  2 times  put  ]
+        16
+  81    [  2  [square]  3 times  put  ]
+        256
+  82    [  2  [square]  4 times  put  ]
+        65536
+  83    [  2  [square]  5 times  put  ] (* note overflow *)
+        0
+  84    [  [7]  10 times  stack  put  ]
+        [7 7 7 7 7 7 7 7 7 7]
+  85
+  86    (* map-combinator to make list of squares *)
+  87    [  [1 2 3]  [dup *]  map  put  ]
+        [1 4 9]
+  88    (* fold-combinator to add squares of members of list *)
+  89    [  [1 2 3]  0  [dup * +]  fold  put  ]
+        14
+  90    (* construct-combinator to make list from programs *)
+  91    [ 11 12                         (* push two numbers             *)
+  92      [                             (* make a list of ..            *)
+  93        [+]                         (*  their sum                   *)
+  94        [*]                         (*  their product               *)
+  95        [pop unit]                  (*  the unit list of first      *)
+  96        [dup pair] ]                (*  the pair of the second      *)
+  97      construct2 put ]
+        [23 132 [11] [12 12]]
+  98    (* the two numbers are still there *)
+  99    [ [                             (* make a list of ..            *)
+ 100        [pair [square] map unpair +](*  the sum of their squares    *)
+ 101        [pop]                       (*  the first number            *)
+ 102        [] ]                        (*  the second number           *)
+ 103      construct2 put ]
+        [265 11 12]
+ 104    (* now clear the stack *)
+ 105    [  [] unstack ]
+ 106
+ 107    (* DIRECTIVES *)
+ 108
+ 109    %INCLUDE 42minjoy.in1
+   1    (* begin of include file *)
+   2
+   3    (* SET-  and  IF-DIRECTIVES  *)
+   4
+   5    %SET  X  =  1
+   6    %IF   =  X  1           [ 11111 ]
+   7    %IF   =  X  2           [ 22222 ]
+   8    [  put  ]
+        11111
+   9
+  10    (* ALTERNATIVE RADIX for input numbers *)
+  11
+  12    (* default alternative radix is 2 *)
+  13    [  &1000000   put  ]
+        64
+  14    (* change default alternative radix *)   %RADIX 8
+  15    [  &100  put  ]
+        64
+  16    (* change default alternative radix *)   %RADIX 16
+  17    [  &FF  put  ]
+        255
+  18
+  19    (* SCAN-TIME EXPRESSIONS IN CHARACTER CONSTANTS *)
+  20
+  21    %SET L = 65
+  22    [  '\L  put  ]
+        A
+  23    [  '\ + L 32   put  ]
+        a
+  24    %SET L = 'G
+  25    [  '\ + L - 'a 'A   put  ]
+        g
+  26
+  27    (* end of include file *)
+ 110    (* back to original line numbering *)
+ 111
+ 112    %INCLUDE 42minjoy.in2
+   1
+   2    (* RECURSIVE FUNCTIONS, non-recursive computation *)
+   3
+   4    (* "last" is a tail-recursive function *)
+   5    [  [ Smith Jones Robinson ]  last  put  ]
+        Robinson
+   6    (* now let us look at the (recursive) definition of "last" *)
+   7    [  [last]  definition  put  ]
+        [dup rest null [first] [rest last] branch]
+   8    [  [ Smith Jones Robinson ]  [last]  definition  i  put  ]
+        Robinson
+   9    (* using the x-combinator *)
+  10    [  [Smith Jones Robinson]
+  11       [    swap dup rest null
+  12            [ car swap pop ]
+  13            [ cdr swap x ]          (* NOTE x-combinator *)
+  14            branch ]
+  15       x put ]                      (* REPEAT x-combinator *)
+        Robinson
+  16    (* using the y-combinator *)
+  17    [  [Smith Jones Robinson]
+  18       [    swap dup rest null
+  19            [ car swap pop ]
+  20            [ cdr swap i ]          (* NOTE i-combinator *)
+  21            branch ]
+  22       y put ]                      (* NOTE y-combinator *)
+        Robinson
+  23
+  24    (* "factorial" is not tail-recursive *)
+  25    [  6 factorial_rec put ]
+        720
+  26    (* using the x-combinator *)
+  27    [  6
+  28       [    swap dup 1 <=
+  29            [ pop pop 1 ]
+  30            [ dup pred rolldown x * ]
+  31            branch ]
+  32       x put ]
+        720
+  33    (* using the y-combinator *)
+  34    [  6
+  35       [    swap dup 1 <=
+  36            [ pop pop 1 ]
+  37            [ dup pred rolldown i * ]
+  38            branch ]
+  39       y put ]
+        720
+  40
+  41    (* "QUICKSORT" *)
+  42
+  43    [ [1 9 2 8 3 7 4 6 5] quicksort putln ]
+        [1 2 3 4 5 6 7 8 9]
+  44    [ [5 6 4 7 3 8 2 9 1] quicksort putln ]
+        [1 2 3 4 5 6 7 8 9]
+  45    [ [1 2 3 4 5 6 7 8 9] quicksort putln ]
+        [1 2 3 4 5 6 7 8 9]
+  46    [ [9 8 7 6 5 4 3 2 1] quicksort putln ]
+        [1 2 3 4 5 6 7 8 9]
+  47
+  48    (* now look at the definition of quicksort: *)
+  49    [ [quicksort] definition putln ]
+        [dup small [] [partition quicksort [quicksort] dip concat]
+        branch]
+  50
+  51    (* sorting lists on first item *)
+  52    [ [ [1 Smith] [3 Jones] [2 Robinson] [4 Brown] ]
+  53      quicksort1 putln ]
+        [[1 Smith] [2 Robinson] [3 Jones] [4 Brown]]
+  54    (* sorting on symbol *)
+  55    [ [] ]  (* initial class-list in COMPUTATIONAL CHRONOSCOPY *)
+  56    [ [NURKS Peter 1989 year 3 major Computer Science ]     cnos
+  57      [ABELSON Mary 1990 year 2 major Logic ]               cnos
+  58      [ZEEMAN Fred 1988 year 2 major Accounting]            cnos
+  59      [MORRIS Janna 1992 year 1 major undecided]            cnos ]
+  60    (* now sort on surname and print *)
+  61    [ quicksort1 dup [putln] step ]
+        [ABELSON Mary 1990 year 2 major Logic]
+        [MORRIS Janna 1992 year 1 major undecided]
+        [NURKS Peter 1989 year 3 major Computer Science]
+        [ZEEMAN Fred 1988 year 2 major Accounting]
+ 113
+ 114    %STATISTICS 1
+ 115    (* end of JOY tutorial *)
+ 116    .
+6840 milliseconds CPU
+2120 milliseconds CPU to read library
+4860 milliseconds CPU to execute
+1461 user nodes available
+12 garbage collections
+17850 nodes used
+5530 calls to joy interpreter
+15482 operations executed
+#+end_example
+
+The large number of garbage collections is due to the fact that for testing purposes the amount of memory available for user nodes was on purpose kep absurdly small.
+
+If you did not read the theoretical first part of this introduction, then you should do that now.
+
+* The Joy language
+
+This section develops the design principles of the Joy language up to a full definition.
+
+** Design principles
+In several languages, notably Lisp, Snobol and Prolog, programs and data have the same structure, as summarised by the slogan
+
+#+begin_example
+                Program  =  Data
+#+end_example
+
+In addition they use internal memory which has a quite different structure.  In Joy the identification is carried one step further: the internal memory also has that same structure
+
+#+begin_example
+                Program  =  Data  =  Memory
+#+end_example
+
+In Joy programs are lists, data are atoms or lists, and the working memory is a stack which is also a list.
+
+Joy was designed to make its semantics as simple as possible.  The semantics of any language is given by a function which assigns meanings to the basic components of the language --- be they formulas, terms or programs.  For example, in propositional logic the semantic function assigns a set of interpretations in which a given formula is true.  In particular, a disjunction =P v Q= is true in all interpretations in which =P= is true or =Q= is true.  Hence to a disjunction the semantic function =SEM= assigns the union of the interpretations in which =P= is true with the set of interpretations in which =Q= is true.  Similarly, to a conjunction =P & Q= the function =SEM= assigns the intersection of the set of interpretations in which =P= is true and the set of interpretations in which =Q= is true.  In an arithmetic language the semantic function =SEM= assigns numbers to terms, and to =X + Y= it assigns the sum of the numbers assigned to =X= and =Y=.  In propositional logic there are two special formulas, say =F= and =T=, which are the identity elements for conjunction and disjunction, the function =SEM= maps them onto the identity elements for union and intersection, the empty set of interpretations and the universal set of interpretations.  In arithmetic there is the numeral =0= which the function =SEM= maps onto the identity element for addition, the number zero.
+
+#+begin_example
+SEM("P v Q")  =
+        the set of interpretations which is the UNION of
+        SEM(P) and SEM(Q).
+SEM("P & Q")  =
+        the set of interpretations which is the INTERSECTION of
+        SEM(P) and SEM(Q)
+SEM("F")  =
+        the EMPTY set of interpretations
+SEM("T")  =
+        the UNIVERSAL set of interpretations
+SEM("X + Y")  =
+        the number which is the SUM of
+        SEM(X) and SEM(Y).
+SEM("0")  =
+        the number ZERO
+#+end_example
+
+Binary composition of functions is an associative operation with the identity function as the left and right identity; together they form a monoid.  For a very simple semantics, one now needs a binary operation on programs and a left and right identity such that the semantics preserves the operation and the identity; the semantic function which associates with every program a meaning then is a homomorphism.  A suitable monoid on programs consists of the binary operation of concatenation of programs as lists together with the empty list as the left and right identity.
+
+#+begin_example
+SEM("F G")  =
+        the function which is the COMPOSITION of
+        SEM(F) and SEM(G).
+SEM("[]")  =
+        the IDENTITY function
+#+end_example
+
+** The core language
+
+This section describes the core part of the language which is implemented directly.  The other parts are built on top of this in the library.
+
+*** /Pushing Data/:
+Literals of type Boolean, character, integer and list can be pushed onto the stack just by writing them.  Strictly speaking a numeral such as =123= does not denote the number 123 but a function which takes stacks as arguments and stacks as values; for an arbitrary stack S1 as argument the function has as its value another stack S2 which is like S1 except that it has an additional item, the number 123, on top.
+
+The two Booleans are written =true= and =false=.  Character literals consist of a single quote followed by the character or by the escape character =\= followed by the decimal ASCII value of the character.  Integers are written in decimal notation with an optional preceding unary minus.  Lists are enclosed in =[= and =]=.  As a /meta/notation we write =[X]= for the unit list whose only element is =X=, we write =[]= for the empty list, =[Xs]= for a list containing zero or more members =Xi=, and =[X Xs]= for the list containing one or more members =Xi=, with =X= as the first element.  Symbols are just letters followed by up to 15 further letters, digits and underscores.
+
+*** /Operators/:
+There are several operators on values of various types.  They are written in postfix notation and take their parameters from the stack.  Parameters are counted from the top of the stack; so the third parameter is the third item on the stack.  The three untyped operators =pop=, =dup= and =swap= take parameters of any type.
+
+*** /Combinators/: 
+These are operators which expect lists on the top of the stack; they will remove them from the stack and execute them as programs.  The simplest is the =i= combinator.  It expects a list as its only mandatory parameter on the top of the stack, it removes this list and executes it as a program.  Hence it satisfies:
+
+#+begin_example
+        [Fs]  i   ==   Fs
+#+end_example
+
+Slightly more complicated is the =dip= combinator.  It expects two mandatory parameters on the top of the stack.  The second parameter can be anything.  The first parameter, topmost, has to be a list.  The =dip= combinator removes these two parameters from the stack and then executes the list as a program.  Typically the execution will change the stack.  After that, the =dip= combinator will restore what was its second parameter to the top of the now current stack.  So its principal use is to produce a change in the stack without affecting the top element.  For a data value =X=, the =dip= combinator satisfies
+
+#+begin_example
+        X  [Fs]  dip   ==   Fs  X
+#+end_example
+
+Very useful is the =step= combinator, which takes two mandatory parameters.  The second parameter has to be a list of arbitrary data values.  The first parameter, topmost, has to be a list which can be executed as a program.  The =step= combinator removes the two parameters.  Then, starting with the first element, if any, of the list of data, it pushes that datum on the stack and then executes the other list as a program.  This is repeated for each datum member of the second parameter.  If that list was empty, then the first parameter is not executed at all.  The =step= combinator satisfies
+
+#+begin_example
+        []  [Fs]  step   ==   id
+        [X Xs]  [Fs]  step   ==   [X]  first  Fs  [Xs]  Fs  step
+#+end_example
+
+If X is a data value, the second line is equivalent to
+
+#+begin_example
+        [X Xs]  [Fs]  step   ==   X  Fs  [Xs]  [Fs]  step
+#+end_example
+
+There are two combinators for stepping through the elements of a list: =stepl= traverses the list from left to right, and =stepr= traverses the list from right to left.  The list to be stepped through has to be the fourth parameter on the stack.  The other three are two functions and a constant.  The third parameter has to be a function, for each element of the list it will be applied to the stack with that element topmost, and below that what was below the list.  This application will produce a value on top of the stack.  The second parameter is a constant.  For the first element of the list the produced value will now be combined with the constant using the first parameter.  For any further elements of the list the produced value will be combined with the result of the previous combination.
+
+
+* Standard library
+
+There are two reasons for having such a small core language:
+
+1) to help in identifying the necessary primitives, and
+2) to keep the implementation as small as possible.
+
+One consequence is that the implementation is quite inefficient.
+
+To turn the library into a complete reference, the meanings of the primitives are explained in comments.  The defined concepts and the primitives are given in their alphabetical order because the program uses a binary search through the identifiers defined in the library.  The program makes two passes through the library.  The =SET=, =IF= and =PUT= directives at the beginning and end produce messages when the library is loaded.  There are also two =INCLUDE= directives.  The first included file contains a definition of a Joy interpreter written in Joy, it is discussed later in this chapter.  The second included file contains answers to some exercises given at the end of this chapter.
+
+#+begin_example
+%IF  = P 0  %SET  P = 1
+%IF  = P 1  %PUT First pass through library:
+%IF  = P 2  %PUT Second pass through library:
+
+                                                                (*
+I1 I2   *               ==  I3          where I3 = (I1 * I2)     *
+I1 I2   +               ==  I3          where I3 = (I1 + I2)     *
+I1 I2   -               ==  I3          where I3 = (I1 - I2)     *
+I1 I2   /               ==  I3          where I3 = (I1 / I2)     *
+I1 I2   <               ==  B           where B  = (I1 < I2)     *
+                                                                 *)
+        <=              ==  succ <                               ;
+        <>              ==  = not                                ;
+                                                                (*
+I1 I2   =               ==  B           where B  =  (I1 = I2)    *
+                                                                 *)
+        >               ==  swap <                               ;
+        >=              ==  pred >                               ;
+                                                                (*
+        addlist         ==  [+] zip                              ;
+                                                                (*
+B1 B2   and             ==  B3          where B3 = (B1 and B2)   *
+                                                                 *)
+        b               ==  [i] dip i                            ;
+        boolean         ==  true sametype                        ;
+        branch          ==  swap pair index i                    ;
+        c               ==  [swap] dip i                         ;
+        car             ==  uncons pop                           ;
+        cdr             ==  uncons swap pop                      ;
+        clearstack      ==  [] unstack                           ;
+        clearstack1     ==  [clearstack] dip                     ;
+        cnos            ==  swap cons                            ;
+        concat          ==  [reverse] c shunt                    ;
+                                                                (*
+X [Xs]  cons            ==  [X Xs]                               *
+nothing [Xs] cons       ==  [Xs]                                 *
+                                                                 *)
+        construct0      ==  [dip swap] map                       ;
+        construct1      ==  [[dip swap] map] unary               ;
+        construct2      ==  [[nullary] cons dip swap] map        ;
+        contains        ==  false swap [ = or ] cons fold        ;
+        cube            ==  dup dup * *                          ;
+        definition      ==  first body                           ;
+                                                                (*
+X [Fs]  dip             ==  Fs X                                 *
+                                                                 *)
+        dip2            ==  [pair] dip dip unpair                ;
+        duco            ==  dup cons                             ;
+                                                                (*
+X       dup             ==  X X                                  *
+                                                                 *)
+        dureco          ==  dup rest cons                        ;
+        exp             ==  dup 0 =
+                            [pop pop 1] [[dup] dip 1 - exp *]
+                            branch ;
+        factorial_rec   ==  dup 1 <=
+                            [ pop 1 ] [ dup pred factorial_rec * ]
+                            branch                               ;
+(*
+        filter          ==  [test] cons [] [cons] stepl          ;
+*)
+        first           ==  uncons pop                           ;
+        fix             ==  [duco] first swap cons duco          ;
+        fold            ==  [swap] dip step                      ;
+        foldl           ==  [] rollup stepl                      ;
+        foldr           ==  [] rollup stepr                      ;
+        hidefirst       ==  dip                                  ;
+        hidesecond      ==  [swap] dip dip swap                  ;
+                                                                (*
+[Fs]    i               ==  Fs                                   *
+                                                                 *)
+        id              ==  [] pop                               ;
+        infra           ==  [infra1] unary                       ;
+        infra1          ==  [unstack] dip i solostack            ;
+        integer         ==  0 sametype                           ;
+
+%INCLUDE 42minjoy.joy
+
+        k               ==  [pop] dip i                          ;
+        last            ==  dup rest null
+                            [first] [rest last] branch           ;
+        length          ==  0 [pop 1 +] fold                     ;
+        lengthold       ==  0 swap [pop 1 +] step                ;
+        list            ==  [] sametype                          ;
+        map             ==  maprev reverse                       ;
+        maprev          ==  [] rollup shuntmap                   ;
+        member          ==  swap contains                        ;
+        mm              ==  [pair] dip map unpair                ;
+        mullists        ==  [*] zip                              ;
+        newline         ==  '\13  put                            ;
+        nil             ==  []                                   ;
+                                                                (*
+B1      not             ==  B2          where B2 = not B1        *
+                                                                 *)
+        null            ==  car nothing sametype                 ;
+        nullary         ==  stack swap dip rest cons unstack     ;
+                                                                (*
+B1 B2   or              ==  B3          where B3 = (B1 or B2)    *
+                                                                 *)
+#+end_example
+
+#+begin_example
+        pair            ==  [] cons cons                         ;
+        pairlists       ==  [pair] zip                           ;
+        partition       ==  [[][]] dip
+                            dup
+                            [ first >
+                              [cnos]
+                              [swap [cnos] dip]
+                              branch ]
+                            cons
+                            [dup] first cnos
+                            step                                 ;
+        partition1      ==  [[][]] dip
+                            dup first
+                            [ first >
+                              [cnos]
+                              [swap [cnos] dip]
+                              branch ]
+                            cons
+                            [first] first cnos
+                            [dup] first cnos
+                            step                                 ;
+                                                                (*
+X       pop             ==                                       *
+                                                                 *)
+        pred            ==  1 -                                  ;
+        product         ==  1 [*] fold                           ;
+        putln           ==  put newline                          ;
+        putsp           ==  put space put                        ;
+                                                                (*
+        quicksort       :   IF the list has only 0 or 1 member
+                                THEN leave it as it is
+                                ELSE partition into two,
+                                     quicksort both,
+                                     concatenate them
+                                                                *)
+        quicksort       ==  dup small
+                            []
+                            [ partition
+                              quicksort [quicksort] dip
+                              concat ]
+                            branch                               ;
+        quicksort1      ==  dup small
+                            []
+                            [ partition1
+                              quicksort1 [quicksort1] dip
+                              concat ]
+                            branch                               ;
+        rest            ==  uncons swap pop                      ;
+        reverse         ==  [] swap shunt                        ;
+        rmap            ==  [] swap [[swap cons] b] cons fold    ;
+        rolldown        ==  [swap] dip swap                      ;
+        rollup          ==  swap [swap] dip                      ;
+        second          ==  rest first                           ;
+
+%INCLUDE 42minjoy.ses
+
+        shunt           ==   [cnos] step                         ;
+        shuntmap        ==   [[cnos] b] cons step                ;
+        small           ==  uncons null swap pop                 ;
+        solostack       ==  stack [clearstack] dip               ;
+        space           ==  '\32        (* one space *)          ;
+        square          ==  dup *                                ;
+        succ            ==  1 +                                  ;
+        sum             ==  0 [+] fold                           ;
+        sumuntried      ==  [] 0 [+] foldl                       ;
+                                                                (*
+X Y     swap            ==  Y X                                  *
+                                                                 *)
+        thrice          ==  dup [twice] dip i                    ;
+        times           ==  dup 0 =
+                            [pop pop]
+                            [[dup [i] dip] dip pred times] branch;
+        twice           ==  dup b                                ;
+        unary           ==  nullary [pop] dip                    ;
+                                                                (*
+[X Xs]  uncons          ==  X [Xs]                               *
+[]      uncons          ==  nothing []                           *
+                                                                 *)
+        unit            ==  [] cons                              ;
+        unpair          ==  uncons uncons pop                    ;
+        w               ==  [dup] dip i                          ;
+        x               ==  dup i                                ;
+        y               ==  fix i                                ;
+        zzz             ==  zzz
+
+%IF  = P 2  %PUT GO !
+%SET  P = 2
+.
+#+end_example
+
+* Theory of Joy
+
+This section develops some aspects of a theory of the Joy language: an algebra for manipulating Joy programs by means of reduction rules, a rudimentary theory of Joy types, and a Joy interpreter written in Joy.
+
+** Joy algebra
+Let A be an alphabet of symbols ={a b ..}= which may be finite or infinite.  Strings over A are sequences of zero or more members of A.  Let a binary relation between strings be given by a set of identities of the form =S1 = T1=, =S2 = T2= and so on.  Write =S == T= for the smallest reflexive, symmetric and transitive extension of this relation which also satisfies the condition
+
+#+begin_example
+        If  S = T  then  R S U  ==  R T U
+#+end_example
+
+where =R S U= and =R T U= are concatenations having =S= and =T= somewhere in the middle.
+
+/Example/: propositional logic in prefix notation, with just the constants 0 and 1, negation =-=, and conjunction =&=.  Consider the rewrite relation given by
+
+#+begin_example
+- 1  =  0       - 0  =  1
+& 1 1  =  1     & 1 0  =  0     & 0 1  =  0     & 0 0  =  0
+#+end_example
+
+These rules may be used to evaluate formulas by rewriting, as in the following example:
+
+#+begin_example
+                & - & - 1 0 & - 0 1
+        ==      & - & 0   0 & - 0 1
+        ==      & - 0       & - 0 1
+        ==      & 1         & - 0 1
+        ==      & 1         & 1   1
+        ==      & 1         1
+        ==      1
+#+end_example
+
+Rewriting systems were already used in chapter 6 on operator precedence parsing.  Obviously the method works for prefix, infix and postfix notation; in particular, for postfix notation there is no need for a stack.  However, for the simplest, left to right rewriting strategy, there is a lot of time wasted, because every step requires scanning the previous string from the beginning.  For postfix notation the stack eliminates the need to scan from the beginning --- at every stage the next symbol in the string is examined, and if it is an operator it takes its parameters from the stack.  As an exercise, specify the rewriting rules for postfix, translate the above formula into postfix, evaluate the formula 1) using the rewriting rules and 2) using a stack.
+
+Clearly the method works not only for various styles of notation but also for various types: truth values, numbers, strings, lists and other constructions.  Since there are only two truth values, it is possible to give a short list of rewriting rules for the operators.  But already for numbers an infinite collection of rewriting rules is needed.  This collection has to be specified in a finite way --- but this does not present an obstacle.  For Joy rewriting rules are needed for all data types and for the stack operations.  Here is an example:
+
+#+begin_example
+        [ 3 4 ]  2  swap  uncons  first  *  +
+==      2  [ 3 4 ]  uncons  first  *  +                 (swap)
+==      2  3  [ 4 ]  first  *  +                        (uncons)
+==      2  3  4  *  +                                   (first)
+==      2  12  +                                        (*)
+==      14                                              (+)
+#+end_example
+
+In Joy there is no need for named parameters in definitions --- the mechanism of naming is replaced by stack operations and by combinators.  This is illustrated by all the functions defined in the standard library.  (Note that any variables occurring there are inside comments explaining the meaning of primitives.)
+
+Backus (1981) argued that programming concepts should satisfy strong and clean mathematical laws.  In Joy the absence of named parameters has the consequence that his requirement holds in a rather startling way.  The following are some examples of laws that can be written in infix or in functional notation and with variables - in the left column, and can also be written in Joy notation without variables - in the right column.
+
+#+begin_example
+INFIX or FUNCTIONAL                     POSTFIX Joy
+  
+X + Y = Y + X                           swap +  ==  +
+(X + Y) + Z) = X + (Y + Z)              [+] dip +  ==  + +
+X + 0  =  X                             0 +  ==  id
+P and false  =  false                   false and  ==  pop false
+P or P  =  P                            dup or  ==  id
+first(cons(X,L))  =  X                  cons first  ==  pop
+length(reverse(L))  =  length(L)        reverse length  ==  length
+#+end_example
+
+The associativity of concatenation and its left and right identity are expressed by the first two laws below.  The third law relates the b-combinator with concatenation.  The associativity of functional composition is expressed by the fourth law.  (Henson (1987, p 258) criticises presentations of the FP-systems originally due to Backus (1978) in that they do not give a law to this effect, although they use it in proofs.)  Finally, the last law expresses that the empty program is the left and right identity of functional composition.
+
+#+begin_example
+        [concat] dip concat   ==   concat concat
+        [] concat   ==   id   ==   [] swap concat
+ 
+        b  ==  concat i
+ 
+        [b] dip i  ==  [[i] dip] dip b
+        [] b   ==   i   ==   [] swap b
+#+end_example
+
+** Joy types
+
+In this part we develop a rudimentary theory of Joy types.
+
+As indicated in the introduction, all Joy functions are unary functions taking a complex object as their sole parameter and yield a complex object as their value.  The complex objects consist of a stack, an input file and an output file.  Because of this, the composition of two appropriate functions is well-defined.  Furthermore, all functions are of the same type.
+
+For many purposes this last result about types leaves out far too much.  It fails to distinguish the various data types that can be manipulated on the stack and shifted between the stack and the two files.  Clearly there are some important differences between the following:
+
+#+begin_example
+        +   concat   123   map   'A   first
+#+end_example
+
+In what follows,we shall distinguish some basic data types, to be written in capital letters: =B=(oolean), =C=(haracter), =I=(nteger) and =L=(ist).  Here are some examples:
+
+#+begin_example
+        true  :  B      'x  :  C        123  : I        [a b c]  :  L
+#+end_example
+
+We want to be able to say that the length function takes one list as parameter and produces an integer as value, and that concatenation takes two lists as parameters and produces a list as value.
+
+Because Joy uses postfix notation, an elegant calculus of types can be developed for it.  This calculus is adapted from what are called categorial grammars, see the end of this section for some reading.  The type expressions are defined recursively as the smallest set generated under the following rules:
+
+#+begin_example
+1. Each of B, C, I and L is a type expression.
+2. If X and Y are type expressions, then so are
+        X Y             their concatenation
+        X\Y             their left cancellation
+        X/Y             their right cancellation
+        [X]             the quotation of X
+#+end_example
+
+The type of the length can now be given:
+
+#+begin_example
+        length  :  L\I
+#+end_example
+
+This type assignment means that if the length function is composed with a list on its left, then the reult is of type integer.
+
+#+begin_example
+        functions:      [a b c]         length          ==      3
+        types:          L               L\I             ==>     I
+#+end_example
+
+The last line is an instance of a general rewriting rule for types:
+
+#+begin_example
+                X  X\Y          ==>     Y
+#+end_example
+
+This means that the composition of two functions of the types indicated on the left of the arrow is of the type indicated on the right of the arrow.  Here are some more type assignments:
+
+#+begin_example
+        concat  :  L\L\L
+        +       :  I\I\I
+        cons    :  X\L\L
+        i       :  [X]\X
+        map     :  L\[X]\L
+#+end_example
+
+The theory of Joy types needs to be developed much further.  It would be most useful in a Joy compiler.
+
+** /Reading/:
+The quotation type introduced here appears to be new.  On the other hand, the concatenation and cancellation types in this section are adapted from categorial grammars, a generating mechanism equivalent to context free grammars.
+
+For a survey of uses of categorial grammars see the book edited by Oehrle, Bach and Wheeler (1988).  In that book the chapters by Casadio and Lambek are probably most useful for the theory of Joy types.
+
+** A Joy interpreter written in Joy
+
+In this section we develop a Joy interpreter written in Joy itself.  This will serve several purposes: it is an exercise in developing a Joy program, it shows how well Joy can talk about itself, and it is a basis of the Joy interpreter to be written in Pascal in the next section.
+
+The first version is merely a reminder that Joy already has a combinator, namely the =i= combinator, which removes a program from the top of the stack and executes it.
+
+#+begin_example
+Joy0   ==   i
+#+end_example
+
+The next version makes explicit the fact that Joy programs are lists which are interpreted by stepping through the members of the list and executing each in turn, by considering them as unit size programs:
+
+#+begin_example
+Joy   ==
+    [ unit i ]
+    step
+#+end_example
+
+The next version has to spell out the various cases.  The select-operator and the i-combinator together perform rather like a =CASE= statement in Pascal.  The list of cases has to be pushed first.  So the next version takes the /form/:
+
+#+begin_example
+Joy   ==
+    [   [ CASELIST ]
+        select
+        i ]
+    step
+#+end_example
+
+or, still schematically:
+
+#+begin_example
+Joy   ==
+    [   [   [c1 ..]
+            [c2 ..]
+            ... ]
+        select
+        i ]
+    step
+#+end_example
+
+where =CASELIST= consists of a list of cases =c1=, =c2= and so on.  Clearly, among the cases to be considered are at least the primitives used in the interpreter so far:
+
+1) the =select= operation,
+2) pushing a list or program, and 
+3) two combinators, the =step= combinator and the i-combinator.  It is best to consider the =select= operation first.  It has to be handled like most other operations =P=: to interpret =P= which is on top of the stack, the primitive =P= has to be popped, and then the primitive operation =P= has to be executed.  This gives the following case for the =select= operation:
+
+#+begin_example
+            [ select    pop select ]
+#+end_example
+
+This means that when the interpreter sees the select operation as the second item on the stack, and the current list of cases as the first, topmost, element, then it will replace the list with the rest of that case, which is =[pop select]=.  The =i= combinator executes this, which has the consequence of =pop=ping the =select= operator which is now on top of the stack.  Then the =select= operation is executed, as required.  As can be seen, the interpreter will also have to use the =pop= primitive, and therefore it will also have to implement it:
+
+#+begin_example
+            [ pop       pop pop ]
+#+end_example
+
+To push a list or program, the interpreter has to leave it there, because executing such a push operation produces precisely the required result.  The =select= operation used in the interpreter only looks at the type of something, so the empty list can serve as the sample list:
+
+#+begin_example
+            [ [] ]                              (* lists        *)
+#+end_example
+
+Finally, the =step= and =i= combinators.  It would be possible to treat them just like operators:
+
+#+begin_example
+            [ step      pop step ]
+            [ i         pop i ]
+#+end_example
+
+However, this would mean that the interpreter only interprets top level programs, but of course it should descend right down into all levels.  What is needed is a way for the combinators to use the Joy interpreter that is being written now.  So, when the =step= combinator is being executed, having a program =[Ps]= as a parameter, the =step= combinator should encounter a program which will eventually call the Joy interpreter recursively, but first push =[Ps]=.  So it has to execute
+
+#+begin_example
+            [ [Ps] Joy ]  step
+#+end_example
+
+The way to do this is to construct the above program from what is on top of the stack when the interpreter sees the =step= combinator.  First, the =step= combinator is popped off.  Now =[Ps]= is on top of the stack.  Second, the unit program =[Joy]= is pushed.  Then the two are =cons='ed together to yield =[[Ps] Joy]=.  If this is ever executed, it will push =[Ps]= and then use Joy to interpret it.  It will be executed as many times as there are elements in the list below, and the execution is under the control of the =step= combinator.  For uniformity the same method is used for the =i= combinator, although it would be possible for it to just call the Joy interpreter recursively.
+
+#+begin_example
+            [ step      pop [Joy] cons step ]
+            [ i         pop [Joy] cons i ]
+#+end_example
+
+The last two cases have used the =cons= operation, so the interpreter has to be able to handle this operation, too.
+
+#+begin_example
+            [ cons      pop cons ]
+#+end_example
+
+Here then is a complete but minimalist version of Joy-in-Joy:
+
+#+begin_example
+Joy   ==
+    [   [   [ [] ]
+            [ pop       pop pop ]
+            [ select    pop select ]
+            [ cons      pop cons ]
+            [ step      pop [Joy] cons step ]
+            [ i         pop [Joy] cons i ] ]
+        select
+        i ]
+    step
+#+end_example
+
+This is not universal yet, what is still needed are two stack operations =swap= and =dup=, one list destructor =uncons=, and one combinator =dip=:
+
+#+begin_example
+            [ swap      pop swap ]
+            [ dup       pop dup ]
+            [ uncons    pop uncons ]
+            [ dip       pop [Joy] cons dip ]
+#+end_example
+
+The final version is actually part of the library, as an included file:
+
+#+begin_example
+(* the JOY interpreter written in JOY                           *)
+
+joy     ==
+    [   [
+                                                (* PUSH DATA:   *)
+            [ nothing ]                         (* type void    *)
+            [ false ]                           (* Booleans     *)
+            [ 'A ]                              (* characters   *)
+            [ 0 ]                               (* numbers      *)
+            [ [] ]                              (* lists        *)
+
+                                                (* OPERATIONS:  *)
+            [ pop       pop pop ]
+            [ dup       pop dup ]
+            [ swap      pop swap ]
+            [ cons      pop cons ]
+            [ uncons    pop uncons ]
+            [ select    pop select ]
+            [ *         pop * ]
+            [ +         pop + ]
+            [ -         pop - ]
+            [ /         pop / ]
+            [ and       pop and ]
+            [ or        pop or ]
+            [ not       pop not ]
+            [ body      pop body ]
+            [ put       pop put ]
+            [ get       pop get ]
+                                                (* COMBINATORS: *)
+            [ i         pop [joy] cons i ]
+            [ dip       pop [joy] cons dip ]
+            [ step      pop [joy] cons step ]
+                                                (* DEFINED      *)
+            [ joy       body joy ]  ]
+        select
+        i ]
+    step                                                         ;
+#+end_example
+
+It is this version that is used as the basis of the Joy interpreter written in Pascal in the next section.
+
+
+* The implementation
+
+** /Declarations/:
+The program makes use of the utilities from Chapter 17 almost everywhere.  Therefore the utilities have to be processed by the Pascal compiler before the program proper can be processed.  But the utilities are not entirely stand alone, they require several previously declared labels, constants and even two types: symbols and standard identifiers.  Only after these have been declared can the file containing the utilities be included.  After that file has been processed, anything in the utilities is accessible.  Then follow any declarations specific to Joy: constants, types, variables, procedures and functions, and then the main program.  Hence the program has this structure:
+
+#+begin_example
+PROGRAM minJoy(input,output);
+LABEL, CONST, TYPE declarations needed for utilities
+INCLUDE utilities
+CONST, TYPE, VAR, PROCEDURE, FUNCTION needed for Joy
+BEGIN (* main *)
+ ..
+END.
+#+end_example
+
+** /Data Structures/:
+Apart from what is provided in the utilities, there are two main data structures: The first is a table of identifiers together with a code address.  The second is an array of code nodes, consisting of an opcode, a value and a next field --- all used by the program proper, but also a Boolean flag needed for the garbage collector.  There are several registers pointing into the code.  One of these is the freelist of linked nodes that are known not to be in use otherwise.  When the program needs a new node, it calls a procedure to provide one; normally it is taken from the freelist.  If the freelist has become empty, then garbage collection occurs, and hopefully the freelist will be replenished.  The garbage collector is described in detail at the end of this section.
+
+** /Main/:
+The main program begins by calling an initialisation procedure whose body consists of calls to procedures in the utilities: one call to initialise the scanner, several calls to enter the reserved symbols, and several calls to enter the standard identifiers.  Then the main program initialises the freelist: all memory cells are set to unmarked, all but the last memory cells are linked to their successor, the last cell is linked to nothing, and the freelist pointer is set to the first cell.
+
+The main program then calls a procedure to read the library.  It is necessary to make two passes through the library: on the first pass the identifiers to be declared are read and entered sequentially into the table of user identifiers; since the lookup procedure will use a binary search through this table, it is essential that the identifiers to be declared are in alphabetical order.  On the first pass the right hand sides of the definitions are ignored.  Then the library is read a second time.  Now all identifiers can be looked up, and code can be generated for the right hand side of each definition and entered in the table for the identifier being defined.  When the library has been read, any remaining memory is available to the user.
+
+The main program then sets the stack to empty and enters its principal read-execute loop.  It repeatedly reads a factor into its program register and then calls the Joy interpreter to execute that program.
+
+** /The interpreter/:
+The principal interpreting procedure =joy= is modelled after the Joy interpreter written in Joy that was described in the previous section.  It takes as a value parameters a (possibly zero) integer pointer to a sequence of next-linked nodes.  Its body consists of a loop which steps through this sequence, thus modelling the operation of the =step= combinator of Joy-in-Joy.  Each individual step is handled by a =CASE= statement to model what in Joy-in-Joy is the =select= operator and the =i= combinator.  The =CASE= statement examines the op-field of the given node and executes the appropriate code.
+
+For pushing values of various types, the =konS= function is used to obtain a new node from the freelist.  For that node the op-field is the type of the value, the value-field is the integer value, and the next-field is the old stack.  For unary operations the required value is computed for a new node whose next-field is the next-field of the old stack.  Since there are quite a few binary operations, a tiny special purpose procedure can be used which pushes the required item onto the old stack with two of its top items removed.
+
+For the combinators the interpreter has to call itself recursively.  The case for the =i= combinator pops the topmost item of the stack and executes it.  The case for the =dip= combinator is similar, except that the second item on the stack first has to be saved on the dump.  Because this saving requires a new node and hence may trigger off a garbage collection, the first item also has to be saved on the dump.  After the execution, the second item is restored from the dump onto the stack.  The case for the =step= combinator has to use a =WHILE= loop to traverse the list which is the second item on the stack.  For each element of that list, the element has to be pushed onto the stack and then the first item is executed.  The final case which results in a recursive call concerns uses of the library.  For these the required code sequence is taken from the table of user declared identifiers, the value field of the node contains the address in that table.  Hence that table does not have to be searched at run time.
+
+Almost all the cases in the interpreter have to access value-fields and next-fields of nodes, they have to check that the nodes really exist and that they have the appropriate operator type.  This is best done by a number of checking functions local to the interpreting procedure.
+
+** /Input and Output/:
+The main program, the procedure to read the library, and also the interpreter make use of two mutually recursive procedures to read terms and factors.
+
+The procedure for reading terms will read at least one factor, and while the next symbol is the beginning of another factor it will read a further one.  The code generated for this sequence of one or more factors has to be linked correctly.  In a =VAR= parameter the procedure returns the address of the first factor it has read, any further factors are linked to the first.
+
+The procedure for reading factors consists essentially of a =CASE= statement which dispatches on the currently seen symbol.  Number constants and character constants simply generate a new node.  Identifiers require the lookup procedure to be called to find the address, then a new node is generated with that address as the value field.  Because the scanner handles hyphens before digits as unary minus and otherwise as a special symbol, the solitary hyphen cannot be handled together with other identifiers but needs a special case.  Finally, a left bracket signals a list; if the next symbol is the beginning of a factor, then another term is read and made the content of that list, otherwise the list is empty.  The procedure also uses a =VAR= parameter to return the address of the code for the factor it has read.
+
+There are corresponding output procedures that are used by the interpreter and also in various places for listing, tracing and debugging.
+
+The procedure for writing terms uses a =WHILE= loop to write zero or more factors by stepping along a list of next-linked nodes.  If there is a further factor, a space separator is written, too.
+
+The procedure for writing factors uses a =CASE= statement to dispatch on the op-field of the node.  For characters and integers it writes the values, for Booleans it writes the appropriate identifier, for identifiers in the library it uses the value-field to index into the table of identifiers, for all others it obtains the name from the table of inbuilt standard identifiers.  For lists it writes =[= and =]= surrounding what will be written by a call to the procedure for writing terms.
+
+Both procedures do not actually do the writing themselves but call appropriate procedures from the utilities.  This way whatever has to be written will get to the standard output file and, if a listing is being written, to the listing file.
+
+For debugging and tracing it is useful to have another output procedure which writes the record fields of a given node to the output file and potentially to the listing file.
+
+** /The kons function and garbage collection/:
+New memory nodes are needed by the program in many places: to read the library, to read a Joy program, and when interpreting a Joy program to manipulate the stack and the dump.  Addresses of new new nodes are provided by a function =kons=, normally new nodes are taken from the freelist of linked nodes not otherwise used.  The function is similar to procedure generate in earlier programs: its parameters are essentially the fields of the record that is to be created.
+
+When the freelist is empty, garbage collection must take place.  It is necessary to /mark/ any nodes that are pointed to directly or indirectly by the other registers: the program, the stack and the dump.  The marking consists of a recursive traversal of any so far unmarked nodes and setting the mark-bit for each node visited.  Then a single /sweep/ is made through the available memory: any nodes that are not marked are added to the freelist.  Also, in anticipation of the next garbage collection, all nodes are set back to unmarked.  The mark sweep method is the simplest of all garbage collectors, it takes only about 20 lines of code as part of the body of the =kons= function.
+
+A good way to test a garbage collector is to exercise it (almost) to death.  In the initial development of the implementation of Joy described here only the absurdly small number of 20 memory cells was allowed for user programs in addition to what is needed for the library.  This made detailed tracing of memory usage feasible, and unfortunately it was necessary.  One of the early bugs discovered this way was the need for the garbage collector to mark not only the program-, stack- and dump-registers, but also the value- and next-parameters of the =kons= function itself.  Otherwise the execution of =swap=, =cons= and =uncons= can create unmarked cells.
+
+** /Lookup/:
+The only procedure that remains to be described is the procedure which looks up identifiers in the table.  It is called in two places in the program: when reading factors and for the second pass of the procedure which reads the library.  It first searches the table for any identifiers that might have been entered after the library has been read.  Since no order can be assumed, this first search is linear, starting with the most recent entry.  If the identifier was not found, a binary search is made through the sorted portion that was entered during the first pass through the library.  If it is still not found, a binary search is made through the table of the inbuilt primitives.  If it was not found there, it is entered as the most recent entry in the table of identifiers.  This part is not yet enabled when the library is being read.  The table of user introduced identifiers can only grow, it is never scavenged.
+
+* The program
+
+The following is the Pascal source file.  It is not quite standard, because it uses the utilities of the previous chapter in an included file.  If your Pascal does not allow included files, you will have to physically include that file at the point where the =INCLUDE= directive occurs, about half a page down.  If your Pascal compiler follows the original (too) strict definition of the language --- by insisting that declarations of labels, types, variables and procedures and functions occur strictly in this order --- then the declarations of the utilities and of the Joy program will have to be merged.  There are no procedures as parameters, so it should be possible to write the program in just about any version of Pascal.
+
+#+begin_src pascal
+PROGRAM minjoy(input,output);
+
+LABEL 10,90,99;
+
+CONST
+    errormark = '%JOY';
+    list_filename = '42minjoy.lst';
+    reslength = 8; emptyres = '        ';
+    maxrestab = 10;
+    identlength = 16; emptyident = '                ';
+    maxstdidenttab = 30;
+
+TYPE
+    symbol =
+        (
+        lbrack,rbrack,semic,period,def_equal,
+        (* compulsory for scanutilities: *)
+        charconst,stringconst,numberconst,
+        leftparenthesis,hyphen,identifier);
+
+    standardident =
+        (lib_,mul_,add_,sub_,div_,les_,eql_,and_,body_,cns_,dip_,dup_,
+         false_,get_,i_,index_,not_,nothing_,or_,pop_,put_,sty_,sel_,
+         stack_,step_,stepl_,stepr_,swap_,true_,uncns_,unstack_,
+         boolean_,char_,integer_,list_,unknownident);
+
+%INCLUDE '41SCANUT.PAS'
+
+PROCEDURE initialise;
+VAR i : integer;
+BEGIN (* initialise *)
+iniscanner;
+specials_repeat := ['=','>','.'];
+erw( '.       ' ,period);
+erw( ';       ' ,semic);
+erw( '==      ' ,def_equal);
+erw( '[       ' ,lbrack);
+erw( ']       ' ,rbrack);
+est( '*               ', mul_ );
+est( '+               ', add_ );
+est( '-               ', sub_ );
+est( '/               ', div_ );
+est( '<               ', les_ );
+est( '=               ', eql_ );
+est( 'and             ', and_ );
+est( 'body            ', body_ );
+est( 'cons            ', cns_ );
+est( 'dip             ', dip_ );
+est( 'dup             ', dup_ );
+est( 'false           ', false_ );
+est( 'get             ', get_ );
+est( 'i               ', i_ );
+est( 'index           ', index_ );
+est( 'not             ', not_ );
+est( 'nothing         ', nothing_ );
+est( 'or              ', or_ );
+est( 'pop             ', pop_ );
+est( 'put             ', put_ );
+est( 'sametype        ', sty_ );
+est( 'select          ', sel_ );
+est( 'stack           ', stack_ );
+est( 'step            ', step_ );
+est( 'stepl           ', stepl_ );
+est( 'stepr           ', stepr_ );
+est( 'swap            ', swap_ );
+est( 'true            ', true_ );
+est( 'uncons          ', uncns_ );
+est( 'unstack         ', unstack_ );
+FOR i := ord(mul_) TO ord(unstack_) DO
+    IF i <> ord(stdidents[i].symb) THEN
+        point('F','bad order in standard idents  ');
+END; (* initialise *)
+
+CONST
+    maxtable = 300;
+    maxmem = 2000;
+TYPE
+    memrange = 0 .. maxmem;
+VAR
+    table : ARRAY [1..maxtable] OF
+                RECORD alf : identalfa; adr : integer END;
+    lastlibloc,sentinel,lasttable,locatn : integer;
+    m : ARRAY [1 .. maxmem] OF RECORD
+            op : standardident; marked : boolean;
+            val : integer; nxt : memrange
+            END;
+    i,firstusernode, freelist, programme, s(*stack*), dump : memrange;
+
+    last_op_executed : standardident;
+    stat_kons,stat_gc,stat_ops,stat_calls,
+    stat_start,stat_lib : integer;
+
+PROCEDURE lookup;
+VAR i,j : integer;
+BEGIN (* lookup *)
+locatn := 0;
+IF sentinel > 0 THEN (* library has been read *)
+    BEGIN
+    table[sentinel].alf := ident; locatn := lasttable;
+    WHILE table[locatn].alf <> ident DO locatn := locatn - 1
+    END;
+IF locatn > sentinel THEN id := lib_ ELSE
+    BEGIN
+    i := 1; j := lastlibloc;
+    REPEAT
+        locatn := (i + j) div 2;
+        IF ident <= table[locatn].alf THEN j := locatn - 1;
+        IF ident >= table[locatn].alf THEN i := locatn + 1
+        UNTIL i > j;
+    IF i - 1 > j THEN id := lib_ ELSE
+        BEGIN (* binary search through standard identifiers *)
+        i := 1; j := laststdident;
+        REPEAT
+            locatn := (i + j) div 2;
+            IF ident <= stdidents[locatn].alf THEN j := locatn - 1;
+            IF ident >= stdidents[locatn].alf THEN i := locatn + 1
+            UNTIL i > j;
+        IF i - 1 > j THEN id := stdidents[locatn].symb ELSE
+            IF sentinel = 0 THEN id := unknownident ELSE
+                BEGIN
+                lasttable := lasttable + 1;
+                WITH table[lasttable] DO
+                    BEGIN alf := ident; adr := 0 END;
+                id := lib_; locatn := lasttable
+                END;
+        END; (* ELSE *)
+    END; (* ELSE *)
+    IF writelisting > 4 THEN
+    writeln(listing,'lookup : ',id,' at ',locatn:0)
+END; (* lookup *)
+
+PROCEDURE writenode(n : memrange);
+
+    PROCEDURE wn(VAR f : text);
+    BEGIN
+    WITH m[n] DO
+        BEGIN
+        write(f,n:5,' ',op,val,nxt,' ',marked:1);
+        IF op = lib_ THEN
+            WITH table[val] DO write(f,'   ',alf,adr:4);
+        writeln(f)
+        END
+    END;
+
+BEGIN (* writenode *)
+wn(output);
+IF writelisting > 0 THEN
+    BEGIN write(listing,'        '); wn(listing) END
+END; (* writenode *)
+
+FUNCTION kons
+    (o : standardident; v : integer; n : memrange) : memrange;
+VAR i,collected : integer;
+
+    PROCEDURE mark(n : memrange);
+    BEGIN (* mark *)
+    WHILE n > 0 DO
+        WITH m[n] DO
+            BEGIN
+            IF writelisting > 4 THEN writenode(n);
+            IF (op = list_) AND NOT marked THEN mark(val);
+            marked := true; n := nxt
+            END
+    END; (* mark *)
+
+BEGIN (* kons *)
+IF freelist = 0 THEN
+    BEGIN
+(*
+    writeln('gc, last_op_executed = ',last_op_executed);
+*)
+    IF writelisting > 2 THEN
+        BEGIN writeident('GC start        '); writeline END;
+    mark(programme); mark(s); mark(dump);
+    (* mark parameters *) mark(n); IF o = list_ THEN mark(v);
+    IF writelisting > 3 THEN
+        BEGIN writeident('finished marking'); writeline END;
+    collected := 0;
+    FOR i := firstusernode TO maxmem DO
+        WITH m[i] DO
+            BEGIN
+            IF NOT marked THEN
+                BEGIN
+                nxt := freelist; freelist := i;
+                collected := collected + 1
+                END;
+            marked := false;
+            IF nxt = i THEN
+                point('F','internal error - selfreference');
+            END;
+    IF writelisting > 2 THEN
+        BEGIN
+        writeinteger(collected); putch(' ');
+        writeident('nodes collected '); writeline
+        END;
+    IF freelist = 0 THEN
+        point('F','dynamic memory exhausted      ');
+    stat_gc := stat_gc + 1
+    END;
+i := freelist;
+IF (o = list_) AND (v = i) THEN
+    point('F','internal error - selfreference');
+IF i = n THEN
+    point('F','internal error - circular     ');
+WITH m[i] DO
+    BEGIN freelist := nxt; op := o; val := v; nxt := n END;
+IF writelisting > 4 THEN writenode(i);
+stat_kons := stat_kons + 1;
+kons := i
+END; (* kons *)
+
+PROCEDURE readterm(VAR first : memrange); forward;
+
+PROCEDURE readfactor(VAR where : memrange);
+VAR first : memrange;
+BEGIN (* readfactor *)
+CASE sym OF
+    lbrack :
+        BEGIN
+        getsym; where := kons(list_,0,0); m[where].marked := true;
+        IF sym IN [lbrack,identifier,hyphen,charconst,numberconst]
+            THEN BEGIN readterm(first); m[where].val := first END
+        END;
+    identifier :
+        BEGIN lookup; where := kons(id,locatn,0) END;
+    charconst :
+        where := kons(char_,num,0);
+    numberconst :
+        where := kons(integer_,num,0);
+    hyphen :
+        where := kons(sub_,ord(sub_),0);
+    OTHERWISE
+        point('F','internal in readfactor        ');
+    END; (* CASE *)
+m[where].marked := true
+END; (* readfactor *)
+
+PROCEDURE readterm; (* was forward *)
+VAR i,j : memrange;
+BEGIN (* readterm *) (* this is LL0 *)
+readfactor(first); i := first;
+getsym;
+WHILE sym In [lbrack,identifier,hyphen,charconst,numberconst] DO
+    BEGIN readfactor(j); m[i].nxt := j; i := j; getsym END;
+END; (* readterm *)
+
+PROCEDURE writefactor(n : memrange; nl : boolean); forward;
+
+PROCEDURE writeterm(n : memrange; nl : boolean);
+BEGIN (* writeterm *)
+WHILE n > 0 DO
+    BEGIN
+    writefactor(n,false);
+    IF m[n].nxt > 0 THEN putch(' ');
+    n := m[n].nxt
+    END;
+IF nl THEN writeline
+END; (* writeterm *)
+
+PROCEDURE writefactor; (* was forward *)
+BEGIN (* writefactor *)
+IF n > 0 THEN
+    WITH m[n] DO
+        CASE op OF
+            list_ :
+                BEGIN
+                putch('[');
+                writeterm(val,false);
+                putch(']')
+                END;
+            boolean_ :
+                IF val = 1
+                    THEN writeident('true            ')
+                    ELSE writeident('false           ');
+            char_ :
+                IF val = 13 THEN writeline ELSE putch(chr(val));
+            integer_ :
+                writeinteger(val);
+            lib_ :
+                writeident(table[val].alf);
+            OTHERWISE
+                writeident(stdidents[val].alf)
+            END; (* CASE *)
+IF nl THEN writeline
+END; (* writefactor *)
+
+PROCEDURE readlibrary;
+VAR  loc,first : integer;
+BEGIN (* readlibrary *)
+IF writelisting > 5 THEN
+    writeln(listing,'first pass through library:');
+newfile('42MINJOY.LIB    ');
+lastlibloc := 0;
+getsym;
+REPEAT
+    IF writelisting > 8 THEN
+        writeln(listing,'seen : ',ident);
+    IF lastlibloc > 0 THEN
+        IF NOT(ident > table[lastlibloc].alf) THEN
+            point('F','bad order in library          ');
+    lastlibloc := lastlibloc + 1;
+    table[lastlibloc].alf := ident;
+    REPEAT getsym UNTIL sym IN [semic,period];
+    IF sym = semic THEN getsym
+    UNTIL sym = period;
+IF writelisting > 5 THEN
+    writeln(listing,'second pass through library:');
+newfile('42MINJOY.LIB    ');
+REPEAT
+    getsym;
+    IF sym <> identifier THEN
+        point('F','pass 2: identifier expected   ');
+    lookup; loc := locatn; getsym;
+    IF sym <> def_equal THEN
+        point('F','pass 2: "==" expected         ');
+    getsym;
+    readterm(first); table[loc].adr := first;
+    IF writelisting > 8 THEN
+        BEGIN
+        writeterm(first,true)
+        END
+    UNTIL sym = period;
+firstusernode := freelist;
+IF writelisting > 5 THEN
+    writeln(listing,'firstusernode = ',firstusernode:0,
+        ',  total memory = ',maxmem:0);
+cc := ll; adjustment := -2 (* back to file "input" *)
+END; (* readlibrary *)
+
+PROCEDURE joy(node : memrange);
+VAR nod,temp1,temp2 : memrange;
+
+    PROCEDURE binary(o : standardident; v : integer);
+    BEGIN s := kons(o,v,m[m[s].nxt].nxt) END;
+
+    FUNCTION ok(x : memrange) : memrange;
+    BEGIN
+    IF x < 1 THEN
+        point('F','null address being referenced ');
+    ok := x
+    END; (* ok *)
+
+    FUNCTION o(x : memrange) : standardident;
+    BEGIN o := m[ok(x)].op END;
+
+    FUNCTION b(x : memrange) : boolean;
+    BEGIN b := m[ok(x)].val > 0 END;
+
+    FUNCTION i(x : memrange) : integer;
+    BEGIN
+    WITH m[ok(x)] DO
+        IF op = integer_ THEN i := val ELSE
+            BEGIN
+            point('R','integer value required        ');
+            GOTO 10
+            END
+    END; (* i *)
+
+    FUNCTION l(x : memrange) : memrange;
+    BEGIN
+    WITH m[ok(x)] DO
+        IF op = list_ THEN l := val ELSE
+            BEGIN
+            point('R','list value required           ');
+            GOTO 10
+            END
+    END;
+
+    FUNCTION n(x : memrange) : memrange;
+    BEGIN
+    WITH m[ok(x)] DO
+        IF nxt >= 0 THEN n := nxt ELSE
+            BEGIN
+            point('R','negative next value           ');
+            GOTO 10
+            END
+    END; (* n *)
+
+    FUNCTION v(x : memrange) : integer;
+    BEGIN v := m[ok(x)].val END;
+
+BEGIN (* joy *)
+nod := node;
+WHILE nod > 0 DO
+    WITH m[nod] DO
+        BEGIN
+        IF writelisting > 3 THEN
+            BEGIN
+            writeident('joy:            '); putch(' ');
+            writefactor(nod,true)
+            END;
+        IF writelisting > 4 THEN
+            BEGIN
+            writeident('stack:          '); putch(' ');
+            writeterm(s,true);
+            writeident('dump:           '); putch(' ');
+            writeterm(dump,true);
+            END;
+        last_op_executed := op;
+        CASE op OF
+            nothing_,char_,integer_,list_ : s := kons(op,val,s);
+            true_,false_ : s := kons(boolean_,ord(op = true_),s);
+            pop_ : s := n(s);
+            dup_ : s := kons(o(s),v(s),s);
+            swap_ :
+                s := kons(o(n(s)),v(n(s)),
+                          kons(o(s),v(s),n(n(s))) );
+            stack_ : s := kons(list_,s,s);
+            unstack_ : s := l(s);
+                                                (* OPERATIONS: *)
+            not_ : s := kons(boolean_,ord(NOT b(s)),n(s));
+            mul_ : binary(integer_,i(n(s)) * i(s));
+            add_ : binary(integer_,i(n(s)) + i(s));
+            sub_ : binary(integer_,i(n(s)) - i(s));
+            div_ : binary(integer_,i(n(s)) DIV i(s));
+            and_ : binary(boolean_,ord(b(n(s)) AND b(s)));
+            or_  : binary(boolean_,ord(b(n(s)) OR b(s)));
+            les_ : IF o(s) = lib_
+                     THEN binary(boolean_,ord(table[v(n(s))].alf
+                                            < table[v(s)].alf))
+                     ELSE binary(boolean_,ord(v(n(s)) < v(s)));
+            eql_ : binary(boolean_,ord(v(n(s)) = v(s)));
+            sty_ : binary(boolean_,ord(o(n(s)) = o(s)));
+            cns_ :
+                IF o(n(s)) = nothing_
+                    THEN s := kons(list_,l(s),n(n(s)))
+                    ELSE s := kons(list_,
+                                   kons(o(n(s)),v(n(s)),v(s)),
+                                   n(n(s)));
+            uncns_ :
+                IF m[s].val = 0
+                    THEN s := kons(list_,0,
+                                   kons(nothing_,ord(nothing_),
+                                        n(s)))
+                    ELSE s := kons(list_,n(l(s)),
+                                   kons(o(l(s)),m[l(s)].val,
+                                        n(s)));
+            sel_ :
+                BEGIN
+                temp1 := l(s);
+                WHILE o(l(temp1)) <> o(n(s))
+                    DO temp1 := n(temp1);
+                s := kons(list_,n(l(temp1)),n(s))
+                END;
+            index_ :
+                IF v(n(s)) < 1 THEN
+                    s := kons(o(l(s)),v(l(s)),n(n(s)))
+                ELSE
+                    s := kons(o(n(l(s))),v(n(l(s))),n(n(s)));
+            body_ : s := kons(list_,table[v(s)].adr,n(s));
+            put_ : BEGIN writefactor(s,false); s := m[s].nxt END;
+            get_ :
+                BEGIN
+                getsym; readfactor(temp1);
+                s := kons(o(temp1),v(temp1),s)
+                END;
+                                                (* COMBINATORS: *)
+            i_ :
+                BEGIN
+                temp1 := s;
+                s := n(s);
+                joy(l(temp1))
+                END;
+            dip_ :
+                BEGIN
+                dump := kons(o(n(s)),v(n(s)),dump);
+                dump := kons(list_,l(s),dump);
+                s := n(n(s));
+                joy(l(dump));
+                dump := n(dump);
+                s := kons(o(dump),v(dump),s);
+                dump := n(dump);
+                END;
+            step_ :
+                BEGIN
+                dump := kons(o(s),l(s),dump);
+                dump := kons(o(n(s)),l(n(s)),dump);
+                temp1 := l(s);
+                temp2 := l(n(s));
+                s := n(n(s));
+                WHILE temp2 > 0 DO
+                    WITH m[temp2] DO
+                        BEGIN
+                        s := kons(op,val,s);
+                        joy(temp1);
+                        temp2 := nxt
+                        END;
+                dump := n(n(dump))
+                END;
+            lib_ : joy(table[val].adr);
+            OTHERWISE
+                point('F','internal error in interpreter ')
+            END; (* CASE *)
+        stat_ops := stat_ops + 1;
+        nod := nxt
+        END; (* WITH, WHILE *)
+stat_calls := stat_calls + 1
+END; (* joy *)
+
+PROCEDURE writestatistics(VAR f : text);
+BEGIN
+writeln(f,stat_lib:0,' milliseconds CPU to read library');
+writeln(f,clock - stat_lib:0,' milliseconds CPU to execute');
+writeln(f,maxmem - firstusernode:0,' user nodes available');
+writeln(f,stat_gc:0,' garbage collections');
+writeln(f,stat_kons:0,' nodes used');
+writeln(f,stat_calls:0,' calls to joy interpreter');
+writeln(f,stat_ops:0,' operations executed');
+END; (* writestatistics *)
+
+BEGIN (* main *)
+stat_start := clock;
+initialise;
+FOR i := 1 TO maxmem DO
+    WITH m[i] DO
+        BEGIN marked := false; nxt := i + 1 END;
+freelist := 1; m[maxmem].nxt := 0;
+writelisting := 0;
+stat_kons := 0; stat_gc := 0; stat_ops := 0; stat_calls := 0;
+sentinel := 0; readlibrary;
+stat_lib := clock - stat_start;
+IF writelisting > 2 THEN
+    FOR i := 1 TO lastlibloc DO
+        WITH table[i] DO
+            BEGIN
+            writeln(listing,'"',alf,'" :');
+            writeterm(adr,true);
+            END;
+sentinel := lastlibloc + 1; lasttable := sentinel; s := 0; dump := 0;
+10:
+REPEAT
+    getsym;
+    IF sym <> period THEN
+        BEGIN
+        last_op_executed := get_;
+        programme := 0; readfactor(programme);
+        IF writelisting > 2 THEN
+            BEGIN
+            writeident('interpreting:   '); writeline;
+            writefactor(programme,true);
+            END;
+        IF dump <> 0 THEN
+            BEGIN
+            writeln('dump error: should be empty!');
+            writeterm(dump,true);
+            dump := 0
+            END;
+        outlinelength := 0;
+        joy(m[programme].val);
+        IF writelisting > 0 THEN
+            IF outlinelength > 0 THEN writeline;
+        IF writelisting > 2 THEN
+            BEGIN
+            writeident('stack:          '); writeline;
+            writeterm(s,true);
+            END;
+        END (* IF *)
+    UNTIL sym = period;
+90: finalise;
+99: ;
+IF statistics > 0 THEN
+    BEGIN
+    writestatistics(output);
+    IF writelisting > 0 THEN writestatistics(listing)
+    END;
+END.
+#+end_src
+
+* Exercises and Reading
+
+** /Algebra/:
+Find Joy equations which express the De Morgan laws and the left and right distributive laws.  All these laws have their duals, of course.
+
+#+begin_example
+INFIX with variables                            POSTFIX Joy
+ 
+not(P and Q)  =  not P or not Q                 and not  ==  ???
+P and (Q or R)  =  P and Q or P and R           or and  ==  ???
+(P or Q) and R  =  P and R or Q and R           [or] dip and  ==  ???
+#+end_example
+
+** /Self-reproducing programs/:
+1) Use the algebra of Joy programs to show that
+
+#+begin_example
+        [[dup cons] dup cons] i   ==   [[dup cons] dup cons]
+#+end_example
+
+This is an example of a program =[Fs]= for which
+
+#+begin_example
+        [Fs] i   ==   [Fs]
+#+end_example
+
+In other words, if the =i= combinator finds a program of this kind on the stack and then executes it, then the execution will create that very same program on the stack.
+
+2) Find some other programs which satisfy the same law.
+3) Find programs =[Gs]= and =[Hs]= such that
+
+#+begin_example
+        [Gs] [Hs] b   ==   [Gs] [Hs]
+#+end_example
+
+4) Find programs =[Is]= =[Js]= =[Ks]= =[Ls]= =[Ms]= such that
+
+#+begin_example
+        [Is] w   ==   [Is]
+        [Js] c   ==   [Js]
+        [Ks] [Ls] dip   ==   [Ks] [Ls]
+        [Ms] i i   ==   [Ms]   =/=   [Ms] i
+#+end_example
+
+In the last line, =\equal/\equal= means /denote different functions/.  Note that =[Ms]= is reproducing but not self-reproducing, the child is not like its parent, but the grandchild is like its grandparent.
+
+5) Find a reproducing program such that each of its descendants is different from each of its ancestors.
+
+6) Find a self-reproducing program =[Ns]= which is insensitive to mutilation --- where a mutilation is either removing the head (by =rest=) or removing the body (by =first=). So it should satisfy
+
+#+begin_example
+        [Ns] i  ==  [Ns] rest i  ==  [Ns] first i  ==  [Ns]
+#+end_example
+
+** /Constructing Joy-in-Joy/:
+The Joy interpreter written in itself is very repetitive, the cases fall into three groups in which the members are almost alike.  Write a Joy program which is shorter than the Joy-in-Joy interpreter and which constructs one.
+
+** /Automatic printout/:
+In interactive work one frequently writes very small programs, and in order to see what has been computed one tends to write =put= at the end of every little interactive program.  This can be a nuisance.  In Lisp this is avoided by the top-level read-eval-print loop which always prints the last value that has been computed.  It is easy enough to add such a facility to the read-execute loop of Joy.  But it would be better to have the automatic printing as an option.  Design a way of making automatic printout of the top item of the stack, or even of the whole stack, an option under user control.
+
+** /OOPS/:
+In interactive work one often makes a mistake, by accidentally deleting something from the stack that was intended to be kept for later.  It would be useful be able to reset the stack to what it was before the error was made.  One way to do so is to copy the stack register to an OOPS-register before executing the next program.  Then, if a mistake did occur, a new OOPS-command could restore the stack to what it was.  Note that the OOPS-register will have to be marked by the garbage collector.  Implement such an OOPS facility.
+
+** /Pretty Printing/:
+The current output procedures just write to the output file and potentially to the listing file without any formatting.  One way of improving on this is to devise a method of indentation that makes it easier for the human reader.  A very simple method would add two columns of indentation per list; the first =[= to be written in the same line followed by one space, then the first element (if any), and the last element followed by a space and the closing =]=.  So, for example, the following is a list of three lists, of 3, 0 and 2 elements respectively:
+
+#+begin_example
+        [ [ peter
+            paul
+            mary ]
+          [ ]
+          [ smith
+            jones ] ]
+#+end_example
+
+This is quite easy to implement with a recursive writing procedure which takes an indentation parameter.  However, this style uses a lot of space --- essentially there can only be only one factor per line.  The following looks much nicer:
+
+#+begin_example
+        [ [ peter paul mary ]
+          []
+          [ smith jones ] ]
+#+end_example
+
+or even
+
+#+begin_example
+        [ [ peter paul mary ]  []  [ smith jones ] ]
+#+end_example
+
+The difficulty is that one does not know whether to write the empty list on a new line and then to start the third list on another new line; the only way to find out whether the third list would fit on the same line is to traverse it first without actually writing it.  Study the way this problem is solved in some version of Lisp to which you have access.  Implement some pretty printer for Joy.
+
+** /Eliminating the dump/:
+In the current implementation the dump serves to save elements of the stack if they may be needed again later.  Describe at least two different implementation techniques of eliminating the dump.  Do they offer any advantages?
+
+** /Implementing the library directly/:
+As explained earlier, this minimal implementation of the Joy language is intended to highlight the essentials, even at the expense of runtime efficiency.  Most of the useful operations are actually defined in the library, and their execution requires the execution of many primitives.  For example, the operation which selects the first element of a list does so by
+1) unconsing the list, producing two elements, the first and the rest, then by
+2) swapping these two, so that the rest is now topmost, and then by
+3) popping the rest.
+
+A total of four push operations occur,when clearly just one would do.  So, having /first/ not defined in the library but built in as a primitive should speed up this common operation by a factor of about three.  The same is true of just about all the operations that are defined in the library - it would be more efficient to include them as primitives.
+
+One of the first combinators one would want to implement directly is the =ifte= combinator.  As it is currently implemented in the library, essentially by the index-operation and the =i= combinator, it is particularly inefficient: first, the =IF= part and the =THEN= part have to be swapped, which uses two nodes.  Then they have to be paired to form a list of two elements.  The pairing requires an empty list to be pushed, another one node.  Then the two parts are cons'ed into that, each requiring two nodes, a total of four.  Then the indexing operation pushes the appropriate part, another node.  Only then does the =i= combinator execute the appropriate part.  The total of eight wasted nodes could be eliminated entirely by implementing the =ifte= combinator directly.  Hence with four lines of easy Pascal one should be able to achieve a speed up by a factor of eight for this combinator.
+
+As an exercise, select some of the operators or combinators currently defined in the library and implement them as primitives.  The chosen operations should then be commented out from the library.  It would be possible to eliminate everything from the library, and then there would be no need for the program to read it (twice) prior to each run.  However, the library would still be a useful document for the user to read, because it contains all definitions.
+
+** /Sets/:
+Joy can be usefully augmented with other data types.  Sets could be useful, even if they do not have the same generality as in Pascal.  As members of sets, just small numbers from 0 to, say, 31, a maximum of 32, would be useful.  In a typical Pascal implementation the value-field of a node can hold a 32 bit integer, and alternatively it could be made to hold a 32 bit set instead.  There will have to be a notation for literal sets, say for example {1 5 12}, which is similar to but different from the notation for literal lists.  A range notation, as in say ={3..5 10..20}= might be a good starting point.  As operations, just union and intersection would do as binary operators, and unary complementation with respect to the universal set {0..31}.  To name these operations, either new symbols could be introduced, or the symbols =or=, =and= and =not= could be made (ad hoc) /polymorphic/ by /overloading/ their meaning in a type sensitive manner.  Additionally there should perhaps be transfer functions which transform sets to lists and vice versa.
+
+Larger sets would certainly be better, but they would occupy more space than the value-field can hold.  So the value field could be made to hold a pointer to a set.  But then sets have to be stored elsewhere, and separate memory management and garbage collection might have to be implemented just for that.  One alternative is to implement large sets as linked lists of 32 bit sets.
+
+** /Reals/:
+Much the same kind of decision has to be made if one wants to implement real numbers.  If reals are going to be used a great deal, then it is best to make the value-field large enough to hold a real.  Any other values will then waste some space.  If reals are only used rarely and memory is a problem, then they should be implemented in a separate area of memory with its own memory management and garbage collection.
+
+** /Other memory management/:
+The efficient use of memory in dynamic languages such as Lisp, Snobol and Prolog has been the topic of intensive research.  Two broad areas of memory management are normally distinguished: garbage collection and reference counting.
+
+Garbage collection requires a traversal of all used nodes to mark which ones are in use.  The traversal can be either recursive, as it was done in the Joy implementation described above, or it can use a more sophisticated method of temporary pointer reversal to eliminate the need for the stack space in the recursion.  Then in a second stage the unused nodes can be collected in a free-list; this is the mark-sweep method used here.  Alternatively the used nodes can be copied to a dual area of memory from which further nodes will be taken until that is exhausted.  Then this area is marked and the needed nodes are copied to the first area.  This mark-copy method of garbage collection is particularly useful in virtual memory systems because it minimises fragmentation of memory.
+
+Reference counters replace the mark-bit by an integer which keeps track of how many times a node is being referenced.  When that count drops to zero, the node can be recycled.  The great advantage of reference counting over garbage collection is that it works continuously.  However, the method does not work with circular structures.  Joy as described does not have circular structures, so reference counting is a candidate implementation method.  On the other hand, one might well want to add circular structures to Joy, and then one would have to resort back to garbage collection.
+
+** /Reading/:
+For a gentle exposition to functional programming using Miranda see Bird and Wadler (1988).  For an exposition using ML see Reade (1989).  A more theoretical perspective can be found in Henson (1987).  The literature on Lisp contains many small interpreters written in their own language.  Henderson (1980) develops this interpreter into a program in a more conventional sequential language.  Kamin (1990) gives Pascal implementations of small versions of many languages, including several functional languages, and of two memory management techniques: mark-copy and reference counting.  Peyton Jones (1987) discusses theoretical aspects of the compiler for Miranda.  For efficient implementations of functional languages, using their inherent parallelism, and for references to the extensive recent literature in that field, see Kelly (1989).
+
+The language Joy was inspired by Quine (1971) and Backus (1981), who in quite different fields argue for the elimination of variables (of different kinds).  The earliest version of Joy was a (too) large implementation in Pascal, then followed much smaller ones in Prolog, Common Lisp, and, by a group of students, in C.  A large, more or less final version is described in von Thun (1997).  As all functional languages, Joy would lend itself to parallel execution, even if only by software on perhaps a transputer, but so far no attempts have been made in that direction.  A Joy chip is at most a remote possibility.
+
+Joy is unlike any of the conventional functional languages.  The closest I have been able to find is the (virtual) machine language of CAM, the Categorical Abstract Machine in Curien (1986) and in Cousineau, Curien and Mauny (1987).  The CAM machine language is not intended for the human programmer, instead it is used as the target language for implementations of languages such as ML.  For Joy the programming language and the machine language are identical.
+
+Any further development of the Joy language should consider the very high level combinators in Meijer, Fokkinga and Paterson (1991).  These can be used to define the more familiar combinators such as map and fold.
+
+Later, in Chapter 21, we will see a compiler written in itself, in this chapter we have seen an interpreter written in itself.  The literature on Lisp and Prolog contains other examples of interpreters written in their own language.  The idea of writing a language processor in its own language can be carried further.  What are called /partial evaluators/ can compile interpreters into compilers; and even more mind-boggling applications are possible.  For some recent references, see Jones (1990).  There is no reason why a partial evaluator should not be written in Joy for Joy.  Another application of language processors written in their own language gives rise to the possibility of /reflection/, a mode of interpretation in which a program sometimes looks at itself rather than at the data.  This is an exciting new field, references can be found in the collection edited by Maes and Nardi (1988).
+
+* Projects
+
+The projects outlined in this section go well beyond the scope of mere exercises.  The first project concerns improving the efficiency of the implementation in a manner that goes deeper than the exercise suggested in the previous section.  Two others deal with extending the language so that it becomes either an imperative or a relational one.  The last section concerns a compiler for Joy.
+
+** Improving efficiency
+
+Even if the entire library is eliminated in favour of primitives, there is much room for optimisation.  Consider the if-then-else combinator =branch= implemented directly in Pascal as suggested in the previous section.  It expects three items on top of the stack: two executable programs, and below that one Boolean value which will determine which of the two programs will be executed.  In most applications the two programs will occur literally just before the =branch= combinator.  Hence in any simple implementation the following will occur: Some possibly complex calculation will produce the Boolean value.  Then two simple push operations will push the two programs onto the stack.  Then the =branch= combinator will pop all three items, and execute one of the two programs.  In other words, the two programs are first pushed and then immediately popped.  But this is wasteful, it would be better if the two programs were not pushed at all but attached to the =branch= combinator as parameters.  Then the calculation of the Boolean value will occur as before, then this new kind of =branch= combinator will inspect that value and execute one of its parameters.
+
+To implement this, a special optimised version of the =branch= combinator is needed.  Since the next field of any node is already needed for linkage, only the value field is available.  It will have to be made to point to a pair of nodes, one each for the two programs.  There are two places where special treatment is necessary: in the compiling stage, where it is necessary to detect such optimisable occurrences and to generate special code, and in the interpreter, where this special code is executed.  The compiler part would need fairly dramatic redesign, since the code for pushing the two programs will have to be taken back and attached to the node for the special =branch= combinator instead.  Since the code is generated not in an array but is taken from the freelist, any back references are not available and would have to be added.  By contrast, adding a special case to the interpreter to handle the optimised =branch= combinator is quite trivial.
+
+But there is a difficulty: if a program is to be written and executed efficiently, then two internal versions will be needed, one for writing and one for executing.  This might seem like a draconian step, but there are other reasons why one might consider this.  Take for example a simple program fragment =[ 2 3 + ]=; if this is to be written as a list with put, then it will have to be stored that way; and if it is to be evaluated with the =i= combinator or any other combinator, then it is best if the program does constant folding and replaces the =[ 2 3 + ] i= by 5.  In other words, for maximal efficiency one might trade the extra space required for increased execution speed.
+
+As a compromise, one might consider actually changing the language: say =BRANCH [thenpart] [elsepart]=, where =BRANCH= is a binary prefix operator.
+
+Recently there has been intensive research devoted to functional programming with infinite lists and other infinite data structures.  In this style of programming one can (pretend to) compute an infinite structure and then access arbitrary parts.  In reality the parts are only computed when they are needed.  The method of implementation used here is called /lazy/ evaluation.  For some reading, see Henderson (1980, Chapter 8), Bird and Wadler (1988, Chapters 6 and 7), and Reade (1989, Chapter 8).  To implement infinite structures and lazy evaluation would require considerable redesign of the Pascal program.  However, it may be possible to write an inefficient version of it in Joy itself.
+
+The most dramatic increase in efficiency would be obtained by compiling Joy into some efficient language.  But for full Joy the interpreter would still be needed for handling programs such as
+
+#+begin_example
+                get  i
+#+end_example
+
+where it is not known at compile time what it is that will be read by the =get=.  So a compiler will only be able to speed up programs that are known at compile time --- and for many purposes that would be sufficient.
+
+** An imperative version of Joy
+
+The difference between purely functional languages and sequential or imperative or procedural languages is this: In functional languages there is no internal state which can be changed, there is no notion of change at all, programs simply evaluate expressions.  In the other languages there is an internal state --- typically a collection of variables whose values can be changed by assignments.  As described so far, Joy is a purely functional language.
+
+There is no computational reason why Joy should not be given assignable variables.  These may but need not be declared to be of any particular type, indeed, since Joy as it stands is so weakly typed it is probably best not to introduce types for variables.  In Joy it is possible to manipulate lists of symbols, for example one can write
+
+#+begin_example
+        [ London Paris ]  [ Tokyo Djakarta ]  concat
+#+end_example
+
+or even
+
+#+begin_example
+        [ London ]  first  [ Paris Tokyo Djakarta ]  cons
+#+end_example
+
+However,
+
+#+begin_example
+        London  [ Paris Tokyo Djakarta ]  cons
+#+end_example
+
+does not have the expected effect, writing =London= does not result in a push operation, any symbols not defined in the library are just noops, denoting the identity function.  But this could be changed easily, so that it does produce a push.  On the other hand, if one were to think of symbols standing for assignable variables, then one might want the /value/ of that variable to be pushed instead.
+
+The syntax for the assignment statement will have to distinguish the assignment position from the retrieving position.  For example, the following could be taken to have the same meaning in Pascal and in extended Joy:
+
+#+begin_example
+                Pascal                          extended Joy
+                a  :=  b + c                    b c + [a] assign
+                                                b c + Assign a
+#+end_example
+
+Note that =Assign= would be a unary prefix operator which takes a variable as a parameter.  Note the difference between =assign= which takes a value, computed by =+=, and (a unit list of) a variable from the stack, and =Assign= which takes a value from the stack and supplies its own variable.  The first is more flexible, since the =[a]= might have been computed; but it is quite unclear whether such flexibility is desirable.
+
+There is another way of introducing assignment and hence change, it has been part of Lisp since its inception.  To understand it one has to distinguish between the variable, which is the name of a location in memory, and the location in memory itself.  When an assignment is being made, what is made to change or vary is not the variable but the memory location which it names.  So, if the locations could be referred to without naming them, assignments need not use variables.  Suppose the stack contains at least two elements, an arbitrary datum and a list, the list topmost.  The list is actually represented by a memory node containing a pointer to a value and a pointer to the next item.  The value and the next item in the list could be changed by assignments, for example by assigning to them the value of the datum below the list.  In Lisp these two operations are called =replaca= and =replacd=; for a good explanation of the implementation issues see MacLennan (1983, pp 379 - 381) and Henderson (1980, pp 116 and 175).
+
+** A nondeterministic version of Joy
+
+Joy programs denote functions taking a complex object as parameter and yielding a complex object as value.  The objects consist of at least a stack, and at least two files.
+
+A quite different language would replace the functions by relations, and to implement them one might use backtracking.  Possibly the two files would be excluded from the backtracking.  If there are assignable variables, then two forms of assignment should be distinguished: a normal assignment and a reversible one which is undone on backtracking.
+
+For such a language any program would denote a relation between two memories which include stacks.  Many of these relations would be the familiar Joy functions, but there could now be nondeterministic primitives: a choice operation (=OR=) and an impossible operation (=FAIL=).  Nondeterministic additions to Lisp are discussed in Henderson (1980, Chapter 7).
+
+Another powerful addition would be the logical variables as in Prolog.

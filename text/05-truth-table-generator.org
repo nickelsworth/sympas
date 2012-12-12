@@ -1,0 +1,441 @@
+#+title: Chapter 5 : Truth table generator
+* <<intro>>
+
+In this chapter we shall write a program which reads formulas in propositional logic and writes their truth table.  The input language for the formulas uses infix notation, but the various binary operators have different precedences and they can be repeated.  This minimises the need for parentheses and hence makes formulas much easier to read.
+
+* User manual
+
+The program TRUTAB repeatedly reads formulas in propositional logic and writes truth tables.  The formulas consist of atoms which are constants or variables, together with truth functional operators written in infix notation.  For the truth tables, the program generates all combinations of truth values for the propositional variables that occur in a given formula, and for each combination it evaluates the formula.
+
+The program indicates its readiness for user input with a =?= as a prompt.  The grammar for user input is given by the following BNF grammar, where =|= denotes alternation, =[= and =]= denote indefinite repetition, and ={= and =}= denote option.  There are the following five productions:
+
+#+begin_example bnf
+input        ::=   [formula '.'] | '.'
+formula      ::=   expression {('>' | '=') formula}
+expression   ::=   term ['v' term]
+term         ::=   factor ['&' factor]
+factor       ::=   'a' | 'b' .. 'z' |
+                   '0' | '1' |
+                   '-' factor |
+                   '(' formula ')'
+#+end_example
+
+White space characters such as blanks, tabs and newlines are ignored.  If an error occurs during input, an error message is given and the remainder of the current input line is discarded.  If the offending character is =X=, then the error message will be one of the following:
+
+#+begin_example
+        seen "X" when "." expected
+        seen "X" when beginning of factor expected
+        seen "X" when right parenthesis expected
+#+end_example
+
+For each correct input formula a truth table is produced.  For a formula with N propositional variables =a= .. =z=, the table consists of a header line and 2^N lines of truth values.  The header line consists of the variables in the formula, in alphabetical order and separated by a space.  The lines of truth values consist of the truth values of the propositional variables, written under the names of the variables in the header line, then a separating space =" "=, followed by the truth value of the formula.  Note that if the formula only contains the constants =0= and =1=, then N=0 and hence there will be 2^0=1 line in the table, containing just the truth value of the formula.
+
+The truth value of the formula is computed from the truth values of its subformulas, as follows: The constants =0= and =1= evaluate to themselves.  Variables evaluate to the value given by the row.  Compound formulas are evaluated in accordance with these tables, where =p= and =q= are arbitrary formulas:
+
+#+begin_example
+    p q   |     p v q   p & q   p > q   p = q           p   |   -p
+    ------+----------------------------------           ----+-----
+    1 1   |       1       1       1       1             1   |   0
+    1 0   |       1       0       0       0             0   |   1
+    0 1   |       1       0       1       0
+    0 0   |       0       0       1       1
+#+end_example
+
+The following is a short interaction with the program.
+
+#+begin_example
+?  p & (q v r)  =  (p & q) v (p & r).
+p q r 
+1 1 1     1
+1 1 0     1
+1 0 1     1
+1 0 0     1
+0 1 1     1
+0 1 0     1
+0 0 1     1
+0 0 0     1
+?  p & -p.
+p 
+1     0
+0     0
+?  (a v -b) = -(b & a).
+a b 
+1 1     0
+1 0     1
+0 1     0
+0 0     1
+?  (1 & 0) v 1.
+
+    1
+?  .
+#+end_example
+
+Observe how each input line, following the =?= prompt, is followed by a formula.  The next line is output from the program, it contains just the propositional variables in the formula, 3, 1, 2 and 0 in the examples.  Following that are the 2^N lines of the truth table.  Note that in these lines the truth value of the formula is /not/ written under the main operator; such a desirable refinement is part of one of the exercises.
+
+* Designing the implementation
+
+When writing a truth table by hand, we essentially do this: Starting with an assignment of true to all propositional variables that occur in the given formula, we successively generate lines by changing assignments to variables, and for each line we evaluate the formula using the definitions of the operators and using the currently assigned values of the variables.  So the formula is needed repeatedly, and in the program it will have to be read and stored.  As a first design stage, then, the main program has to have this structure: Repeatedly write a prompt, read a formula and store it in internal form, check for the final period =.=, and then do a truth table on the internal form.  >From the grammar it is easily seen that the definition of formula is (indirectly) recursive, so reading a formula and storing it in internal form is best done by a separate procedure.  Also, writing a truth table is essentially a recursive process, so this will be done by a recursive procedure too.
+
+** The translation to internal form
+
+*** Step 1: /Visibility requirements/.
+
+Our first task is to design a procedure for reading and storing formulas, and we concentrate on the reading first.  In the grammar there are actually four non-terminals: =formula=, =expression=, =term= and =factor=; each of them becomes a reading or parsing procedure.  They have to be arranged in such a way that for any given procedure the ones that it may call are visible to it.  Inspection of the grammar reveals that =formula= needs =expression= and itself, =expression= needs =term=, =term= needs =factor=, and =factor= needs itself and =formula=.  A convenient spin-off from the block structure of Pascal is that it makes it easy to satisfy these requirements, by arranging the procedures in this way:
+
+#+begin_example pascal
+        PROCEDURE formula;
+            PROCEDURE expression;
+                PROCEDURE term;
+                    PROCEDURE factor;
+                    Body of factor;
+                Body of term;
+            Body of expression;
+        Body of formula;
+#+end_example
+
+Any procedure can call itself and any more global procedure to its left and any (at most one here) local procedure one step to its right.  This more than satisfies the visibility requirements for the parser.  typical for languages with several infix operators of different precedences.
+
+*** Step 2: /Parsing/.
+
+The bodies of each of the four parsing procedures follow the BNF grammar in essential structure: inside =formula= the curly ={ }= braces become an =IF= statement, inside /expression/ and =term= the square =[ ]= brackets become =WHILE= statements, and the choice inside =factor= becomes the by now familiar =CASE= statement.  An important point to note is that in some of the detail the parsing procedures have to be different from the parsing procedures for the prefix and the fully parenthesised infix grammars in earlier chapters.  This arises because all infix operators are optional here, so the parsing procedures that deal with them must be able to inspect the next printing character and then either take some appropriate action or ignore it.  That so far ignored character is still sitting there, where it might be picked up by another parsing procedure, or it may be the terminating period.  This also explains why a grammar with optional infix operators needs either a terminator or outermost parentheses.  Hence the body of, for example, =PROCEDURE= =term= has to look like this:
+
+#+begin_example
+        factor;
+        WHILE ch = '&' DO
+            BEGIN
+            getch;
+            factor
+            END
+#+end_example
+
+For the same reason =PROCEDURE= =factor= does not start with a call to =getch=, but inspects the current character.  And finally, in the main program the initial call to =formula= has to be preceded by a call to =getch= and has to be followed by a check for the terminator.  As described up to this point, the parsing procedures merely read formulas and perhaps complain about the two sorts of errors that can occur inside =factor=.  If you are writing the program yourself, you should get this part right first.
+
+*** Step 3: /Selecting an internal code/.
+
+The procedures do not yet store the formula in internal form.  The formula could be stored in an internal form which is identical to the external form being read --- this was the method used in the macro expander, and it was appropriate there.  Even blanks could be stored, and in that case the storing should be done inside the =REPEAT= loop of =getch=.  But blanks are not really needed, since they are semantically insignificant; so the storing could be done after the =REPEAT= loop of =getch=.  This method would store all the printing characters, including parentheses.  But do we really need these?  After all, they merely serve to override precedences, and precedences are there to save parentheses (Huh?).  For later processing by the truth table generator only essential semantic information is needed, as could be provided by prefix or postfix notation.  (In Chapter 7 we shall see another internal notation.)  It is best to think ahead now and consider how the internal code will be used in the evaluator part of the truth table generator.  The simplest evaluators are recursive, like the infix evaluator in Chapter 3.  Another kind of evaluator uses postfix code which is evaluated on an explicit stack of intermediate values.  The details are described later.
+
+*** Step 4: /Translation - Generating postfix code/.
+
+As postfix alphabet we take the original infix alphabet, except that for disjunction we use =#= to avoid confusion with the variable =v=.  Generating postfix code is done by inserting appropriate calls to a code generating routine into the parsers.  Inside =factor=, code generation is straightforward in the case of constants and variables.  Negations are generated after the negand, another factor, has been read and its code generated.  For infix operators the code can be generated after the second subformula has been read and translated.  Note that the code for =p & q & r= will be =pq&r&=, this has the advantage that the stack will not grow unnecessarily.  But =p > q > r= should be understood as =p > (q > r)=, and this should be translated as =pqr>>=.  For this reason the grammar already makes a distinction between =&= and =v= on the one hand, and =>= on the other.  Another minor point is that inside the parsing procedure for =formula= a local variable has to be used to save which of =>= or === had been seen.  Since code has to be generated at several places in the parser, the task is best delegated to a procedure which takes a character parameter.  Its body is similar to where the macro expander stores characters of macros: it increments the variable which indicates the last used part of memory and then deposits its parameter there.
+
+To be able to check that the postfix code is correct, it is useful to be able to see it when developing the program.  The following device is on purpose not documented in the manual: If the formula is not terminated with a period but with a question mark instead, then the program will write out the internal representation of the formula before doing the truth table.  A similar /secret/ device, known to the implementor but not documented in the manual, will be used in many other programs in this book.  Such a device can save endless editing sessions of adding and removing write statements which trace values of variables and of parameters.  The method is probably more useful than a debugger.
+
+** The truth table generator
+
+The truth table generator receives the internal version of the formula, repeatedly assigns various values to the propositional variables in the formula, and for each complete assignment it evaluates the formula.  Assigning values and evaluating are two distinct tasks.
+
+*** Step 5: /Assigning values to variables/.
+
+Let us begin with the unrealistic case of a formula in which each of the possible 26 possible propositional variables actually occur.  To assign all combinations of truth values to the 26 variables, the program has to make =a= true and continue, and then make =a= false and continue.  Continuing means doing the same to =b=, to =c= and so forth, hence a recursive solution is called for.  When all propositional variables have been assigned, i.e. when =z= has been passed, the recursion stops and the formula can be evaluated.  As a first draft, consider a procedure which is initially called with the actual parameter =a=:
+
+#+begin_example
+        PROCEDURE table(v : char);
+        BEGIN
+        IF v > 'z' THEN evaluate the formula ELSE
+            BEGIN
+            make variable v true; table(succ(v));
+            make variable v false; table(succ(v))
+            END
+        END;
+#+end_example
+
+This is essentially correct for the unrealistic case, but for realistic formulas in which most of the possible 26 variables do not actually occur, something else is needed.  Firstly, before doing the truth table, it is necessary to write the names of all variables that actually occur.  Secondly, in the =table= procedure, when all the variables have been given values, before evaluating the formula, it is necessary to write the values of the variables that actually occur.  Thirdly, when the body of the =table= procedure is entered, the parameter variable should be replaced by the next variable that actually occurs.  So instead of recursing with the next possible variable, =succ(v)=, the alphabetically next actually occurring variable should be used.  A wasteful way of doing so would be to find the next actual variable every time it is needed by searching through the formula.  A better way is to create a set of actual variables as the formula is being read: when =factor= sees a variable, put it into this set.  This set of actual variables is used at each of the three places mentioned.  In the third of these places, the table procedure, the pseudo code now looks like this:
+
+#+begin_example pascal
+        PROCEDURE table(v : char);
+        BEGIN
+        WHILE NOT (v IN the set of actual variables) DO
+            v := succ(v);
+        IF v > 'z' THEN
+            BEGIN
+            write the values of all actual variables;
+            evaluate the formula
+            END
+          ELSE
+            BEGIN
+            make variable v true; table(succ(v));
+            make variable v false; table(succ(v))
+            END
+        END;
+#+end_example
+
+To stop the =WHILE= loop from racing off the end, the main program has to put the successor of =z= into the set to act as a sentinel.  There are several ways of making variables true or false --- one is to have a boolean array, another is to have a set of variables that are currently true.
+
+As described, the procedure executes several =WHILE= loops, one for each actually occurring variable, but each loop only traverses a portion of the potential variables.  A further, but probably minor improvement is this: The next actuals can be computed globally after the formula has been read and before it is passed to the =table= procedure.  This can be done by a single =FOR= loop through all the 26 potential variables, and it creates an array which for each actual variables contains the next actual variable.  The loop also finds the first actual variable, and the =table= procedure is then called with this first actual variable as a parameter.  (This optimisation is left as one of the exercises.)
+
+The part of the table generator which generates values of variables is now complete.
+
+*** Step 6: /The evaluator/.
+
+Since the length of the postfix representation is known by the time it is being evaluated, the evaluator can consist of a =FOR= loop which steps through the postfix code, an array of characters.  At each step it examines the current character in the postfix, and depending on what the character is, it does something to a stack of booleans which is initially empty.
+
+1) If the character is one of the two constants, push its value onto the stack; if the character is a propositional variable, look up its current value and push that onto the stack.
+
+2) If the character is =-=, replace the top value on the stack by its negation.
+
+3) If the character is a binary operator, replace the two values on the top by a single value computed from the other two; for example, if the character is =&=, replace the top two values by the value of their conjunction. When the end of the postfix is reached, the stack will contain just one value which is the value of the formula.
+
+Here is an example; for readability the postfix has been spaced out.  Below the postfix code is a trace of the stack; note that /time flows from left to right/.
+
+#+begin_example
+                                infix:
+                                (p v q v r) & -(s > t > u)
+current values:                 postfix:
+p q r s t u                     p q # r # s t u > > - &
+1 0 1 0 0 1
+                                              1
+                                            0 0 1
+                                  0   1   0 0 0 0 1 0
+                        stack:  1 1 1 1 1 1 1 1 1 1 1 0
+#+end_example
+
+The stack is best implemented as an =ARRAY= of boolean values, together with an integer variable which is the top.  When the formula has been evaluated, its value can be written, but that value should be preceded on the same line by the current values of each of the actual variables.  Before the main program sends the formula to the table generator, it should write a line with the names of the actual variables.  Both the writing of the current values and the writing of the names makes use of the set of actuals collected during parsing.
+
+* The program
+
+The following is the standard Pascal source for the truth table program TRUTAB.
+
+#+begin_src pascal
+PROGRAM truthtable(input,output);
+
+LABEL 1, 99;
+
+CONST
+    maxcode = 200;
+    maxstack = 30;
+
+TYPE
+    message = PACKED ARRAY [1..30] OF char;
+
+VAR
+    ch : char;
+    code : ARRAY [1..maxcode] OF char;
+    codeindex : integer;
+
+    occurrences,truevars  : SET OF char;
+    c : char;
+
+    i : integer;
+
+PROCEDURE error(mes : message);
+BEGIN (* error *)
+writeln('seen "',ch,'" when ',mes);
+readln;
+GOTO 1
+END; (* error *)
+
+PROCEDURE getch;
+BEGIN (* getch *)
+REPEAT
+    IF eof THEN goto 99;
+    read(ch);
+    write(ch)   (* for batch use *)
+    UNTIL ch > ' '
+END; (* getch *)
+
+PROCEDURE generate(o : char);
+BEGIN (* generate *)
+codeindex  :=  codeindex + 1;
+code[codeindex] := o
+END; (* generate *)
+
+(* - - - - -  T R A N S L A T O R  - - - - - *)
+
+PROCEDURE formula;
+VAR localchar : char;
+
+    PROCEDURE expression;
+
+        PROCEDURE term;
+
+            PROCEDURE factor;
+            BEGIN
+            CASE ch of
+                'a','b','c','d','e','f','g','h','i',
+                'j','k','l','m','n','o','p','q','r',
+                's','t','u','v','w','x','y','z',
+                '0','1' :
+                    BEGIN
+                    generate(ch);
+                    occurrences := occurrences + [ch];
+                    getch
+                    END;
+                '-' :
+                    BEGIN
+                    getch;
+                    factor;
+                    generate('-')
+                    END;
+                '(' :
+                    BEGIN
+                    getch;
+                    formula;
+                    IF ch = ')' THEN getch ELSE
+                        error('right parenthesis expected    ')
+                    END
+                OTHERWISE
+                    error('beginning of factor expected  ');
+                END (* CASE *)
+            END; (* factor *)
+
+        BEGIN (* term *)
+        factor;
+        WHILE ch = '&' DO
+            BEGIN
+            getch;
+            factor;
+            generate('&')
+            END (* WHILE *)
+        END; (* term *)
+
+    BEGIN (* expression *)
+    term;
+    WHILE ch IN ['#','v'] DO
+        BEGIN
+        getch;
+        term;
+        generate('#')
+        END (* WHILE *)
+    END; (* expression *)
+
+BEGIN (* formula *)
+expression;
+IF (ch = '>') OR (ch = '=') THEN
+    BEGIN
+    localchar := ch;
+    getch;
+    formula;
+    generate(localchar)
+    END (* WHILE *)
+END; (* formula *)
+
+(* - - - - -  T A B L E   G E N E R A T O R  - - - - - *)
+
+PROCEDURE table(v : char);
+VAR c : char;
+
+    FUNCTION val : boolean;
+    VAR
+        s : ARRAY [1..maxstack] OF boolean;
+        t : integer; (* top of stack *)
+        i : integer;
+    BEGIN (* val *)
+    t := 0;
+    FOR i := 1 TO codeindex DO
+        CASE code[i] OF
+            'a','b','c','d','e','f','g','h','i','j','k','l','m',
+            'n','o','p','q','r','s','t','u','v','w','x','y','z' :
+                  BEGIN t := t+1; s[t] := code[i] IN truevars END;
+            '1' : BEGIN t := t+1; s[t] := true                END;
+            '0' : BEGIN t := t+1; s[t] := false               END;
+            '-' : BEGIN           s[t] := NOT s[t]            END;
+            '&' : BEGIN t := t-1; s[t] := s[t] AND s[t+1]     END;
+            '#' : BEGIN t := t-1; s[t] := s[t] OR  s[t+1]     END;
+            '>' : BEGIN t := t-1; s[t] := s[t] <=  s[t+1]     END;
+            '=' : BEGIN t := t-1; s[t] := s[t]  =  s[t+1]     END
+            END; (* CASE *)
+    val := s[1]
+    END; (* val *)
+
+BEGIN (* table *)
+WHILE NOT (v IN occurrences) DO v := succ(v);
+IF v > 'z' THEN
+    BEGIN
+    FOR v := 'a' TO 'z' DO
+        IF v IN occurrences
+            THEN write(ord(v IN truevars):1,' ');
+    writeln('    ',ord(val):1)
+    END
+  ELSE
+    BEGIN
+    truevars := truevars + [v]; table(succ(v));
+    truevars := truevars - [v]; table(succ(v))
+    END
+END; (* table *)
+
+(* - - - - -  M A I N  - - - - - *)
+
+BEGIN (* main *)
+1:
+REPEAT
+    write('? ');
+    getch;
+    IF ch = '.' THEN GOTO 99;
+    codeindex := 0; occurrences := [succ('z')];
+    formula;
+    IF NOT (ch IN ['.','?']) THEN
+        error('"." expected                  ');
+    writeln;
+    IF ch = '?' THEN
+        BEGIN
+        write('POSTFIX: ');
+        FOR i := 1 TO codeindex DO write(code[i]);
+        writeln
+        END;
+    FOR c := 'a' TO 'z' DO
+        IF c IN occurrences THEN write(c,' ');
+    writeln;
+    table('a')
+    UNTIL false;
+99:
+END.
+#+end_src
+
+* Exercises and reading
+
+** /Better output/:
+
+Modify the program so that after doing the truth table for a formula it will write =tautology= if the formula was true in every line, =selfcontradiction= if the formula was false in every line, and =contingent= if the formula was true in some lines and false in others.  Looking at large truth table is boring, so some users might prefer merely to be told whether the formula they have typed is a tautology, a self contradiction, or a contingency.  Devise a way of letting the user tell the program whether the entire table is required.
+
+** /Optimisation/:
+Implement the optimisation outlined at the end of the description of the table procedure.
+
+** /Values of subformulas/:
+Change the program so that in every line it will write the values of all subformulas, directly underneath the operators of the formula as typed in by the user.
+
+** /Symbolic operators/:
+Modify the program so that it can use =NOT=, =AND=, =OR=, =IMP= and =IFF= as the operators.
+
+** /Translator/:
+If you have devised a way of translating from fully parenthesised infix notation to prefix notation, then you might consider the problem of translating from the minimally parenthesised infix notation with operator precedences to prefix notation.  More likely than not, the method you used for the fully parenthesised notation will not work for the minimally parenthesised notation.
+
+** /Text Macros/:
+Devise a way for users to define (upper case) string or text macros, similar to the macro expander in Chapter 4.  Any formula can then be preceded by a sequence of macro definitions, and procedure =getch= has to know whether it is supposed to be reading from the input file or whether it is supposed to retrieve characters from a macro.  An alternative is to allow definitions anywhere in a formula, in that case even definitions should be handled by =getch=, and neither the main program nor the parsing procedures know anything about macros.  Text macros are extremely powerful, they would allow definitions such as =A = = =(p & q)= but also definitions such as =B = = =(((-= or the equally strange =C = = =& r) > s))=.  However, macros such as =B= and =C= can be very error-prone in use.
+
+** /Syntax Macros/:
+At the expense of expressive power, the above difficulty can be avoided by insisting that in any macro the body, the right hand side, is actually processed by the parser and that it has to be a complete formula or maybe a factor.  This will allow macro =A= but not macros =B= and =C=.  There are two methods in which the body might be stored: in source form or in translated form.  In both a call to a macro occurs inside a factor, as an atom.  In the first method the body would have to be translated at every call.  In the second method the translated form would merely be copied at every call, clearly this method is more efficient.  Neither text macros nor syntax macros require any change to the stack evaluator.
+
+** /Run Time Calls/:
+Instead of expanding macros in the parser it is possible not to expand at all but to generate a call to the macro in the postfix code, effectively treating all upper and lower case letters as atoms merely to be distinguished at run time.  In that case the stack evaluator will need an additional case for upper case atoms: it has to stop executing the current postfix formula and instead start executing the postfix formula which is the translated body of the defined atom, and when it has finished with that formula it has to resume executing the previous formula.  There are two ways of implementing this: In one the stack evaluator uses recursion for such calls, and probably this is the simplest method (it is the method that will be used in Chapter 7).  In another method the evaluator saves where it has to resume on an explicit stack of return addresses, and when it has finished executing a defined formula it picks up the return address from that stack (this is the method used in Chapters 13 and 14).
+
+** /A difficult optimisation/:
+Consider =(p v q) & (r v s)= in the first four lines of the truth table.  Since the =p= and =q= do not change, =p v q= should not have to be recomputed.  Can you think of an algorithm which avoids this?
+
+** /Other logics/:
+Study one of the non-classical logic which has 3 or more truth values, see Martin (1987) for some such systems.  Adapt the program for such a logic.
+
+** /Cartesian Product/:
+
+Write a program which repeatedly reads expressions which are Cartesian products of sets and then writes out the set of n-tuples of the product.  Use =a=..=z= as elements, use ={= and =}= to enclose (possibly empty) sets, use =*= to form products. In the output, use =&lt= and =>= to enclose tuples.  Example:
+
+#+begin_example
+input   {ab} * {cde} * {fg}.
+output  {<acf><acg><adf><adg><aef><aeg><bcf><bcg><bdf><bdg><bef><beg>}
+#+end_example
+
+For long output lines you will have to be careful not to exceed the size of Pascal's output buffer, you will have to insert new lines as appropriate.  You will find the method used to generate all combinations of truth values in the truth table program useful here.  (This exercise was suggested to me by Yum Kwok Keung.)
+
+** /Reading/:
+Compare the program designed in this chapter with the truth table algorithm given by Schagrin, Rapaport and Dipert (1985, pp 108 - 109) and their evaluation algorithm (p 91).  One lesson to learn from their attempt is that formulas just are not strings.  For a recursive descent program which translates arithmetical expressions from minimally parenthesised infix notation to postfix notation, see McCracken (1987, pp 162 - 169).  Many books on compilers will contain something similar.
+
+** /Petri Nets/:
+Consider a system comprising several propositional variables Any particular change /may/ occur if some variables specific to the change are true and some variables specific to the change are false.  If a particular change does occur, then the variables required to be true or false all change their truth value to the opposite.  One question that arises for such a system is whether there are possible assignments of truth values to the variables for which none of the permitted changes is possible.  A dual question is whether there are assignments which cannot be the result of any of the permitted changes.  1)~Show how the truth table program can be used to answer these two kinds of questions for any particular system of variables and changes.  2)~Modify the program so that instead of reading a formula it reads a system of changes and answers these two questions.  You will have to design a suitable notation for the changes.
+
+In the literature systems like the above are known as (simple) Petri nets.  The variables are called /places/, and they are said to be occupied by a /token/ or to be empty.  The changes are called /transitions/, and they are always given names.  A transition is said to be /enabled/ if there are so-called /input arcs/ from the places they require to contain a token and there are so-called /output arcs/ to the places they require to be empty.  If an enabled transition does produce its change, it is said to /fire/, and then tokens are removed from the places connected to the transition by input arcs, and tokens are sent to places connected to the transition by output arcs.  A particular distribution of tokens at a particular time is called a /marking/.  Nets are often presented as a graph, in particular, a bi-partite graph of places and transitions, with input arcs and output arcs connecting them.  The first question in the previous paragraph asks whether there are markings for which the net will /deadlock/, the second asks whether there are /unreachable/ markings.  For some more reading, see Chapter~20 and the references given there.  As may be seen, the usual terminology does not make it obvious how close such nets are to propositional logic, and that a simple truth table program can answer significant questions about nets.  In practice, however, nets tend to have so many places that a truth table program is not really adequate.  The truth tree or semantic tableau program in Chapter 10 presents some improvements.
+
+** /Compiling into Pascal/:
+For large truth tables the /interpretation/ of the postfix code could be too slow.  The same is true for any other internal code that needs interpretation.  It might be faster to /compile/ the formula to be tested into an (inputless) Pascal program which, when run, produces either all lines in the truth table, or only those lines, if any, in which the formula is false, or only the first line, if there is one, in which it is false.  The resultant Pascal program should look like the program in Chapter 1: it will consist of several nested =FOR= loops and a write statement.  Can you write such a compiler from formulas to Pascal without reading the formula twice?  Without storing the formula internally?  The computation cost for such a system will of course consist of the compile cost and the run cost --- so it will only be worth it for very large formulas.
+
+** /Petri Nets again/:
+Write two compilers for a little Petri net language to Pascal to test a given net for deadlock and for unreachability.  Alternatively, write a dual purpose compiler.
+
