@@ -1,0 +1,935 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Chapter 6 : Operator Precedence Parsing</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Chapter 6 : Operator Precedence Parsing"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-01-11 07:38:08 CST"/>
+<meta name="author" content="michal"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Chapter 6 : Operator Precedence Parsing</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 intro</a></li>
+<li><a href="#sec-2">2 Bottom up parsing</a></li>
+<li><a href="#sec-3">3 Precedence relations</a>
+<ul>
+<li><a href="#sec-3-1">3.1 The algorithm</a></li>
+<li><a href="#sec-3-2">3.2 The program</a></li>
+</ul>
+</li>
+<li><a href="#sec-4">4 Precedence functions</a>
+<ul>
+<li><a href="#sec-4-1">4.1 The algorithm</a></li>
+<li><a href="#sec-4-2">4.2 The program</a></li>
+</ul>
+</li>
+<li><a href="#sec-5">5 Exercises and reading</a>
+<ul>
+<li><a href="#sec-5-1">5.1 <i>Ad hoc error detection</i>:</a></li>
+<li><a href="#sec-5-2">5.2 <i>Parsing without tables</i>:</a></li>
+<li><a href="#sec-5-3">5.3 <i>Changing the tables</i>:</a></li>
+<li><a href="#sec-5-4">5.4 <i>Evaluator</i>:</a></li>
+<li><a href="#sec-5-5">5.5 <i>Non-recursive truth table program</i>:</a></li>
+<li><a href="#sec-5-6">5.6 <i>Reading</i>:</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div class="outline-text-2" id="text-1">
+
+
+<p>
+In previous chapters we have seen several parsers, evaluators and translators.
+</p>
+<p>
+All used <i>recursive descent</i>, one of the top down methods.  This chapter introduces one very simple form of <i>bottom up</i> parsing and translating.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Bottom up parsing</h2>
+<div class="outline-text-2" id="text-2">
+
+
+<p>
+Consider the following fragment of a Pascal program:
+</p>
+
+
+
+<pre class="example">IF  x = 0  THEN  y := 1
+</pre>
+
+
+<p>
+You can see immediately that this is a statement, and not a program or an expression or a factor or anything else.  A recursive descent compiler for Pascal will recognise it as a statement, but only if the compiler is currently expecting a statement.  If it is currently expecting a program or a type or an expression or something else, then it will respond with error messages.  Note that you were able to recognise the fragment because you had no expectations.  This is an essential difference between a top down parsing method like recursive descent, and the bottom up method you were using in your head.  In this chapter we shall study bottom up methods applied to parsing and translating.  In all of these the parser does not start off with definite expectations but reads symbols as they come along and makes sense of them.
+</p>
+<p>
+The basic idea is that just as expressions can be evaluated by several passes which evaluate subexpressions, so sequences of symbols can be parsed by several passes which parse subexpressions.  First, consider the following equivalent formulas in prefix, in fully parenthesised infix, and in postfix notation: All three are to be evaluated, by rewriting leftmost subformulas by their values when possible; note that <i>time flows from top to bottom</i>:
+</p>
+
+
+
+<pre class="example">prefix:                 infix:                      postfix:
+&gt; - = 0 - &amp; 1 1 0       (-(0 = -(1 &amp; 1)) &gt; 0)       0 1 1 &amp; - = - 0 &gt;
+&gt; - = 0 - 1     0       (-(0 = -   1   ) &gt; 0)       0     1 - = - 0 &gt;
+&gt; - = 0 0       0       (-(0 = 0       ) &gt; 0)       0       0 = - 0 &gt;
+&gt; - 1           0       (-   1           &gt; 0)                 1 - 0 &gt;
+&gt; 0             0       (0               &gt; 0)                   0 0 &gt;
+1                                        1                          1
+</pre>
+
+
+<p>
+If we ignore the difference in meaning between the various operands and operators and merely consider syntax, then we could rewrite all well-formed subformulas by <code>F</code> to indicate that they are formulas, like this:
+</p>
+
+
+
+<pre class="example">prefix:                 infix:                      postfix:
+&gt; - = 0 - &amp; 1 1 0       (-(0 = -(1 &amp; 1)) &gt; 0)       0 1 1 &amp; - = - 0 &gt;
+&gt; - = F - &amp; 1 1 0       (-(F = -(1 &amp; 1)) &gt; 0)       F 1 1 &amp; - = - 0 &gt;
+&gt; - = F - &amp; F 1 0       (-(F = -(F &amp; 1)) &gt; 0)       F F 1 &amp; - = - 0 &gt;
+&gt; - = F - &amp; F F 0       (-(F = -(F &amp; F)) &gt; 0)       F F F &amp; - = - 0 &gt;
+&gt; - = F - F     0       (-(F = -   F   ) &gt; 0)       F     F - = - 0 &gt;
+&gt; - = F F       0       (-(F = F       ) &gt; 0)       F       F = - 0 &gt;
+&gt; - F           0       (-   F           &gt; 0)                 F - 0 &gt;
+&gt; F             0       (F               &gt; 0)                   F 0 &gt;
+&gt; F             F       (F               &gt; F)                   F F &gt;
+F                                        F                          F
+</pre>
+
+
+<p>
+As described, the method would require us to always start at the beginning of the symbol sequence and perform the first replacement, just as we did for evaluation by replacement.  But from our truth table program you will remember that a very good method for evaluating uses an auxiliary stack which contains whatever needs to be remembered about the values computed so far.  We could even imagine a method which is less efficient than the one we used there, but which is interesting; as we pass through the postfix formula, we push all symbols onto the stack, operands and operators.  If <i>at any time</i> the top few elements of the stack consist of a few operands topped by an operator, we interrupt the pushing and replace the operator and its operands by the result value.  For comparison, here are the two evaluation methods; note that <i>time flows from left to right</i>:
+</p>
+
+
+
+<pre class="example">efficient method:               less efficient method:
+0 1 1 &amp; - = - 0 &gt;               0 1 1 &amp;   -   =   -   0 &gt;
+                                      &amp;
+    1                               1 1   -   =         &gt;
+  1 1 1 0     0                   1 1 1 1 1 0 0   -   0 0
+0 0 0 0 0 1 0 0 1               0 0 0 0 0 0 0 0 1 1 0 0 0 1
+</pre>
+
+
+<p>
+For either method, if instead of 0 and 1 on the stack we always had <code>F</code> (for <code>formula</code>), we would have a parsing method which avoids having to restart at the beginning of the formula every time.  This is how it will look:
+</p>
+
+
+
+<pre class="example">efficient method:               less efficient method:
+0 1 1 &amp; - = - 0 &gt;               0 1 1 &amp;   -   =   -   0 &gt;
+                                      &amp;
+    F                               F F   -   =         &gt;
+  F F F F     F                   F F F F F F F   -   F F
+F F F F F F F F F               F F F F F F F F F F F F F F
+</pre>
+
+
+<p>
+The less efficient method lends itself to becoming a very general parsing method which can be used for the other notations, too.  Here it is used for fully parenthesised infix notation:
+</p>
+
+
+
+<pre class="example">( - ( 0 = - ( 1 &amp; 1 )     )     &gt; 0 )
+                    )
+                  F F
+                &amp; &amp; &amp;
+              F F F F
+            ( ( ( ( ( F   )
+          - - - - - - - F F
+        = = = = = = = = = =         )
+      F F F F F F F F F F F       F F
+    ( ( ( ( ( ( ( ( ( ( ( ( F   &gt; &gt; &gt;
+  - - - - - - - - - - - - - - F F F F
+( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( ( F
+                      1 2   3 4       5
+</pre>
+
+
+<p>
+Note that most steps push the current input symbol onto the stack, but there are five <i>reduction</i> steps, marked <code>1..5</code>.  Here is a brief formulation of the algorithm:
+</p>
+
+
+
+<pre class="example">start with an empty stack
+REPEAT
+    IF the top few symbols on the stack can be replaced by
+            a single one in accordance with the grammar
+        THEN do the replacement
+        ELSE push the next symbol onto the stack
+    UNTIL the end of the string has been reached
+</pre>
+
+
+<p>
+At the end of this, the stack should contain a single non-terminal of the grammar, and this is what has been recognised.  As described, the algorithm is not very efficient, because for example in the case of fully parenthesised infix formulas up to five symbols on the stack have to be examined in the <code>IF</code> part.  To improve the algorithm, we can make partial reductions and also make the applicability of reductions depend on the next input symbol.  This idea is used in most bottom up parsers, including the two very specialised ones to follow.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Precedence relations</h2>
+<div class="outline-text-2" id="text-3">
+
+
+<p>
+In the remainder of this chapter we shall look at two related bottom up parsing methods which are very simple and efficient, but are applicable only to a rather narrow class of languages.
+</p>
+
+</div>
+
+<div id="outline-container-3-1" class="outline-3">
+<h3 id="sec-3-1"><span class="section-number-3">3.1</span> The algorithm</h3>
+<div class="outline-text-3" id="text-3-1">
+
+
+<p>
+Consider arithmetic or logical expressions in minimally parenthesised notation as written in the first line and their fully parenthesised form in the second line.
+</p>
+
+
+
+<pre class="example">x +  y * z                      p v  q &amp; r
+x + (y * z)                     p v (q &amp; r)
+</pre>
+
+
+<p>
+The usual convention is that <code>*</code> binds more strongly than <code>+</code>, and that <code>&amp;</code> binds more strongly than <code>v</code>.  Hence <code>y</code> is an operand to <code>*</code> and not to <code>+</code>, and <code>q</code> is an operand to <code>&amp;</code> and not to <code>v</code>.  It helps to think of the operators on the left and right of <code>y</code> and <code>q</code> tugging at it, and <code>*</code> and <code>&amp;</code> win.  The technical notion is that <code>*</code> has precedence over <code>+</code>, and that <code>&amp;</code> has precedence over <code>v</code>.  For binary operators that are semantically associative it does not matter whether they have precedence over themselves, but for others it is important to distinguish those that are syntactically left-associative (such as subtraction and implication), and those that are syntactically right-associative (such as exponentiation in arithmetic).
+</p>
+<p>
+We shall now design a parser for logical formulas in minimally parenthesised infix notation.  In the following table, the row headings are for the operator on the left of the disputed operand, and the column headings are for the operator on the right of the operand.  The table entries <code>&gt;</code> indicate that the row operator, when on the left, has precedence over the column operator, when on the right.  The table entries <code>&lt;</code> indicate the reverse.
+</p>
+
+
+
+<pre class="example">      "&amp;"   "v"   "&gt;"
+    +----------------
+"&amp;" |  &gt;     &gt;     &gt;
+"v" |  &lt;     &gt;     &gt;
+"&gt;" |  &lt;     &lt;     &lt;
+</pre>
+
+
+<p>
+This table is part of a larger table which has rows and columns for symbols that are not binary operators: atomic formulas, negation, the two parentheses, and a terminator, say the period <code>.</code> The notion of a symbol having precedence over another now has to be extended to cover these other symbols.  It so turns out that apart from <code>&lt;</code> and <code>&gt;</code> a third entry, ===, is needed.  Finally, for illegal combinations, the entries can be error codes.
+</p>
+<p>
+A minor problem arises about <code>v</code> being used as an infix connective and as an atomic formula.  In the case of recursive descent parsing there was no problem, even a formula such as <code>v v v v v</code> is correctly recognised as the three-fold disjunction of <code>v</code> with itself.  However, for operator precedence parsing this will not work, and henceforth we shall use <code>#</code> as the disjunction symbol.
+</p>
+<p>
+That larger table can then be used to drive an algorithm which is a descendant of the one outlined at the end of the last section.  Instead of pushing symbols from the input onto the stack and then comparing them with what is below, the comparison is done between the current input symbol and the top element.  Instead of reducing only when the full right hand side of a production of the grammar has been seen, partial reductions take place.  Instead of reducing non-terminals (such as <code>F</code> in the example), the only symbols on the stack are terminals.  The net effect of the three changes is a very simple and very efficient bottom up parsing method:
+</p>
+
+
+
+<pre class="example">Push a marker onto an otherwise empty stack
+WHILE stack contains more than one symbol OR
+    the current input symbol is not the terminator DO
+  LET R be the precedence relation between
+    the symbol on top of the stack and the next input symbol
+  IF R is &lt; OR R is = THEN
+    shift the next input symbol onto the stack
+  ELSE IF R is &gt; THEN
+    REPEAT
+      pop the top element off the stack
+      UNTIL the precedence relation between
+        the symbol on top of the stack and
+        the most recently popped symbol is &lt;
+  ELSE abort with error R
+</pre>
+
+
+<p>
+With the information given so far, it should not be too difficult to write the program.  The precedence relations can be built into the algorithm at the <code>LET</code> part of the loop.  Alternatively, the algorithm can be left quite general and the <code>LET</code> part implemented as a lookup of a two dimensional array.  In this way it is this array or table which specifies the language; such table driven parsing is a popular implementation technique for bottom up parsers.  No matter which implementation is chosen, the hard part is to specify the precedence relations between symbols other than the infix operators.  A very minor addition to the program turns it into an infix to postfix translator.
+</p>
+<p>
+The following is the record of an interaction with the program.  The program does not echo its input, which is ideal for interactive use.  After each prompt <code>ready</code>, it reads a formula typed by the user.  If the formula is preceded by <code>?</code>, then the program goes into tracing mode.  Note that the first three formulas are being parsed and translated in tracing mode, where the stack is now written horizontally.  For the remaining formulas tracing is switched off.  The last formulas contain intentional errors.
+</p>
+
+
+
+<pre class="example">$ RUN 15OPPRER.EXE
+ready
+?  a &amp; b.
+stack               infix-char          postfix-char
+                    a
+a                   &amp;
+                                        a
+                    &amp;
+&amp;                   b
+&amp;b                  .
+                                        b
+&amp;                   .
+                                        &amp;
+POSTFIX CODE : ab&amp;
+ready
+?  (a &amp; b) # (c &amp; d).
+stack               infix-char          postfix-char
+                    (
+(                   a
+(a                  &amp;
+                                        a
+(                   &amp;
+(&amp;                  b
+(&amp;b                 )
+                                        b
+(&amp;                  )
+                                        &amp;
+(                   )
+()                  #
+                    #
+#                   (
+#(                  c
+#(c                 &amp;
+                                        c
+#(                  &amp;
+#(&amp;                 d
+#(&amp;d                )
+                                        d
+#(&amp;                 )
+                                        &amp;
+#(                  )
+#()                 .
+#                   .
+                                        #
+POSTFIX CODE : ab&amp;cd&amp;#
+ready
+-a &amp; -b # -(c &gt; d) &gt; e &gt; f.
+POSTFIX CODE : a-b-&amp;cd&gt;-#ef&gt;&gt;
+ready
+a&amp;b&amp;c&amp;d&amp;e&amp;f&amp;g&amp;h&amp;i&amp;j.
+POSTFIX CODE : ab&amp;c&amp;d&amp;e&amp;f&amp;g&amp;h&amp;i&amp;j&amp;
+ready
+a&gt;b&gt;c&gt;d&gt;e&gt;f&gt;g&gt;h&gt;i&gt;j.
+POSTFIX CODE : abcdefghij&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+ready
+((a=b) # (c&gt;d)) &amp; -(e=f).
+POSTFIX CODE : ab=cd&gt;#ef=-&amp;
+ready
+?  a &amp; b b.
+stack               infix-char          postfix-char
+                    a
+a                   &amp;
+                                        a
+                    &amp;
+&amp;                   b
+&amp;b                  b
+error 0
+ready
+(((((((a&amp;-b)).
+error 2
+ready
+.
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-3-2" class="outline-3">
+<h3 id="sec-3-2"><span class="section-number-3">3.2</span> The program</h3>
+<div class="outline-text-3" id="text-3-2">
+
+
+<p>
+The following is the Pascal source program for the operator precedence parser/translator based on precedence relations.  Note that the <code>VALUE</code> declaration is not standard Pascal, it initialises the (two dimensional) <code>ARRAY</code> of precedence relations.  Note that it this <code>ARRAY</code> which specifies the syntax of the input language, the remainder of the program is quite general.  (The <code>VALUE</code> declaration could be replaced by some other initialisation mechanism; one possibility is 64 assignment statements, another is 8 calls of a procedure with 8 parameters, another is reading the matrix from a file.)
+</p>
+
+
+
+<pre class="example">PROGRAM opprer(input,output);
+(* OPerator PREcedence Relations *)
+
+LABEL 1;
+
+CONST
+marker = '.';
+maxstack = 100;
+maxcode = 300;
+
+s_header = 'stack               ';
+i_header = 'infix-char          ';
+p_header = 'postfix-char        ';
+big_tab  = '                    ';
+
+TYPE
+symbol =
+    (atomsy,notsy,andsy,orsy,implsy,lpar,rpar,period);
+VAR
+p : ARRAY[symbol,symbol] OF char;       (* relations *)
+s : ARRAY[0..maxstack] OF char;         (* parsing stack *)
+t : integer;                            (* top of stack *)
+sy : ARRAY[char] OF symbol;
+ch : char;
+tracing,finished : boolean;
+i : integer;
+
+code : ARRAY[1..maxcode] OF char;
+cx : integer;
+
+VALUE
+p := ( (*        atm not and or  imp lp  rp  per *)
+(* atm *)       ('0','&gt;','&gt;','&gt;','&gt;','1','&gt;','&gt;'),
+(* not *)       ('&lt;','&lt;','&gt;','&gt;','&gt;','&lt;','&gt;','&gt;'),
+(* and *)       ('&lt;','&lt;','&gt;','&gt;','&gt;','&lt;','&gt;','&gt;'),
+(* or  *)       ('&lt;','&lt;','&lt;','&gt;','&gt;','&lt;','&gt;','&gt;'),
+(* imp *)       ('&lt;','&lt;','&lt;','&lt;','&lt;','&lt;','&gt;','&gt;'),
+(* lp  *)       ('&lt;','&lt;','&lt;','&lt;','&lt;','&lt;','=','2'),
+(* rp  *)       ('3','&gt;','&gt;','&gt;','&gt;','4','&gt;','&gt;'),
+(* per *)       ('&lt;','&lt;','&lt;','&lt;','&lt;','&lt;','5','6') );
+
+PROCEDURE getch;
+BEGIN
+REPEAT
+    read(ch)
+    UNTIL ch &gt; ' '
+END; (* getch *)
+
+PROCEDURE gen(c:char);
+BEGIN (* gen *)
+IF NOT (c IN ['(',')']) THEN
+    BEGIN
+    IF tracing THEN writeln(big_tab,big_tab,c);
+    cx := cx + 1;
+    code[cx] := c
+    END
+END; (* gen *)
+
+BEGIN (* main *)
+(* initialise table SY *)
+FOR ch := chr(0) TO chr(255) DO
+    IF ch IN ['A'..'Z','a'..'z','0','1']
+        THEN sy[ch] := atomsy
+    ELSE CASE ch OF
+        '-'     : sy[ch] := notsy;
+        '&amp;'     : sy[ch] := andsy;
+        '#'     : sy[ch] := orsy;
+        '&gt;','=' : sy[ch] := implsy;
+        '('     : sy[ch] := lpar;
+        ')'     : sy[ch] := rpar;
+        '.'     : sy[ch] := period;
+        OTHERWISE  sy[ch] := period
+        END; (* CASE *)
+1:
+finished := false;
+REPEAT
+    writeln('ready');
+    tracing := false;
+    cx := 0;
+    getch;
+    IF ch = '.' THEN finished := true ELSE
+        BEGIN
+        IF ch = '?' THEN
+            BEGIN tracing := true; getch END;
+
+        (* BEGIN operator precedence parsing algorithm *)
+        IF tracing THEN
+            writeln(s_header,i_header,p_header);
+        s[0] := marker; t := 0;
+        WHILE (t &gt; 0) OR (ch &lt;&gt; marker) DO
+            BEGIN
+            IF tracing THEN
+                BEGIN
+                FOR i := 1 TO t DO write(s[i]);
+                FOR i := t+1 TO 15 DO write(' ');
+                writeln('     ',ch)
+                END; (* IF *)
+            CASE  p[sy[s[t]],sy[ch]] OF
+                '&lt;', '=' :
+                    BEGIN                               (* shift *)
+                    t := t+1;
+                    s[t] := ch;
+                    getch
+                    END;
+                '&gt;' :
+                    BEGIN                               (* reduce *)
+                    REPEAT
+                        gen(s[t]);
+                        t := t-1
+                        UNTIL p[sy[s[t]],sy[s[t+1]]] = '&lt;'
+                    END;
+                OTHERWISE
+                    BEGIN
+                    writeln('error ',p[sy[s[t]],sy[ch]]);
+                    readln;
+                    GOTO 1
+                    END
+                END (* CASE *)
+            END; (* WHILE *)
+        (* END operator precedence parsing algorithm *)
+
+        write('POSTFIX CODE : ');
+        FOR i := 1 TO cx DO write(code[i]);
+        writeln
+        END (* ELSE *)
+    UNTIL finished
+END. (* main *)
+</pre>
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> Precedence functions</h2>
+<div class="outline-text-2" id="text-4">
+
+
+<p>
+This section describes a variant of the algorithm which replaces the two dimensional (and hence potentially large) array of precedence relations by two one-dimensional arrays.
+</p>
+
+</div>
+
+<div id="outline-container-4-1" class="outline-3">
+<h3 id="sec-4-1"><span class="section-number-3">4.1</span> The algorithm</h3>
+<div class="outline-text-3" id="text-4-1">
+
+
+<p>
+The precedence relations between binary operators need not be transitive.  It is quite possible to have three infix operators O1, O2 and O3 such that O1 on the left has precedence over O2 on the right, that O2 on the left has precedence over O3 on the right, and yet O3 on the left has precedence over O1 on the right.  But for most purposes this possibility is not required at all, indeed users would probably find it confusing.  If the precedence relation can be made transitive and even linear, then it becomes possible to assign to each symbol a numeric precedence strength.  More precisely, for each symbol <code>s</code> two numbers are needed, conventionally called <code>f(s)</code> for the precedence on the left, and <code>g(s)</code> for the precedence on the right.  The algorithm now becomes:
+</p>
+
+
+
+<pre class="example">Push a marker onto an otherwise empty stack
+WHILE stack contains more than one symbol OR
+    the current input symbol is not the terminator DO
+  IF f(the symbol on top of the stack)
+      &lt;= g(the next input symbol) THEN
+    shift the next input symbol onto the stack
+  ELSE
+    REPEAT
+      pop the top element off the stack
+      UNTIL f(the symbol on top of the stack)
+        &lt; g(the symbol most recently popped)
+</pre>
+
+
+<p>
+The most difficult part is to find, for each input symbol, numeric values for the f and g functions.  When suitable values have been found, it is easy enough to put them into two arrays, say f and g.  Thus, just as the precedence relations program can be driven by a two dimensional array of relations, so the precedence functions program can be driven by two numeric arrays f and g.  There is no way to build error detection into the algorithm, see Aho and Ullman (1977, p 171), except by ad hoc methods.  But it is again an easy matter to extend the program just slightly so that it becomes a translator into postfix.  It is not essential that the postfix version uses exactly the same symbols, it is easy enough translate into a different symbolism.  (The sample program translates the infix constants <code>0</code> and <code>1</code> into the postfix constants <code>T</code> and <code>F</code>.)
+</p>
+<p>
+The following is a record of an interaction with the program.  Like the preceding program, this one does not echo its input.  After each prompt <code>ready</code>, it reads a formula typed by the user.  If the formula is preceded by <code>?</code>, then the program goes into tracing mode.
+</p>
+
+
+
+<pre class="example">$ SET VERIFY
+$ RUN  15OPPREF.EXE
+ready
+?  a &amp; b.
+stack               infix-char          postfix-char
+                    a
+a                   &amp;
+                                        a
+                    &amp;
+&amp;                   b
+&amp;b                  .
+                                        b
+&amp;                   .
+                                        &amp;
+POSTFIX CODE : ab&amp;
+ready
+?  (a &amp; b) # (c &amp; d).
+stack               infix-char          postfix-char
+                    (
+(                   a
+(a                  &amp;
+                                        a
+(                   &amp;
+(&amp;                  b
+(&amp;b                 )
+                                        b
+(&amp;                  )
+                                        &amp;
+(                   )
+()                  #
+                    #
+#                   (
+#(                  c
+#(c                 &amp;
+                                        c
+#(                  &amp;
+#(&amp;                 d
+#(&amp;d                )
+                                        d
+#(&amp;                 )
+                                        &amp;
+#(                  )
+#()                 .
+#                   .
+                                        #
+POSTFIX CODE : ab&amp;cd&amp;#
+ready
+-a &amp; -b # -(c &gt; d) &gt; e &gt; f.
+POSTFIX CODE : a-b-&amp;cd&gt;-#ef&gt;&gt;
+ready
+a&amp;b&amp;c&amp;d&amp;e&amp;f&amp;g&amp;h&amp;i&amp;j.
+POSTFIX CODE : ab&amp;c&amp;d&amp;e&amp;f&amp;g&amp;h&amp;i&amp;j&amp;
+ready
+a&gt;b&gt;c&gt;d&gt;e&gt;f&gt;g&gt;h&gt;i&gt;j.
+POSTFIX CODE : abcdefghij&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+ready
+((a=b) # (c&gt;d)) &amp; -(e=f).
+POSTFIX CODE : ab=cd&gt;#ef=-&amp;
+ready
+(0 # 1) &amp; (--1 &gt; 0)  =  1 # 0 &amp; 1.
+POSTFIX CODE : FT#T--F&gt;&amp;TFT&amp;#=
+ready
+.
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-4-2" class="outline-3">
+<h3 id="sec-4-2"><span class="section-number-3">4.2</span> The program</h3>
+<div class="outline-text-3" id="text-4-2">
+
+
+<p>
+The following is the standard Pascal source program for the parser/translator based on precedence functions.  Note that the input language and the translation to the output language are specified by the four string constants in the <code>CONST</code> declaration.  The remainder of the program is completely general.
+</p>
+
+
+
+<pre class="example">PROGRAM oppref(input,output);
+(* OPerator PREcedence Functions *)
+(* CANNOT HANDLE ERRORS - SEE Aho and Ullman (1977, p 171) *)
+
+CONST
+numterminals = 36;
+i0 = '=&gt;#&amp;-()abcdefghijklmnopqrstuvwxyz01.';
+o0 = '=&gt;#&amp;-  abcdefghijklmnopqrstuvwxyzFT.';
+f0 = '114660666666666666666666666666666660';
+g0 = '223577077777777777777777777777777770';
+marker = '.';
+maxstack = 100;
+maxcode = 300;
+
+s_header = 'stack               ';
+i_header = 'infix-char          ';
+p_header = 'postfix-char        ';
+big_tab  = '                    ';
+
+VAR
+o : ARRAY[char] OF char;        (* outputs *)
+f,g : ARRAY[char] OF integer;   (* precedences *)
+s : ARRAY[0..maxstack] OF char; (* parsing stack *)
+t : integer;                    (* top of stack *)
+ch : char;
+code : ARRAY[1..maxcode] OF char;
+cx : integer;
+tracing,finished : boolean;
+i : integer;
+
+PROCEDURE initialise;
+VAR i : integer;
+    i1,o1,f1,g1 : PACKED ARRAY [1..numterminals] OF char;
+BEGIN
+i1 := i0; o1 := o0; f1 := f0; g1 := g0;
+  (* this nonsense was necessary because silly PASCAL
+  does not allow indexed access into constant strings *)
+FOR ch := chr(0) TO chr(255) DO
+    BEGIN f[ch] := -1; g[ch] := -1 END;
+FOR i := 1 TO numterminals DO
+    BEGIN
+    f[i1[i]] := ord(f1[i]) - ord('0');
+    g[i1[i]] := ord(g1[i]) - ord('0');
+    o[i1[i]] := o1[i]
+    END;
+END; (* initialise *)
+
+PROCEDURE getch;
+BEGIN
+REPEAT
+    read(ch)
+    UNTIL ch &gt; ' '
+END; (* getch *)
+
+PROCEDURE putch;
+VAR c : char;
+BEGIN
+c := o[s[t]];
+IF c &lt;&gt; ' ' THEN
+    BEGIN
+    cx := cx + 1;
+    code[cx] := c;
+    IF tracing THEN writeln(big_tab,big_tab,c);
+    END
+END; (* putch *)
+
+BEGIN (* main *)
+initialise;
+finished := false;
+REPEAT
+    writeln('ready');
+    tracing := false;
+    getch;
+    IF ch = '.' THEN finished := true ELSE
+        BEGIN
+        IF ch = '?' THEN
+            BEGIN tracing := true; getch END;
+        IF tracing THEN writeln(s_header,i_header,p_header);
+
+        (* BEGIN precedence function algorithm *)
+        s[0] := marker; t := 0;
+        cx := 0;
+        WHILE (s[t] &lt;&gt; marker) OR (ch &lt;&gt; marker) DO
+            BEGIN
+            IF tracing THEN
+                BEGIN
+                FOR i := 1 TO t DO write(s[i]);
+                FOR i := t+1 TO 15 DO write(' ');
+                writeln('     ',ch)
+                END;
+            IF  f[s[t]] &lt;= g[ch]  THEN
+                BEGIN                           (* shift *)
+                t := t+1; s[t] := ch;
+                getch
+                END
+              ELSE
+                REPEAT                          (* reduce *)
+                    putch;
+                    t := t-1
+                    UNTIL f[s[t]] &lt; g[s[t+1]]
+            END; (* WHILE *)
+        write('POSTFIX CODE : ');
+        FOR i := 1 TO cx DO write(code[i]);
+        writeln
+        (* END precedence function algorithm *)
+
+        END (* ELSE *)
+    UNTIL finished;
+END. (* main *)
+</pre>
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Exercises and reading</h2>
+<div class="outline-text-2" id="text-5">
+
+
+
+</div>
+
+<div id="outline-container-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> <i>Ad hoc error detection</i>:</h3>
+<div class="outline-text-3" id="text-5-1">
+
+<p>The precedence function algorithm cannot detect errors, because for any symbol on top of the stack and any input symbol, one of the three relations <code>&gt;</code>, ===, <code>&gt;</code> must hold for their <code>f</code>- and <code>g</code>-values.  Hence there is no way of encoding error conditions, as was done with the matrix of precedence relations.  For example, the algorithm will happily shift two adjacent atoms on the stack.  Find a way of adding extra <i>ad hoc</i> code to the algorithm so that errors can be handled correctly.  You might experiment with a further function, say <code>h</code>.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-2" class="outline-3">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> <i>Parsing without tables</i>:</h3>
+<div class="outline-text-3" id="text-5-2">
+
+<p>Both programs are general, they are driven by tables which specify the input language and the translation.  It would be possible to write both programs without the tables.  Essentially this amounts to building the information which is now in the tables into the programs.  Rewrite either the precedence relations program or the precedence functions program in this way.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-3" class="outline-3">
+<h3 id="sec-5-3"><span class="section-number-3">5.3</span> <i>Changing the tables</i>:</h3>
+<div class="outline-text-3" id="text-5-3">
+
+<p>Experiment with changing the table in the <code>VALUE</code> part of the precedence relations program, or the tables in the <code>CONST</code> part of the precedence functions program.  Can you change them so that the input language is in fully parenthesised infix or in prefix? If not, why not?
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-4" class="outline-3">
+<h3 id="sec-5-4"><span class="section-number-3">5.4</span> <i>Evaluator</i>:</h3>
+<div class="outline-text-3" id="text-5-4">
+
+<p>For either the precedence relations or the precedence functions program, modify the algorithm and then the program and the tables so as to make an evaluator for formulas without variables but only with constants <code>0</code> and <code>1</code>.
+</p>
+<p>
+Write a parser which uses the method described towards the end of the first section of this chapter.  Your program could be, but need not be, driven by some kind of data structure playing the role of the tables used here.  Augment your parser so that it becomes a translator.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-5" class="outline-3">
+<h3 id="sec-5-5"><span class="section-number-3">5.5</span> <i>Non-recursive truth table program</i>:</h3>
+<div class="outline-text-3" id="text-5-5">
+
+<p>Our truth table program had essentially three tasks to perform:
+</p>
+<ol>
+<li>to translate from infix to postfix,
+</li>
+<li>to generate all combinations of truth values, and
+</li>
+<li>to evaluate the postfix.
+</li>
+</ol>
+
+
+<p>
+Our program used recursion for 1) and 2), but used an explicit stack for 3).  Now this chapter has shown how to do 1) without recursion.  Can you think of a non-recursive way of doing 2)?  This would give you a truth table program which does not use recursion at all.  It should even be possible to write the entire program without any procedures; but many people would argue that such a style is unclear.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-6" class="outline-3">
+<h3 id="sec-5-6"><span class="section-number-3">5.6</span> <i>Reading</i>:</h3>
+<div class="outline-text-3" id="text-5-6">
+
+
+<p>
+For a different exposition of operator precedences and a translator from arithmetic infix to postfix which also uses a two dimensional table but with slightly different stack operations, see Collins (1986, pp 117 - 145).
+</p>
+<p>
+For an operator precedence program which translates from infix to postfix but which is not table driven, see McCracken (1987, pp 111 - 120).
+</p>
+<p>
+For a detailed theoretically oriented exposition of operator precedence parsing, see Aho and Ullman (1977, Section 5.3).
+</p>
+<p>
+A short but usable exposition of LR parsing is given in Capon and Jinks (1988, p 95).
+</p>
+<p>
+A more detailed exposition is in Sudkamp (1988, Chapters 15 and 16).
+</p>
+<p>
+For a very comprehensive treatment of LR-parsing,
+see Chapman (1987).
+</p>
+
+</div>
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-01-11 07:38:08 CST</p>
+<p class="author">Author: michal</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

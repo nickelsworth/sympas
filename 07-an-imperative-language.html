@@ -1,0 +1,1099 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Chapter 7 : An Imperative Language</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Chapter 7 : An Imperative Language"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-01-11 07:38:07 CST"/>
+<meta name="author" content="michal"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Chapter 7 : An Imperative Language</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 intro</a></li>
+<li><a href="#sec-2">2 User manual</a></li>
+<li><a href="#sec-3">3 Designing the implementation</a>
+<ul>
+<li><a href="#sec-3-1">3.1 Implementing the syntax</a></li>
+<li><a href="#sec-3-2">3.2 Step 1: <i>Visibility requirements</i>:</a></li>
+<li><a href="#sec-3-3">3.3 Step 2: <i>Bodies of parsing procedures</i>:</a></li>
+<li><a href="#sec-3-4">3.4 Step 3: <i>Declarations</i>:</a></li>
+<li><a href="#sec-3-5">3.5 Step 4: <i>Type checking</i>:</a>
+<ul>
+<li><a href="#sec-3-5-1">3.5.1 Implementing the semantics</a></li>
+</ul>
+</li>
+<li><a href="#sec-3-6">3.6 Step 5: <i>Designing the internal code</i>:</a></li>
+<li><a href="#sec-3-7">3.7 Step 6: <i>Translating into internal code</i>:</a></li>
+<li><a href="#sec-3-8">3.8 Step 7: <i>Interpreting the internal code</i>:</a></li>
+</ul>
+</li>
+<li><a href="#sec-4">4 The program</a></li>
+<li><a href="#sec-5">5 Exercises and reading</a>
+<ul>
+<li><a href="#sec-5-1">5.1 <i>Changing the implementation</i>:</a></li>
+<li><a href="#sec-5-2">5.2 <i>Changing the language</i>:</a></li>
+<li><a href="#sec-5-3">5.3 <i>Reading</i>:</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div class="outline-text-2" id="text-1">
+
+
+<p>
+This chapter aims to give more fluency in the use of block structure and mutual recursion, and more confidence in writing larger programs than those in Part One of this book.  The program described here is a compiler interpreter for a very small imperative language.  None of the concepts of the language are new, so the language is first described by a user manual.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> User manual</h2>
+<div class="outline-text-2" id="text-2">
+
+
+<p>
+The language TYPROC is a very small imperative language.  It has assignment statements, I-O statements and structured flow of control statements including recursive calls of previously declared procedures.  Variables are global, and they have to be declared as being of either type Boolean or type integer.  Expressions are built from variables and literal constants by means of a small number of inbuilt operators.  Strict type checking is maintained throughout.  The language is not intended for serious use but as an illustration in language implementation and documentation.
+</p>
+<p>
+The language is described by the following BNF productions for the context free syntax, and by the accompanying text for the context sensitive syntax and for the semantics.
+</p>
+
+
+
+<pre class="example">input-file ::=
+    [ programme ] '.'
+</pre>
+
+
+<p>
+The processor reads an input file consisting of zero or more programs which are processed as soon as they have been read, terminated by a period.
+</p>
+
+
+
+<pre class="example">programme  ::=
+    'BOOLEAN' [ ( 'a' | 'b' .. 'z' ) ]
+    'INTEGER' [ ( 'a' | 'b' .. 'z' ) ]
+    [ ( 'A' | 'B' .. 'Z' ) body ]
+    body '.'
+</pre>
+
+
+<p>
+A program consists of declarations of variables and procedures and a body.  Variables are just lower case letters, and they are typed as Boolean or integer.  Procedures are upper case letters, and their declaration is followed by a body.  Variables and procedures have to be declared before they can be used in a body, and they cannot be redeclared.  When a programme has been read, execution begins with its body.
+</p>
+
+
+
+<pre class="example">body  ::=
+    'BEGIN' statement-sequence 'END'
+statement-sequence  ::=
+    statement [ ';' statement ]
+</pre>
+
+
+<p>
+A body is a statement sequence enclosed in <code>BEGIN</code> and <code>END</code>.  A statement sequence consisting of one or more statements separated by semicolons is executed by executing the statements one after another.
+</p>
+
+
+
+<pre class="example">statement  ::=
+    ( 'a' | 'b' .. 'z' ) '=' expression |
+    'A' | 'B' .. 'Z' |
+    'BEGIN' statement-sequence 'END' |
+    'IF' expression 'THEN' statement |
+    'WHILE' expression 'DO' statement |
+    'READ' ( 'a' | 'b' .. 'z' ) |
+    'WRITE' expression |
+    'LINE' |
+    'TAB'
+</pre>
+
+
+<p>
+There are several kinds of statements.  Assignment statements are of the form <code>v = e</code>, where <code>v</code> is a variable that has been declared and <code>e</code> is an expression of the same type.  Execution has the effect of evaluating <code>e</code> and assigning its value to <code>v</code>.  Procedure calls are of the form <code>P</code>, where <code>P</code> is a procedure that has been declared; execution has the effect of executing the body of <code>P</code>.  Compound statements provide a means of executing a sequence of statements in <code>IF</code> and <code>WHILE</code> statements.  In <code>IF</code> and <code>WHILE</code> statements the expression must be of type Boolean.  In an <code>IF</code> statement the <code>THEN</code> part is executed only if the expression evaluates to true.  In a <code>WHILE</code> statement the <code>DO</code> part is executed zero or more times, as long as the expression evaluates to true.  In <code>READ</code> statements the variable has to have been declared, execution has the effect of reading from the input file either an integer or a Boolean value and assigning this to the variable.  <code>WRITE</code> statements will evaluate the expression, which may be of either type, and write its value to the output file.  <code>LINE</code> statements start a new line, <code>TAB</code> statements write a tab.
+</p>
+
+
+
+<pre class="example">expression  ::=
+    simple-expression { ('&gt;' | '&lt;' | '=' ) simple-expression }
+</pre>
+
+
+<p>
+An expression is either a simple expression or two simple expressions separated by a comparison operator.  In the second case the type of the expression will be Boolean, and the expression will be evaluated to true if the comparison holds between the values of the two simple expressions.
+</p>
+
+
+
+<pre class="example">simple-expression  ::=
+    term [ ( '+' | '-' | '#' ) term ]
+</pre>
+
+
+<p>
+A simple expression consists of one or more terms separated by addition, subtraction or disjunction operators.  The term on the left and the term on the right have to be of the same type.  For the two arithmetic operators the types have to be integer, for the disjunction operator the types have to be Boolean.  The result type of the simple expression is that of its terms.  During evaluation the terms are evaluated left to right and the operation is applied to their values.
+</p>
+
+
+
+<pre class="example">term  ::=
+    factor [ ( '*' | '/' | '&amp;' ) factor ]
+</pre>
+
+
+<p>
+A term consists of one or more factors separated by multiplication, division or conjunction operators.  The factors have to be of the same type, integer for the arithmetic operators and Boolean for conjunction, and the result type is the same as that of the factors.  Evaluation is left to right.
+</p>
+
+
+
+<pre class="example">factor  ::=
+    'a' | 'b' .. 'z' |
+    ( '0' | '1' .. '9' ) [ ( '0' | '1' .. '9' ) ] |
+    '(' expression ')' |
+    '-' factor |
+    'TRUE' |
+    'FALSE |
+    'ORD' factor
+</pre>
+
+
+<p>
+A factor can be a variable that has been previously declared, the result type of the factor is that of the variable.  A factor can also be a string of decimal digits interpreted as an integer (up to an implementation dependent number of bits, typically 32), and the result type is integer.  A factor can be a parenthesised expression of either type, and that will be the result type.  A factor can be a negated factor of type Boolean, and its result type is Boolean, note that <code>-</code> is <i>overloaded</i>: as an infix operator it means subtraction, as a prefix operator it means negation.  A factor can also be one of the two Boolean constants, giving result type Boolean.  Finally, a factor can be the <code>ORD</code> function applied to a factor of any type, the result type is integer; if the contained factor is of type integer, then <code>ORD</code> is the identity function, and if the contained factor is of type Boolean, then <code>ORD</code> evaluates to 0 for false and to 1 for true.
+</p>
+<p>
+Comments are written just inside curly braces like this: <code>{ this is a comment }</code>.  The grammar as given does not explain this, and indeed most documentations for languages leave such a detail to the informal explanations.  Comments are generally treated like white space.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Designing the implementation</h2>
+<div class="outline-text-2" id="text-3">
+
+
+<p>
+For the implementation of this language we shall distinguish syntax and semantics rather thoroughly.
+</p>
+
+</div>
+
+<div id="outline-container-3-1" class="outline-3">
+<h3 id="sec-3-1"><span class="section-number-3">3.1</span> Implementing the syntax</h3>
+<div class="outline-text-3" id="text-3-1">
+
+
+<p>
+In all our previous programs the basic symbols were single printing characters.  In this language symbols consist of either single letters for user declared variables and procedures, or inbuilt single letter special characters, or inbuilt multi capital letter words.  The procedure for reading symbols, called <code>getsym</code>, has to be able to detect these multi character symbols.  After skipping any non-printing characters, it has to examine the current character: If it is a capital and the next character waiting in the input is also a capital, then the two capitals and any following capitals are collected in a short string.  If the current character is an opening brace for a comment, characters are skipped up to the closing brace and the procedure starts again.  In all other cases the procedure does not read beyond the current single character.  The language was designed to make this simple technique possible.  The procedure <code>getsym</code> is an unusually simple scanner for a language with multi-character symbols.  Indeed, it does not have to know much about the language to be parsed.  Other scanners that we shall see in later chapters are much more complex, and some even make use of auxiliary tables.  But often this will have the advantage that the parser does not need to know much about how symbols are written.  The simple scanner given here has to delegate most of the recognition of symbols to the parser.  Consequently, much surface detail has to be spread throughout the program.  For example, the maximum length of the string for multi-character symbols is spread all over the parser.  Hence there cannot be a constant declaration to set the maximum length (to 8 or whatever).
+</p>
+<p>
+For the parsing procedures we now distinguish various steps in the design.  If you are writing the program yourself, you are advised to maintain a discipline of steps similar to the ones used here.  The steps continue in the next section on semantics.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-2" class="outline-3">
+<h3 id="sec-3-2"><span class="section-number-3">3.2</span> Step 1: <i>Visibility requirements</i>:</h3>
+<div class="outline-text-3" id="text-3-2">
+
+<p>A detailed examination of the grammar shows that the productions are already ordered in a convenient way: each non-terminal needs access either to one defined earlier, or to itself, or to the one immediately following.  Hence all visibility requirements will be satisfied if all the parsing procedures are nested successively as in the grammar, <code>programme</code> outermost, <code>factor</code> innermost.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-3" class="outline-3">
+<h3 id="sec-3-3"><span class="section-number-3">3.3</span> Step 2: <i>Bodies of parsing procedures</i>:</h3>
+<div class="outline-text-3" id="text-3-3">
+
+<p>Most of this should be routine by now, except that a CASE statement can no longer be used for the non-terminals which have alternatives.  Because some symbols are single characters and some are short strings, a cascade of <code>IF-THEN-ELSE-IF-..</code> has to be used in the parsing procedures for factor and for statement.  Wrong symbols produce a call to the by now familiar error handler.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-4" class="outline-3">
+<h3 id="sec-3-4"><span class="section-number-3">3.4</span> Step 3: <i>Declarations</i>:</h3>
+<div class="outline-text-3" id="text-3-4">
+
+<p>Inside <code>programme</code>, whenever a variable is declared, then this fact should be noted, and the type also needs recording.  In this simple language we can manage by entering declared variables into an appropriate set &mdash; one for the integers, and one for the Booleans.  Whenever a procedure is declared, it is entered into a set of procedures.  Then inside <code>statement</code>, for the variable in an assignment statement it has to be checked that it is in one of the two sets of declared variables.  Also inside <code>statement</code>, calls of procedures have to be checked.  Finally, inside <code>factor</code> any variables have to be checked.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-5" class="outline-3">
+<h3 id="sec-3-5"><span class="section-number-3">3.5</span> Step 4: <i>Type checking</i>:</h3>
+<div class="outline-text-3" id="text-3-5">
+
+<p>Inside <code>factor</code> all variables, the numeric constants and the Boolean constants have one of two types, and these types have to be transmitted to the procedure which called <code>factor</code>.  Also inside <code>factor</code>, a check has to be made that the negand was of type Boolean, and the result will be of type Boolean.  For <code>ORD</code> no type check is made, but the result will be integer.  For terms, simple expressions and expressions containing infix operators a check has to be made that the operands are appropriate for the infix operator.  For terms and simple expressions the result type is the same as that of the operands, for expressions the result type Boolean is returned.  The appropriate implementation mechanism is similar to the one for returning values in the infix evaluator of Chapter 3: each of the above procedures needs a <code>VAR</code> parameter whose possible values are of two types, and each of the procedures for infix operators need a similar local variable for the second operand.  A local variable is also needed inside <code>statement</code> for calls of <code>expression</code>.  This occurs inside assignment statements for which type agreement of the variable and the expression has to be checked.  It also occurs in <code>IF</code> and <code>WHILE</code> statements for which the expression must be Boolean.  In <code>WRITE</code> statements no type check is needed for the expression, but the type of the expression will determine what code is to be generated later.
+</p>
+
+</div>
+
+<div id="outline-container-3-5-1" class="outline-4">
+<h4 id="sec-3-5-1"><span class="section-number-4">3.5.1</span> Implementing the semantics</h4>
+<div class="outline-text-4" id="text-3-5-1">
+
+
+<p>
+Up to this point we have been concerned with syntax only.  Some earlier authors would have called steps 3 and 4 <i>static semantics</i>, but this was based on the misconception that syntax has to be context free.  Semantics assigns meanings to the symbols of the language and to the more complex constructions.  A simple example is that <code>&amp;</code> means AND.  Assignment of meaning was done directly in the infix evaluator of Chapter 3, but here it has to be done indirectly.  Loops may result in their bodies being executed several times, so for the same reason as for the truth table generator of Chapter 5, the code has to be stored internally.  So the semantics requires an indirect assignment of meaning to the language seen by the user, by first specifying a translation scheme and then assigning meaning to translations.  For example, <code>&amp;</code> is translated internally to <code>conj</code> which means AND.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-3-6" class="outline-3">
+<h3 id="sec-3-6"><span class="section-number-3">3.6</span> Step 5: <i>Designing the internal code</i>:</h3>
+<div class="outline-text-3" id="text-3-6">
+
+<p>Whereas postfix code as in the truth table generator is good for evaluating expressions, something else is needed for the execution of loops or of conditionals.  Essentially we should like to say something like this:
+</p>
+
+
+
+<pre class="example">A term can be 'F1 &amp; F2',
+        where F1 and F2 are factors,
+    and its translation is: and-op(G1,G2)
+        where G1 and G2 are the translations of F1 and F2,
+    whose value is: V1 AND V2,
+        where V1 and V2 are the values of G1 and G2.
+A statement can be 'WHILE E DO S'
+        where E is an expression, and
+        where S is a statement,
+    and its translation is: while-op(F,T),
+        where F and T are the translations of E and S,
+    which is executed:
+        WHILE the value of F (is true) DO execute T.
+</pre>
+
+
+<p>
+Note that <code>F1 &amp; F2</code> and <code>WHILE E DO S</code>, as they occur in the first lines, belong to the object language whose meaning is being explained; we are not expected to know the meaning of either.  Of course we and the Pascal compiler are supposed to know what <code>AND</code>, <code>WHILE</code> and <code>DO</code> mean where they occur unquoted near the end.
+</p>
+<p>
+We now have to think of a way of representing such translations.  A uniform way of doing this is to think of <code>conj</code> and <code>while</code> as operators with two arguments which are pointers to other, possibly complex things.  Those other things can also consist of operators with two pointers, but ultimately there must be operands which do not point to anything.  Pointers indicate an address where something is to be found, we can use integer pointers into an <code>ARRAY</code> of three-part =RECORD=s with an operator and two integers.  The integers are also used to hold addresses of variables or the code of procedures, and to represent numeric and Boolean constants.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-7" class="outline-3">
+<h3 id="sec-3-7"><span class="section-number-3">3.7</span> Step 6: <i>Translating into internal code</i>:</h3>
+<div class="outline-text-3" id="text-3-7">
+
+<p>Once the internal code has been designed, it is an easy matter to produce the translations during the parsing.  The translation is very similar to translation into postfix in the truth table generator.  Each translation step is handled by a call to a code generating procedure, which is similar to the one in the truth table generator.  But instead of one parameter, it has three: an operator and two integers, and it deposits the values of the three in another <code>RECORD</code>.  The two integers have to be known at the time the call is made.  For variables and constants in <code>factor</code> this is no problem, for the arithmetic and Boolean operators it has to be done when the address of the code for the operands is known, after the second operand has been processed.  So the order of generation is the same as that for postfix code.  The address of the code for the second operand will be the most recently generated code, so that is easily accessible.  But the address of the code for the first operand will be lost by now; so that has to be saved in a local variable when the infix operator is seen.  Since the procedures for infix operators can each process several, in fact three, different operators each, the source operators also have to be saved in another local variable so that the correct internal code can be generated.  The mechanism is already familiar from the truth table generator in procedure formula.  Essentially the same mechanism is used in the parsing procedure for statements and for statement sequences; for the latter it should be noted that semicolons produce code in the same way that <code>+</code> does.  Inside <code>programme</code> no code is generated for declarations, but for a procedure the last code generated by its body has to be attached to the name of the procedure, so that a call to this code can be generated when the procedure is called inside <code>statement</code>.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-8" class="outline-3">
+<h3 id="sec-3-8"><span class="section-number-3">3.8</span> Step 7: <i>Interpreting the internal code</i>:</h3>
+<div class="outline-text-3" id="text-3-8">
+
+<p>The code for the body of the (main) programme will be the last code that has been generated.  This can now be interpreted by either real hardware or by a software interpreter.  Both would need space for the variables of the program; the way it has been designed here all 26 potential variables need to be given space.  For a hardware interpreter the internal code would have to be loaded into another space, but for our software interpreter it is already there.  So when the entire programme has been read, checked for errors and translated, the main program should pass it onto an interpreter which has an <code>ARRAY</code> of 26 integers for the potential variables.  Then the body of the programme has to be executed.  During execution expressions will have to be evaluated, both Boolean and integer.  So a natural way to think of the entire interpretation is that it involves recursive calls of a procedure for executing statements and two functions for evaluating expressions.  The procedure and the functions each take an integer parameter which is the index of a <code>RECORD</code> in the code <code>ARRAY</code>, and each makes a <code>CASE</code> decision based on the operator part of the <code>RECORD</code>.  The cases resemble those in the infix evaluator and the truth table generator, and when there are recursive calls then one or both of the integer parts of the <code>RECORD</code> are used as parameters of the call.
+</p>
+<p>
+If a program is preceded by <code>?</code>, then the code for every body will be displayed when the body has been read.  If a program is not terminated by <code>.</code> but by <code>?</code>, then the execution will be traced.  These two facilities were not mentioned in the user manual, they are supposedly secret information, known only to the implementor who is checking the internal workings.
+</p>
+<p>
+The following is a sample run from TYPROC:
+</p>
+
+
+
+<pre class="example">ready
+{ demonstrating generated code and tracing of execution }
+{ request to display the code after translation: } ?
+INTEGER i
+BEGIN
+i = 1010101;
+WRITE 42 * i
+END
+                code for this body :
+               1             IMMED   1010101         0
+               2           IASSIGN         8         1
+               3             IMMED        42         0
+               4             FETCH         8         0
+               5               MUL         3         4
+               6            IWRITE         0         5
+               7           SEMICOL         2         6
+
+{ request to trace execution: } ?
+                interpreting ...
+               7           SEMICOL         2         6
+               2           IASSIGN         8         1
+               1             IMMED   1010101         0
+               6            IWRITE         0         5
+               5               MUL         3         4
+               3             IMMED        42         0
+               4             FETCH         8         0
+  42424242
+  variable     value
+         i   1010101
+ready
+
+{ request to display the code after translation: } ?
+BOOLEAN p q
+BEGIN
+p = TRUE;
+q = FALSE;
+WRITE  (p &amp; - FALSE # - q)  &amp;  p ;
+LINE
+END
+                code for this body :
+               1             IMMED         1         0
+               2           BASSIGN        15         1
+               3             IMMED         0         0
+               4           BASSIGN        16         3
+               5           SEMICOL         2         4
+               6             FETCH        15         0
+               7             IMMED         0         0
+               8             NOTOP         0         7
+               9             ANDOP         6         8
+              10             FETCH        16         0
+              11             NOTOP         0        10
+              12              OROP         9        11
+              13             FETCH        15         0
+              14             ANDOP        12        13
+              15            BWRITE         0        14
+              16           SEMICOL         5        15
+              17            LINEOP         0         0
+              18           SEMICOL        16        17
+ .
+  TRUE
+ready
+
+{ demonstration of procedures }
+
+INTEGER
+  i { counter }
+  s { square }
+  c { cube }
+  f { fourth power }
+  t { total of squares }
+  u { total of cubes }
+  w { total of fourth powers }
+
+I                               { initialisation }
+  BEGIN
+  i = 1;  t = 0;  u = 0;  w = 0
+  END
+
+C                               { computing and writing }
+  BEGIN
+  WHILE i &lt; 6 DO
+    BEGIN
+    s = i * i;  c = s * i;  f = s * s;
+    WRITE i;  WRITE s;  WRITE c;  WRITE f;  LINE;
+    t = t + s;  u = u + c;  w = w + f;
+    i = i + 1
+    END
+  END
+
+R                               { writing totals }
+  BEGIN
+  LINE;  TAB;  WRITE t;  WRITE u;  WRITE w;  LINE
+  END
+
+BEGIN                           { main program }
+I;
+C;
+R
+END .
+         1         1         1         1
+         2         4         8        16
+         3         9        27        81
+         4        16        64       256
+         5        25       125       625
+
+                  55       225       979
+ready
+
+.
+</pre>
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> The program</h2>
+<div class="outline-text-2" id="text-4">
+
+
+<p>
+The following is the standard Pascal source program for the imperative language TYPROC.
+</p>
+
+
+
+<pre class="example">PROGRAM typroc(input,output);
+(* TYpes, PROCedures, treecode, recursive interpreter *)
+
+LABEL 1,99;
+
+CONST
+    echo = true; (* echo = usage_is_not_interactive *)
+    tt = 16;
+    maxcode = 200;
+
+TYPE
+    types = (booltyp,inttyp);
+    operator =
+        (fetch,immed,call,notop,andop,orop,less,great,equal,
+        add,sub,mul,divid,bassign,iassign,semicol,ifop,whilop,
+        bread,iread,bwrite,iwrite,lineop,tabop);
+    instruction =
+        RECORD op : operator; left,right : integer END;
+    alfa     = PACKED ARRAY [1..8] OF char;
+    string20 = PACKED ARRAY [1..20] OF char;
+
+VAR
+    ch : char;          (* from getsym *)
+    al : alfa;
+    boolvars,intvars : SET OF 'a'..'z';
+    procedures : SET OF 'A'..'Z';
+    procaddresses : ARRAY ['A'..'Z'] OF integer;
+    code : ARRAY [1..maxcode] OF instruction;
+    lastcode : integer; (* code index *)
+    tracing : boolean;
+    i : integer;
+
+(* - - - - -   C O M P I L E R   - - - - - *)
+
+PROCEDURE getsym;
+LABEL 1;
+VAR I : integer;
+
+    PROCEDURE getch;
+    BEGIN (* getch *)
+    IF eof THEN
+        BEGIN
+        writeln('unexepcted end of file');
+        GOTO 99
+        END;
+    WHILE eoln DO
+        BEGIN readln; IF echo THEN writeln END;
+    read(ch); IF echo THEN write(ch)
+    END; (* getch *)
+
+BEGIN (* getsym *)
+1:
+al := '        ';
+REPEAT getch UNTIL ch &gt; ' ';
+IF (ch IN ['A'..'Z']) AND (input^ IN ['A'..'Z']) THEN
+    BEGIN
+    al[1] := ch; i := 2;
+    REPEAT
+        getch; IF i &lt; 8 THEN al[i] := ch; i := i + 1
+        UNTIL NOT (input^ IN ['A'..'Z']);
+    ch := ' '
+    END (* IF *)
+ELSE IF ch = '{' THEN
+    BEGIN (* comment *)
+    REPEAT getch UNTIL ch = '}';
+    GOTO 1
+    END
+END; (* getsym *)
+
+PROCEDURE gen(o : operator; l,r : integer);
+BEGIN (* gen *)
+lastcode := lastcode + 1;
+WITH code[lastcode] DO
+    BEGIN op := o; left := l; right := r END
+END; (* gen *)
+
+PROCEDURE showcode(i : integer);
+BEGIN (* showcode *)
+WITH code[i] DO
+    writeln(i:tt,'        ',op:10,left:10,right:10)
+END; (* showcode *)
+
+PROCEDURE programme;
+VAR c : char;
+
+  PROCEDURE error(message : string20);
+  BEGIN (* error *)
+  write('error : ');
+  IF message[1] &lt;&gt; ' ' THEN
+      BEGIN
+      IF ch &lt;&gt; ' ' THEN write('"',ch,'"') ELSE write('"',al,'"');
+      write(' when ')
+      END;
+  writeln(message); readln; GOTO 1
+  END; (* error *)
+
+  PROCEDURE body;
+  VAR firstcode : integer;
+
+    PROCEDURE statementsequence;
+    VAR left : integer;
+
+      PROCEDURE statement;
+      VAR typ : types; c : char; left : integer;
+
+        PROCEDURE expression(VAR typ : types);
+        VAR typ2 : types; c : char; left : integer;
+
+          PROCEDURE simpexpression(VAR typ : types);
+          VAR typ2 : types; c : char; left : integer;
+
+            PROCEDURE term(VAR typ : types);
+            VAR typ2 : types; c : char; left : integer;
+
+              PROCEDURE factor(VAR typ : types);
+              VAR num : integer;
+              BEGIN (* factor *)
+              IF ch IN ['a'..'z'] THEN
+                  BEGIN
+                  IF NOT (ch IN boolvars + intvars)
+                      THEN error('undeclared variable ');
+                  IF ch IN boolvars
+                      THEN typ := booltyp
+                      ELSE typ := inttyp;
+                  gen(fetch,ord(ch) - ord('a'),0);
+                  getsym
+                  END
+              ELSE IF ch IN ['0'..'9'] THEN
+                  BEGIN
+                  num := 0;
+                  REPEAT
+                      num := 10 * num + ord(ch) - ord('0');
+                      getsym;
+                      UNTIL NOT (ch IN ['0'..'9']);
+                  typ := inttyp;
+                  gen(immed,num,0)
+                  END
+              ELSE IF ch = '(' THEN
+                  BEGIN
+                  getsym;
+                  expression(typ);
+                  IF ch &lt;&gt; ')' THEN
+                      error('")" expected        ');
+                  getsym
+                  END
+              ELSE IF ch = '-' THEN
+                  BEGIN
+                  getsym;
+                  factor(typ);
+                  IF typ &lt;&gt; booltyp THEN
+                      error(' boolean expected   ');
+                  gen(notop,0,lastcode)
+                  END
+              ELSE IF (al = 'TRUE    ')
+                    OR (al = 'FALSE   ') THEN
+                  BEGIN
+                  typ := booltyp;
+                  gen(immed,ord(al = 'TRUE    '),0);
+                  getsym
+                  END
+              ELSE IF al = 'ORD     ' THEN
+                  BEGIN
+                  getsym;
+                  factor(typ);
+                  typ := inttyp
+                  END
+              ELSE error('illegal IN factor   ')
+              END; (* factor *)
+
+            BEGIN (* term *)
+            factor(typ);
+            WHILE ch IN ['*','/','&amp;'] DO
+                BEGIN
+                IF (typ = booltyp) AND (ch IN ['*','/'])
+                      OR (typ = inttyp) AND (ch = '&amp;')
+                    THEN error('operand conflict    ');
+                c := ch; left := lastcode;
+                getsym;
+                factor(typ2);
+                IF typ &lt;&gt; typ2 THEN
+                    error(' different types    ');
+                CASE c OF
+                    '*' : gen(mul,left,lastcode);
+                    '/' : gen(divid,left,lastcode);
+                    '&amp;' : gen(andop,left,lastcode)
+                    END (* CASE *)
+                END (* WHILE *)
+            END; (* term *)
+
+          BEGIN (* simpexpression *)
+          term(typ);
+          WHILE ch IN ['+','-','#'] DO
+              BEGIN
+              IF (typ = booltyp) AND (ch IN ['+','-'])
+                    OR (typ = inttyp) AND (ch = '#')
+                  THEN error('operand conflict    ');
+              c := ch; left := lastcode;
+              getsym;
+              term(typ2);
+              IF typ &lt;&gt; typ2 THEN
+                error(' different types    ');
+              CASE c OF
+                  '+' : gen(add,left,lastcode);
+                  '-' : gen(sub,left,lastcode);
+                  '#' : gen(orop,left,lastcode)
+                  END (* CASE *)
+              END (* while *)
+          END; (* simpexpression *)
+
+        BEGIN (* expression *)
+        simpexpression(typ);
+        IF ch IN ['&gt;','&lt;','='] THEN
+            BEGIN
+            c := ch; left := lastcode;
+            getsym;
+            simpexpression(typ2);
+            IF typ &lt;&gt; typ2 THEN
+                error(' different types    ');
+            typ := booltyp;
+            CASE c OF
+                '&gt;' : gen(great,left,lastcode);
+                '&lt;' : gen(less,left,lastcode);
+                '=' : gen(equal,left,lastcode)
+                END (* CASE *)
+            END (* IF *)
+        END; (* expression *)
+
+      BEGIN (* statement *)
+      IF ch IN ['a'..'z'] THEN
+            BEGIN (* assignment statement *)
+            IF NOT (ch IN boolvars + intvars) THEN
+                error('undeclared variable ');
+            c := ch; left := ord(ch) - ord('a'); getsym;
+            IF ch &lt;&gt; '=' THEN error('"=" expected        ');
+            getsym; expression(typ);
+            IF (c IN boolvars) AND (typ = inttyp)
+                    OR (c IN intvars) AND (typ = booltyp)
+                THEN error(' assignment conflict');
+            IF typ = booltyp
+                THEN gen(bassign,left,lastcode)
+                ELSE gen(iassign,left,lastcode)
+            END
+      ELSE IF ch IN ['A'..'Z'] THEN
+            BEGIN (* procedure call *)
+            IF NOT (ch IN procedures) THEN
+                error('undeclared procedure');
+            gen(call,procaddresses[ch],0); getsym
+            END
+      ELSE IF al = 'BEGIN   ' THEN
+            BEGIN
+            getsym; statementsequence;
+            IF al &lt;&gt; 'END     ' THEN error('"END" expected      ');
+            getsym
+            END
+      ELSE IF al = 'IF      ' THEN
+            BEGIN
+            getsym; expression(typ);
+            IF typ &lt;&gt; booltyp THEN
+                error('must be boolean expr');
+            left := lastcode;
+            IF al &lt;&gt; 'THEN    ' THEN
+                error('"THEN" expected     ');
+            getsym; statement; gen(ifop,left,lastcode)
+            END
+      ELSE IF al = 'WHILE   ' THEN
+            BEGIN
+            getsym; expression(typ);
+            IF typ &lt;&gt; booltyp THEN
+                error('must be boolean expr');
+            left := lastcode;
+            IF al &lt;&gt; 'DO      ' THEN
+                error('"DO" expected       ');
+            getsym; statement; gen(whilop,left,lastcode)
+            END
+      ELSE IF al = 'READ    ' THEN
+            BEGIN
+            getsym;
+            IF NOT (ch IN ['a'..'z'])
+                THEN error('"a..z" expected     ');
+            IF NOT (ch IN boolvars + intvars)
+                THEN error('undeclared variable ');
+            IF ch IN boolvars
+                THEN gen(bread,ord(ch) - ord('a'),0)
+                ELSE gen(iread,ord(ch) - ord('a'),0);
+            getsym
+            END
+      ELSE IF al = 'WRITE   ' THEN
+            BEGIN
+            getsym; expression(typ);
+            IF typ = booltyp
+                THEN gen(bwrite,0,lastcode)
+                ELSE gen(iwrite,0,lastcode)
+            END
+      ELSE IF al = 'LINE    ' THEN
+            BEGIN getsym; gen(lineop,0,0) END
+      ELSE IF al = 'TAB     ' THEN
+            BEGIN getsym; gen(tabop,0,0) END
+      ELSE error('illegal in statement')
+      END; (* statement *)
+
+    BEGIN (* statementsequence *)
+    statement;
+    WHILE ch = ';' DO
+        BEGIN
+        left := lastcode;
+        getsym;
+        statement;
+        gen(semicol,left,lastcode)
+        END
+    END; (* statementsequence *)
+
+  BEGIN (* body *)
+  IF al &lt;&gt; 'BEGIN   ' THEN
+      error('"BEGIN" expected    ');
+  getsym;
+  firstcode := lastcode + 1;
+  statementsequence;
+  IF tracing THEN
+      BEGIN
+      writeln; writeln(' ':tt,'code for this body :');
+      FOR i := firstcode TO lastcode DO showcode(i)
+      END;
+  IF al &lt;&gt; 'END     ' THEN
+      error('"END" expected      ');
+  getsym
+  END; (* body *)
+
+BEGIN (* programme *)
+boolvars := []; intvars := []; procedures := [];
+lastcode := 0;
+IF al = 'BOOLEAN ' THEN
+    BEGIN
+    getsym;
+    WHILE ch IN ['a'..'z'] DO
+        BEGIN
+        IF ch IN boolvars THEN
+            error('existing variable   ');
+        boolvars := boolvars + [ch]; getsym
+        END
+    END; (* IF *)
+IF al = 'INTEGER ' THEN
+    BEGIN
+    getsym;
+    WHILE ch IN ['a'..'z'] DO
+        BEGIN
+        IF ch IN boolvars + intvars THEN
+            error('existing variable   ');
+        intvars := intvars + [ch]; getsym
+        END (* WHILE *)
+    END; (* IF *)
+WHILE ch IN ['A'..'Z'] DO
+    BEGIN
+    IF ch IN procedures THEN
+        error('existing procedure  ');
+    procedures := procedures + [ch]; c := ch; getsym;
+    body; procaddresses[c] := lastcode
+    END; (* WHILE *)
+body;
+IF NOT (ch IN ['.','?']) THEN
+    BEGIN writeln('"." assumed'); ch := '.' END;
+tracing := ch = '?';
+ch := ' '
+END; (* programme *)
+
+(* - - - - -   I N T E R P R E T E R   - - - - - *)
+
+PROCEDURE interpret;
+VAR  mem : ARRAY [0..25] OF integer;
+
+  FUNCTION ival(n : integer) : integer;
+  BEGIN (* ival *)
+  WITH code[n] DO
+      BEGIN
+      IF tracing THEN showcode(n);
+      CASE op OF
+          fetch : ival := mem[left];
+          immed : ival := left;
+          add   : ival := ival(left)  +  ival(right);
+          sub   : ival := ival(left)  -  ival(right);
+          mul   : ival := ival(left)  *  ival(right);
+          divid : ival := ival(left) DIV ival(right);
+          END (* CASE *)
+      END (* WITH *)
+  END; (* ival *)
+
+  FUNCTION bval(n : integer) : boolean;
+  BEGIN (* bval *)
+  WITH code[n] DO
+      BEGIN
+      IF tracing THEN showcode(n);
+      CASE op OF
+          fetch : bval := mem[left] = 1;
+          immed : bval := left = 1;
+          notop : bval :=            NOT bval(right);
+          andop : bval := bval(left) AND bval(right);
+          orop  : bval := bval(left) OR  bval(right);
+          less  : bval := ival(left)  &lt;  ival(right);
+          great : bval := ival(left)  &gt;  ival(right);
+          equal : bval := ival(left)  =  ival(right)
+          END (* CASE *)
+      END (* WITH *)
+  END; (* bval *)
+
+  PROCEDURE exe(n : integer);
+  VAR b : boolean; (* for reading *)
+  BEGIN (* exe *)
+  WITH code[n] DO
+      BEGIN
+      IF tracing THEN showcode(n);
+      CASE op OF
+          bassign : mem[left] := ord(bval(right));
+          iassign : mem[left] := ival(right);
+          call    : exe(left);
+          semicol : BEGIN exe(left); exe(right) END;
+          ifop    : IF bval(left) THEN exe(right);
+          whilop  : WHILE bval(left) DO exe(right);
+          bread   : BEGIN read(b); mem[left] := ord(b) END;
+          iread   :       read(mem[left]);
+          bwrite  : IF tracing THEN writeln(bval(right))
+                               ELSE write  (bval(right));
+          iwrite  : IF tracing THEN writeln(ival(right))
+                               ELSE write  (ival(right));
+          lineop  : writeln;
+          tabop   : IF tracing THEN writeln
+                               ELSE write(' ':10)
+          END (* CASE *)
+      END (* WITH *)
+  END; (* exe *)
+
+BEGIN (* interpret *)
+IF echo THEN writeln;
+IF tracing THEN writeln(' ':tt,'interpreting ...');
+exe(lastcode);
+IF tracing AND (boolvars + intvars &lt;&gt; []) THEN
+    BEGIN
+    writeln('variable':10,'value':10);
+    FOR ch := 'a' TO 'z' DO
+        IF ch IN boolvars + intvars THEN
+            writeln(ch:10,mem[ord(ch)-ord('a')]:10)
+    END
+END; (* interpret *)
+
+(* - - - - -   M A I N   - - - - - *)
+
+BEGIN (* main *)
+1:
+REPEAT
+    writeln('ready');
+    getsym;
+    IF ch &lt;&gt; '.' THEN
+        BEGIN
+        tracing := ch = '?'; IF tracing THEN getsym;
+        programme; interpret
+        END
+    UNTIL ch = '.';
+99:
+END. (* main *)
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Exercises and reading</h2>
+<div class="outline-text-2" id="text-5">
+
+
+<p>
+The exercises below are divided into two groups:
+those that leave the language as it is and merely
+change the implementation,
+and those that change the language.
+</p>
+
+</div>
+
+<div id="outline-container-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> <i>Changing the implementation</i>:</h3>
+<div class="outline-text-3" id="text-5-1">
+
+<p>Improve the error reporting so that when an error has occurred, a marker is placed under the currently visible symbol and the error message is written next.  You will need to use an input line buffer, so that the whole line is written out when an error has been seen.  This affects procedure <code>getch</code> &mdash; it now has to maintain this buffer, extract characters from it sequentially, and read a whole new line when the buffer is empty.
+</p>
+<p>
+Rewrite the scanner so that it recognises reserved words like <code>BEGIN</code> and <code>IF</code> rather than leaving the recognition to the parser.  This will mean that procedure <code>getsym</code> reports to the parsing procedures that it has recognised a begin-symbol, or an if-symbol, and so on.  You will need to define an enumeration type for these symbols.  This enumeration type should include symbols for the single characters, too.  As a consequence, the parsing procedures do not have to know anything about the surface syntax of the language.
+</p>
+<p>
+Study the notion of error recovery, and implement it in this compiler.  See Wirth (1976, p 320 - 322) for a description of error recovery.
+</p>
+<p>
+Instead of implementing the binary tree code in <code>ARRAY</code>, use pointers.  Do not forget to dispose of unwanted pointers when a <code>programme</code> has been executed.
+</p>
+<p>
+In the interpreter, add a check which prevents attempted division by zero.
+</p>
+<p>
+Rewrite the interpreter without using recursion.
+</p>
+<p>
+Redesign the internal code so that it is closer to a conventional machine language.  The simplest kind is code for a stack machine for evaluating expressions and for holding return addresses for procedures that have been called.  You will have to write a completely new interpreter.
+</p>
+<p>
+Rewrite the program in a different language such as C or Lisp or Basic.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-2" class="outline-3">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> <i>Changing the language</i>:</h3>
+<div class="outline-text-3" id="text-5-2">
+
+<p>Just 26 lowercase variables and 26 uppercase procedures do not make programs very readable.  Change this so that variables and procedures can be any (perhaps lowercase) identifier &mdash; starting with a letter optionally followed by further letters, digits (and perhaps underscores).  You will need to implement a symbol table in which such identifiers are stored when they are being declared.
+</p>
+<p>
+The third little program in the sample run uses procedures, but they are not recursive.  Write a little program in the language which uses recursion.  Without actually running it, but by inspecting the Pascal program in the previous section, determine whether your program would work correctly.  If yes, explain how; if no, fix it.
+</p>
+<p>
+Add the type <code>CHAR</code> to the language.  Define a method which allows users to write character strings.  This is particularly useful for obtaing readable output.  Do not attempt to implement string variables of arbitrary length &mdash; this is quite difficult.
+</p>
+<p>
+Implement <code>ELSE</code>, <code>REPEAT</code>, <code>FOR</code> and <code>CASE</code> statements.  Note that the latter two are much harder than the first two.
+</p>
+<p>
+Add declarations for <code>ARRAY</code>\s of integers or of Booleans or of characters.  The declaration should specify their size, do not attempt to implement dynamically varying sizes.
+</p>
+<p>
+Add local variables to procedures.  Since procedures should allow recursion, the local variables will have to be allocated on a stack.
+</p>
+<p>
+Allow procedures to be called before they have been defined, but ensure that they have been defined before the body of the main program.
+</p>
+<p>
+Add a facility for defining (parameterless) functions.  In one way functions are like procedures in that they have an executable code body.  In another way functions are like variables in that they have a type.  The type is given in the declaration, and it has to be recorded in the symbol table for later checking.
+</p>
+<p>
+Implement value parameters for procedures (and functions).  Such parameters are just like local variables except that they are being initialised at the time of call.  So they will have to live on the stack, too.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-3" class="outline-3">
+<h3 id="sec-5-3"><span class="section-number-3">5.3</span> <i>Reading</i>:</h3>
+<div class="outline-text-3" id="text-5-3">
+
+<p>Allison (1986, pp 52 - 59) gives a denotational semantics for a small imperative language, and (pp 120 - 127) a Pascal interpreter for the language.  Note that the interpreter is a close, almost literal, translation of the semantics into Pascal.  The closeness of the translation is intentional, it is bought at the price of efficiency.  You might like to write a more efficient version, but do try to understand why Allison made his translation so close.
+</p>
+<p>
+If you wish to pursue the topic of compilers, you may wish to skip to Chapter 14 to study a somewhat more complex but still quite small compiler for another, more useable language.  Alternatively, you may wish to pursue the reading given in that chapter.
+</p>
+</div>
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-01-11 07:38:07 CST</p>
+<p class="author">Author: michal</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

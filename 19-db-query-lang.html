@@ -1,0 +1,2579 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Chapter 19 : A language for querying databases</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Chapter 19 : A language for querying databases"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-01-11 07:34:52 CST"/>
+<meta name="author" content="michal"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/javascript" src="http://orgmode.org/mathjax/MathJax.js">
+<!--/*--><![CDATA[/*><!--*/
+    MathJax.Hub.Config({
+        // Only one of the two following lines, depending on user settings
+        // First allows browser-native MathML display, second forces HTML/CSS
+        //  config: ["MMLorHTML.js"], jax: ["input/TeX"],
+            jax: ["input/TeX", "output/HTML-CSS"],
+        extensions: ["tex2jax.js","TeX/AMSmath.js","TeX/AMSsymbols.js",
+                     "TeX/noUndefined.js"],
+        tex2jax: {
+            inlineMath: [ ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"], ["\\begin{displaymath}","\\end{displaymath}"] ],
+            skipTags: ["script","noscript","style","textarea","pre","code"],
+            ignoreClass: "tex2jax_ignore",
+            processEscapes: false,
+            processEnvironments: true,
+            preview: "TeX"
+        },
+        showProcessingMessages: true,
+        displayAlign: "center",
+        displayIndent: "2em",
+
+        "HTML-CSS": {
+             scale: 100,
+             availableFonts: ["STIX","TeX"],
+             preferredFont: "TeX",
+             webFont: "TeX",
+             imageFont: "TeX",
+             showMathMenu: true,
+        },
+        MMLorHTML: {
+             prefer: {
+                 MSIE:    "MML",
+                 Firefox: "MML",
+                 Opera:   "HTML",
+                 other:   "HTML"
+             }
+        }
+    });
+/*]]>*///-->
+</script>
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Chapter 19 : A language for querying databases</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 intro</a></li>
+<li><a href="#sec-2">2 Design of the language</a>
+<ul>
+<li><a href="#sec-2-1">2.1 Sorts and types</a></li>
+<li><a href="#sec-2-2">2.2 Determinates and determinables</a></li>
+<li><a href="#sec-2-3">2.3 Formal definitions</a>
+<ul>
+<li><a href="#sec-2-3-1">2.3.1 <i>Syntax</i>:</a></li>
+<li><a href="#sec-2-3-2">2.3.2 <i>Semantics &mdash; Interpretation</i>:</a></li>
+<li><a href="#sec-2-3-3">2.3.3 <i>Semantics &mdash; Satisfaction</i>:</a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-3">3 A sample run</a></li>
+<li><a href="#sec-4">4 User manual</a></li>
+<li><a href="#sec-5">5 The implementation</a>
+<ul>
+<li><a href="#sec-5-1">5.1 General and context free syntax</a>
+<ul>
+<li><a href="#sec-5-1-1">5.1.1 <i>Utilities</i>:</a></li>
+<li><a href="#sec-5-1-2">5.1.2 <i>Main</i>:</a></li>
+<li><a href="#sec-5-1-3">5.1.3 <i>Context free parsing and error recovery</i>:</a></li>
+</ul>
+</li>
+<li><a href="#sec-5-2">5.2 Context sensitive syntax</a></li>
+<li><a href="#sec-5-3">5.3 <i>Step 1 - Symbol Table</i>:</a></li>
+<li><a href="#sec-5-4">5.4 <i>Step 2:</i></a></li>
+<li><a href="#sec-5-5">5.5 <i>Step 3:</i></a></li>
+<li><a href="#sec-5-6">5.6 Semantics &mdash; closed atomic formulas</a>
+<ul>
+<li><a href="#sec-5-6-1">5.6.1 <i>Predicates as truth functions</i>:</a></li>
+<li><a href="#sec-5-6-2">5.6.2 <i>Linearising the array</i>:</a></li>
+<li><a href="#sec-5-6-3">5.6.3 <i>A single array for all predicates</i>:</a></li>
+<li><a href="#sec-5-6-4">5.6.4 <i>Extensions</i>:</a></li>
+</ul>
+</li>
+<li><a href="#sec-5-7">5.7 Semantics &mdash; variables</a>
+<ul>
+<li><a href="#sec-5-7-1">5.7.1 <i>Requirements</i>:</a></li>
+<li><a href="#sec-5-7-2">5.7.2 <i>Implementing substitution</i>:</a></li>
+<li><a href="#sec-5-7-3">5.7.3 <i>Verifying existentials</i>:</a></li>
+<li><a href="#sec-5-7-4">5.7.4 <i>Verifying universals</i>:</a></li>
+<li><a href="#sec-5-7-5">5.7.5 <i>Atoms with variables</i>:</a></li>
+<li><a href="#sec-5-7-6">5.7.6 <i>=THE= declarations</i>:</a></li>
+</ul>
+</li>
+<li><a href="#sec-5-8">5.8 Semantics &mdash; other aspects</a>
+<ul>
+<li><a href="#sec-5-8-1">5.8.1 <i>Logical operations</i>:</a></li>
+<li><a href="#sec-5-8-2">5.8.2 <i>Sorts Used As Predicates</i>:</a></li>
+<li><a href="#sec-5-8-3">5.8.3 <i>Identity Statements</i>:</a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-6">6 The program</a></li>
+<li><a href="#sec-7">7 Exercises and reading</a>
+<ul>
+<li><a href="#sec-7-1">7.1 <i>Background Reading</i> :</a></li>
+<li><a href="#sec-7-2">7.2 <i>Syntactic Sugar - condensed binding</i>:</a></li>
+<li><a href="#sec-7-3">7.3 <i>Syntactic Sugar - non-identity</i>:</a></li>
+<li><a href="#sec-7-4">7.4 <i>Closures</i>:</a></li>
+<li><a href="#sec-7-5">7.5 <i>Functions</i>:</a></li>
+<li><a href="#sec-7-6">7.6 <i>Determinables as predicates</i>:</a></li>
+<li><a href="#sec-7-7">7.7 <i>Sparse Memory</i> :</a></li>
+<li><a href="#sec-7-8">7.8 <i>Constraints instead of Sorts</i> :</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div class="outline-text-2" id="text-1">
+
+
+<p>
+Datbas is a small language based on classical predicate logic, with predicates of any number of parameters.  It allows users to describe a finite interpretation and then to ask the system questions about this interpretation.  The system incorporates features of the Datalog system of Chapter 16 and the theorem prover for monadic logic developed in Chapter 15.  The implementation makes heavy use of the utilities developed in Chapter 17.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Design of the language</h2>
+<div class="outline-text-2" id="text-2">
+
+
+<p>
+In this section we design a language that is to be based on classical predicate calculus.  In this respect it is similar to the monadic logic system of Chapter 15.  But this system will allow predicates not with at most one parameter but with any number of parameters.  Whereas the monadic logic system determined whether a formula is a logical truth (or true in all interpretations), this system determines whether a formula is true in a particular interpretation.
+</p>
+<p>
+The idea is that the user first specifies a finite <i>interpretation</i> and then repeatedly asks the system whether particular formulas are true in the interpretation or which individuals in the interpretation satisfy particular formulas.  In this respect the system resembles Prolog (and its small cousin, Datalog, of Chapter 16).  However, the system to be designed here is entirely classical and hence its treatment of negation is quite different from that of Prolog's.  In particular, it will be possible to ask which individuals do <i>not</i> satisfy an open formula.  Such a query would not be possible in Prolog because the domain is infinite (technically, it is the Herbrand universe of all terms), and hence the list of individuals which do not satisfy a formula will generally be infinite.  To make this list finite, the system to be developed here will require all individuals in the domain to be specifically listed.  Hence the domain of individuals and the extensions of predicates are relatively fixed, in a way that is similar to the Datalog system, and unlike the monadic logic system.
+</p>
+
+</div>
+
+<div id="outline-container-2-1" class="outline-3">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> Sorts and types</h3>
+<div class="outline-text-3" id="text-2-1">
+
+
+<p>
+One decision that had to be made concerned whether all individuals should be of the same undifferentiated kind or sort, or whether there should be a system of /sort/s, somewhat similar to the typing system of languages such as Pascal or C.  Most of the familiar logics have just one kind or sort of individual, and hence quantifiers range over all individuals.  But there are advantages in having several sorts of individuals, and making all quantified variables range over some specified sort.
+</p>
+<ol>
+<li>One advantage lies in additional security: the system can check whether the constraints imposed by the sorts are violated and then produce error messages.
+
+</li>
+<li>The other advantage lies in execution speed. Consider an unsorted and a sorted system in which there are many things which are not people.  Now consider the query whether all people are healthy, wealthy and wise.  In the <i>unsorted system</i> this question would be put as a universally quantified implication formula.  To determine the answer, the program would have to check through all the individuals in the domain to ascertain whether they are either not persons or are healthy, wealthy and wise.  In the <i>sorted system</i> the same question would be expressed as a universally quantified formula, with the variable of quantification being typed to range over persons.  The remainder of the formula is just the consequent of the implication formula needed for the unsorted system.  So the antecedent of the unsorted formula becomes absorbed into the simultaneous quantification and typing of the variable.  To determine whether the formula is true, the program would merely have to check through the individuals of sort person to determine whether they are healthy, wealthy and wise.  If there are many individuals that are not persons, this difference in search space can be substantial.
+</li>
+</ol>
+
+
+<p>
+The introduction of sorts requires that the variables in open formulas be typed in a way that is similar to the typing in quantifiers.  One solution is to introduce quasi-binders which are like quantifiers in that they assign a type to a variable, but which leave the variable unquantified and hence free.  One such quasi-binder is <code>WHICH</code>, and to a question beginning with <code>WHICH</code> the system should then respond with a list of those persons which satisfy the open formula.  Another quasi-binder is <code>FIRST</code>, used in a similar way to obtain not all individuals having a particular property but just one, the first that can be found.
+</p>
+<ol>
+<li>The third advantage is minor, it has to do with finding individuals which do not have a particular property, i.e. individuals which satisfy a negated formula.  Consider the query
+</li>
+</ol>
+
+
+
+
+
+<pre class="example">WHICH p:person  NOT happy(p)
+</pre>
+
+
+<p>
+It will only produce a list of persons who are not happy, and not cities, rivers and countries.
+</p>
+<ol>
+<li>Finally, the introduction of sorts can save memory. Happiness is a property of some persons, but never of cities, rivers or planets.  So it is never necessary to store such information about those other things.
+</li>
+</ol>
+
+
+<p>
+Sorts are very similar to /type/s, and often the two terms are used synonymously.  But there are good reasons to distinguish them.  In the literature one sometimes speaks of individuals in the domain having one or the other sort, and expressions, which refer to individuals, as having one or the other type.  This makes the notion of sort model-theoretic and the notion of type syntactic.  I shall speak of individuals having a particular sort, and variables and formal parameters as having a particular type.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2-2" class="outline-3">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> Determinates and determinables</h3>
+<div class="outline-text-3" id="text-2-2">
+
+
+<p>
+The usual predicates of logic are often called /truth function/s.  This is because when supplied with parameters they yield a truth value.  For example, a unary predicate is either true of an individual or it is not &mdash; there is no third possibility.  The resultant truth value can then become an operand to the truth functional operators.
+</p>
+<p>
+For many purposes it is useful to have a family of mutually exclusive and jointly exhaustive predicates.  One might want to speak of men, women and children, and one may want it understood that every person belongs to exactly one of these categories.  What is being understood here can be expressed explicitly by meaning postulates which state that the three categories are mutually exclusive and, within the sort person, jointly exhaustive.  Then from the fact that somebody is neither a man nor a woman we may infer that we are dealing with a child.  But the meaning postulates can complicate the deduction mechanism considerably.
+</p>
+<p>
+In the case of unary predicates like the above, another solution is to define the three categories as sorts, and then to define the type person as the union of these three sorts.  If sort names can also be used as predicates, this method takes care of the required deductions without explicit meaning postulates.
+</p>
+<p>
+But the method cannot work with families of relations, predicates taking more than one parameter.  For example, one might want to categorise the attitude of one person to another as loving, friendly, indifferent, disdainful or hostile.  As we all learnt when young, often to our sorrow, the relationships are not symmetric.  No system of sorts of individuals can cope with this, since sorts are classes of individuals, and not classes of ordered pairs of individuals.  Hence families of mutually exclusive and jointly exhaustive predicates require a separate treatment.  Indeed, one can have families without sorts, or vice versa, or one can have neither or both.
+</p>
+<p>
+Another possible way of dealing with the problem is to have a sort comprising these five attitudes and to regard human relationships not as a binary relation between two people, but as a ternary relation between two persons and an attitude.  But this turns the five attitudes into individuals, and this is at least philosophically suspect.
+</p>
+<p>
+So it seems that families of predicates need a separate treatment.  Following an older usage, I shall call the human relationship a <i>determinable</i>, and it has five <i>determinate</i> values.  An ordinary predicate has just two values, the truth values, and a determinable predicate can have any positive number of values.  The determinates of a given determinable are just two-valued predicates, but they are automatically mutually exclusive and jointly exhaustive.
+</p>
+<p>
+Once there are determinables, it seems natural to allow <i>variable</i>\s to range over the determinates of a determinable.  These variables can be universally or existentially quantified, or they can occur in <code>WHICH</code> or <code>FIRST</code> queries.  The variables have to be typed just like individuals variables, and the type of such a predicate variable is the determinable over whose determinates the variable is to range.  Syntactically there need not be anything to distinguish the declaration of a <i>predicate variable</i> from the declaration of an <i>individual variable</i>.  But within the scope of such a declaration, the predicate variable behaves just like a determinate predicate.  Semantically an existential quantification using a predicate variable behaves just like a disjunction of several copies of the formula being quantified, with each of the determinate predicates substituted for the predicate variable.  Universal quantifications behave just like conjunctions.  For <code>WHICH</code> queries the system should respond by listing the determinates that make the formula true, and for <code>FIRST</code> queries it should list only the first such determinate that it can find.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2-3" class="outline-3">
+<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Formal definitions</h3>
+<div class="outline-text-3" id="text-2-3">
+
+
+
+</div>
+
+<div id="outline-container-2-3-1" class="outline-4">
+<h4 id="sec-2-3-1"><span class="section-number-4">2.3.1</span> <i>Syntax</i>:</h4>
+<div class="outline-text-4" id="text-2-3-1">
+
+<p>The predicate language to be used will need the usual truthfunctional connectives, predicate constants and individual constants, individual variables and quantifiers.  In addition there will have to be /sort constant/s, which are similar to predicate constants except that they are defined by enumerations of the individuals they comprise, and later used in quantifications and questions.  To anticipate the concrete syntax to be used later, here are some examples:
+</p>
+
+
+
+<pre class="example">person = (peter paul mary)              definition
+ALL x:person (rich(x) IMP happy(x))     use in quantification
+WHICH y:person rich(y)                  use in question
+</pre>
+
+
+<p>
+This method allows variables such as <code>x</code> and <code>y</code> to be used with any type name, and the variable acquires its type at the point of quantification and retains this type throughout the scope of that quantification except where overridden by more local quantifications.  Another method is to type the variables once and for all, as in, say,
+</p>
+
+
+
+<pre class="example">x,y : person = (peter paul mary)
+</pre>
+
+
+<p>
+This would simultaneously give an extension to the type person and allow variables <code>x</code> and <code>y</code> to range over these persons.  Then one would write:
+</p>
+
+
+
+<pre class="example">ALL x SOME y likes(x,y)
+</pre>
+
+
+<p>
+The variables <code>x</code> and <code>y</code> would be automatically typed.
+But this method will not be used here.
+</p>
+<p>
+All predicates will have to be typed by the types of their parameters.  Assuming that persons and cities have been declared as sorts, one might declare happy to be a predicate which takes a person as a parameter, lives-in as a predicate which takes two parameters, a person and a city, and bigger as a predicate which takes two cities as parameters.  In the concrete syntax these declarations might appear as:
+</p>
+
+
+
+<pre class="example">happy(person)
+lives-in(person,city)
+bigger(city,city)
+</pre>
+
+
+<p>
+For determinable predicates it is necessary to list the determinates, the mutually exclusive and jointly exhaustive predicates.
+</p>
+
+
+
+<pre class="example">attitude(person,person) =
+    { loving friendly indifferent disdainful hostile }
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-2-3-2" class="outline-4">
+<h4 id="sec-2-3-2"><span class="section-number-4">2.3.2</span> <i>Semantics &mdash; Interpretation</i>:</h4>
+<div class="outline-text-4" id="text-2-3-2">
+
+<p>An interpretation consists of a <i>domain</i> of individuals and for each predicate an <i>extension</i> of the predicate.  The domain is subdivided into one or more exclusive subdomains or <i>sort/s.  Each sort is a set of individuals, and each individual belongs to just one sort.  The domain comprises the union of all the sorts.  A /type</i> is a union of one or more sorts.  Each predicate has a fixed number of formal parameters, and each parameter is of a particular type.  Each predicate of n parameters has as its extension a set of n-tuples of individuals, where the sort of each individual is a subset of the type of the corresponding formal parameters.
+</p>
+<p>
+The system to be implemented here does not use individual constants that are different from the names of the individuals.  So, every individual constant has as its extension the individual which it names, and every individual has exactly one individual constant of which it is the extension.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2-3-3" class="outline-4">
+<h4 id="sec-2-3-3"><span class="section-number-4">2.3.3</span> <i>Semantics &mdash; Satisfaction</i>:</h4>
+<div class="outline-text-4" id="text-2-3-3">
+
+<p>This is more complicated than for monadic logic because there can be any number of variables in a formula.  These variables have to be given extensions, and hence satisfaction is not a relation between an individual and a formula but a relation between a sequence of individuals and a formula.  Such a sequence of individuals is always used to interpret variables in a formula.  More formally, a sequence is a mapping from the variables in a formula to individuals in the domain.  (To anticipate the implementation, the sequence is the content of the stack.)
+</p>
+<p>
+First, the definition of satisfaction between a sequence of individuals and an atomic formula.  In the notation to be used here, the formula might be <code>p(a,y,b,x)</code>, which is formed from a predicate, here the 4-place predicate <code>p</code>, followed by a parenthesised 4-tuple, of constants, here <code>a</code> and <code>b</code>, and variables, here <code>x</code> and <code>y</code>.  First we form a 4-tuple of individuals: For each constant such as <code>a</code> and <code>b</code> we use the individual which it denotes.  For each variable such as <code>x</code> and <code>y</code> we use the individual which the sequence assigns to them &mdash; they might be <code>a</code> for <code>x</code> and <code>c</code> for <code>y</code>.  This gives a 4-tuple of individuals <code>&lt;a,c,b,a&gt;</code> of individuals.  Then we check whether this 4-tuple of individuals is in the extension of the predicate <code>p</code>.  If it is, then the sequence satisfies the atomic formula, otherwise it does not.
+</p>
+<p>
+There is also the special case of an atomic formula, say <code>s(x)</code> or <code>s(a)</code> in which <code>s</code> is a sort.  Then a given sequence satisfies <code>s(x)</code> if and only if it assigns to <code>x</code> an individual of sort <code>s</code>, and any sequence satisfies <code>s(a)</code> if an only if the constant a denotes an individual of sort <code>s</code>.
+</p>
+<p>
+Next, satisfaction for truth-functionally compound formulas:
+</p>
+<ul>
+<li>A sequence satisfies a negation if and only if it does not satisfy the negand,
+</li>
+<li>it satisfies a conjunction if and only if it satisfies both conjuncts,
+</li>
+<li>it satisfies a disjunction if and only if it satisfies at least one disjunct,
+</li>
+<li>it satisfies a conditional if and only if either it does not satify the antecedent or it satisfies the consequent,
+</li>
+<li>and it satisfies an equivalence if and only if either it satisfies both or satisfies neither parts.
+</li>
+</ul>
+
+
+<p>
+Finally, satisfaction for universally or existentially quantified formulas.  These are of the form <code>ALL v:t F</code> or <code>SOME v:t F</code> where <code>t</code> is a type and hence <code>v</code> is being declared to be a variable of type <code>t</code>.  For a given sequence we have to form the set of <i>v-variants</i> of the sequence, the set of those sequences which are like the given sequence except that they may differ from the given one in what they assign to the variable <code>v</code>.  A given sequence satisfies the universally quantified formula if and only if all <code>v</code>-variants of the sequence satisfy <code>F</code>.  A given sequence satisfies the existential quantified formula if and only if at least one <code>v</code>-variant of the sequence satisfies <code>F</code>.
+</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> A sample run</h2>
+<div class="outline-text-2" id="text-3">
+
+
+<p>
+The following is a sample run of the program.  The first part consists of a very small database about people and countries, and some queries.  The second consists of a larger database concerning the geography of Australia, and some queries.
+</p>
+
+
+
+<pre class="example">   1    %LISTING 1
+   2    %STATISTICS 1
+   3    %INCLUDE 43datba1.db
+   1    SORT
+   2        person  =  (peter paul mary);
+   3        country  =  (china brazil italy);
+   4        entity  =  person | country.
+   5    PREDICATE
+   6        tall(person);
+   7        likes(person,entity).
+   8    EXTENSION
+   9        tall = { &lt;peter&gt; &lt;mary&gt; };
+  10        likes = { &lt;peter,mary&gt; &lt;mary,paul&gt; &lt;mary,mary&gt;
+  11                  &lt;peter,china&gt; &lt;peter,italy&gt;
+  12                  &lt;paul,italy&gt; &lt;mary,brazil&gt; }.
+  13    WHICH x:entity likes(peter,x).
+        1:
+            x = mary
+        2:
+            x = china
+        3:
+            x = italy
+        yes
+  14    SOME p:person (tall(p) AND likes(p,brazil)).
+        1:
+        yes
+  15    WHICH p:person likes(p,p).
+        1:
+            p = mary
+        yes
+   4    %INCLUDE 43australia.db
+   1    (* GEOGRAPHICAL DATABASE FOR AUSTRALIA *)
+   2
+   3    SORT
+   4
+   5    statename =
+   6      ( Western_Australia  Northern_Territory  Queensland
+   7        New_South_Wales  Australian_Capital_Territory
+   8        South_Australia  Victoria  Tasmania );
+   9    city =
+  10      ( Perth  Fremantle  Albany  Coolgardie  Kalgoorlie
+  11        Darwin  Port_Essington  Alice_Springs
+  12        Brisbane  York  Cooktown  Townsville  Rockhampton
+  13        Sydney  Newcastle  Broken_Hill  Bathurst  Albury
+  14        Canberra
+  15        Adelaide  Port_Augusta
+  16        Melbourne  Ballarat  Bendigo  Geelong
+  17        Hobart  Launceston );
+  18    river =
+  19      ( Fitzroy  Daly  Georgina  Warburton
+  20        Coopers_Creek  Flinders  Darling  Murray );
+  21    state =
+  22      ( WA  NT  QUE  NSW  ACT  SA  VIC  TAS );
+  23    city_or_state =
+  24        city | state.
+  25
+  26    PREDICATE
+  27
+  28    big(city_or_state);
+  29    eastern_statename(statename);
+  30    abbreviation(statename, state);
+  31    capital_of(city, state);
+  32    flows_through(river, state);
+  33    borders(state,state);
+  34    climate(state) = { hot warm temperate cold }.
+  35
+  36    EXTENSION
+  37
+  38    big =
+  39      { &lt;Sydney&gt; &lt;Melbourne&gt; &lt;WA&gt; &lt;NT&gt; &lt;QUE&gt; &lt;NSW&gt; };
+  40    eastern_statename =
+  41      { &lt;Queensland&gt;  &lt;New_South_Wales&gt;
+  42        &lt;Australian_Capital_Territory&gt;  &lt;Victoria&gt; };
+  43    abbreviation =
+  44      { &lt;Western_Australia,WA&gt;  &lt;Northern_Territory,NT&gt;
+  45        &lt;Queensland,QUE&gt;  &lt;New_South_Wales,NSW&gt;
+  46        &lt;Australian_Capital_Territory,ACT&gt;
+  47        &lt;South_Australia,SA&gt;  &lt;Victoria,VIC&gt;  &lt;Tasmania,TAS&gt; };
+  48    capital_of =
+  49      { &lt;Perth,WA&gt;  &lt;Darwin,NT&gt;  &lt;Brisbane,QUE&gt;  &lt;Sydney,NSW&gt;
+  50        &lt;Canberra,ACT&gt;  &lt;Adelaide,SA&gt;  &lt;Melbourne,VIC&gt;
+  51        &lt;Hobart,TAS&gt; };
+  52    flows_through =
+  53      { &lt;Fitzroy,WA&gt; &lt;Daly,NT&gt; &lt;Georgina,NT&gt; &lt;Georgina,SA&gt;
+  54        &lt;Warburton,QUE&gt; &lt;Warburton,SA&gt; &lt;Coopers_Creek,QUE&gt;
+  55        &lt;Coopers_Creek,SA&gt; &lt;Flinders,QUE&gt; &lt;Darling,NSW&gt;
+  56        &lt;Darling,SA&gt; &lt;Murray,NSW&gt; &lt;Murray,VIC&gt; };
+  57    borders =
+  58      { &lt;WA,NT&gt; &lt;WA,SA&gt; &lt;NT,QUE&gt; &lt;NT,SA&gt; &lt;QUE,SA&gt; &lt;QUE,NSW&gt;
+  59        &lt;NSW,SA&gt; &lt;NSW,ACT&gt; &lt;NSW,VIC&gt; &lt;NSW,SA&gt; &lt;SA,VIC&gt; };
+  60    borders = (* NOW MAKE borders A SYMMETRIC RELATION *)
+  61      { THE &lt;a:state,b:state&gt; borders(a,b) OR borders(b,a) };
+  62    hot = { &lt;NT&gt; &lt;QUE&gt; };
+  63    warm = { &lt;WA&gt; &lt;NSW&gt; &lt;SA&gt; };
+  64    temperate = { &lt;ACT&gt; &lt;VIC&gt; };
+  65    cold = { &lt;TAS&gt; }.
+  66
+  67
+  68    WHICH s: statename NOT (eastern_statename(s) OR s = Tasmania).
+        1:
+            s = Western_Australia
+        2:
+            s = Northern_Territory
+        3:
+            s = South_Australia
+        yes
+  69    WHICH s:statename SOME a:state
+  70        (capital_of(Melbourne,a) AND abbreviation(s,a)).
+        1:
+            s = Victoria
+        yes
+  71
+  72    WHICH c:city SOME a:state
+  73        (abbreviation(New_South_Wales,a) AND capital_of(c,a)).
+        1:
+            c = Sydney
+        yes
+  74    SOME r:river flows_through(r,QUE).
+        1:
+        yes
+  75    ALL a:state SOME r:river flows_through(r,a).
+        no
+  76    SOME r:river flows_through(r,ACT).
+        no
+  77    WHICH a:state borders(a,NSW).
+        1:
+            a = QUE
+        2:
+            a = ACT
+        3:
+            a = SA
+        4:
+            a = VIC
+        yes
+  78    WHICH a:state borders(NSW,a).
+        1:
+            a = QUE
+        2:
+            a = ACT
+        3:
+            a = SA
+        4:
+            a = VIC
+        yes
+  79    WHICH r:river WHICH s:statename (* r entirely in s *)
+  80      SOME s0:state
+  81        ( flows_through(r,s0) AND
+  82          ALL s1:state (flows_through(r,s1) IMP s1 = s0) AND
+  83          abbreviation(s,s0) ).
+        1:
+            r = Fitzroy
+            s = Western_Australia
+        2:
+            r = Daly
+            s = Northern_Territory
+        3:
+            r = Flinders
+            s = Queensland
+        yes
+  84    WHICH s:state (* borders three states *)
+  85      SOME s1:state SOME s2:state SOME s3:state
+  86        ( borders(s,s1) AND borders(s,s2) AND borders(s,s3) AND
+  87          NOT (s1 = s2 OR s1 = s3 OR s2 = s3) ).
+        1:
+            s = NT
+        2:
+            s = QUE
+        3:
+            s = NSW
+        4:
+            s = SA
+        yes
+  88
+  89    WHICH s:state temperate(s).
+        1:
+            s = ACT
+        2:
+            s = VIC
+        yes
+  90    WHICH s:state NOT(cold(s) OR temperate(s)).
+        1:
+            s = WA
+        2:
+            s = NT
+        3:
+            s = QUE
+        4:
+            s = NSW
+        5:
+            s = SA
+        yes
+  91    (* NOW variables ranging over determinables *)
+  92    WHICH c:climate c(VIC).
+        1:
+            c = temperate
+        yes
+  93    FIRST c1:climate FIRST c2:climate
+  94      FIRST s1:state FIRST s2:state
+  95        ( c1(s1) AND c2(s2) AND borders(s1,s2) ).
+        1:
+            c1 = hot
+            c2 = hot
+            s1 = NT
+            s2 = QUE
+        yes
+  96    FIRST c1:climate FIRST c2:climate
+  97      FIRST s1:state FIRST s2:state
+  98        ( c1(VIC) AND c1(s1) AND c2(s2) AND borders(s1,s2) ).
+        1:
+            c1 = temperate
+            c2 = warm
+            s1 = ACT
+            s2 = NSW
+        yes
+  99    ALL c:climate SOME s:state c(s).
+        1:
+        yes
+ 100    ALL c:climate SOME s1:state  SOME s2:state
+ 101      ( NOT s1 = s2 AND c(s1) AND c(s2) ).
+        no
+ 102    (* FIND climates  WHICH AT LEAST 3 STATES HAVE *)
+ 103    WHICH c:climate SOME s1:state SOME s2:state SOME s3:state
+ 104      ( NOT (s1 = s2 OR s1 = s3 OR s2 = s3)
+ 105        AND c(s1) AND c(s2) AND c(s3) ).
+        1:
+            c = warm
+        yes
+ 106    (* FIND A climate WHICH ONLY ONE STATE HAS *)
+ 107    WHICH c:climate ALL s1:state ALL s2:state
+ 108        ( c(s1) AND c(s2) IMP s1 = s2 ).
+        1:
+            c = cold
+        yes
+ 109    WHICH x:city_or_state big(x).
+        1:
+            x = Sydney
+        2:
+            x = Melbourne
+        3:
+            x = WA
+        4:
+            x = NT
+        5:
+            x = QUE
+        6:
+            x = NSW
+        yes
+ 110
+ 111    (*  This query requires about 75% of the time: *)
+ 112    WHICH s:state
+ 113      SOME s1:state SOME s2:state SOME s3:state SOME s4:state
+ 114        ( borders(s,s1) AND borders(s,s2) AND
+ 115          borders(s,s3) AND borders(s,s4) AND
+ 116          NOT ( s1 = s2 OR s1 = s3 OR s1 = s4 OR
+ 117                s2 = s3 OR s2 = s4 OR s3 = s4 ) ).
+        1:
+            s = NSW
+        2:
+            s = SA
+        yes
+   5    QUIT.
+660 milliseconds CPU
+101143 calls to make
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> User manual</h2>
+<div class="outline-text-2" id="text-4">
+
+
+<p>
+The DATBAS system is a database and reasoning system based on classical logic over many-sorted domains.
+</p>
+<p>
+The system permits declarations of sorts and the individuals they comprise, of predicates and the types of their parameters, and of extensions of predicates.  The system does not distinguish between individuals and individual constants.  Hence in a declaration of a sort the names listed are simultaneously the metalanguage names of the individuals in the interpretation and the object language individual constants which have those individuals as their extension.
+</p>
+<p>
+The <i>grammar</i> of the input language is as follows:
+</p>
+
+
+
+<pre class="example">session  ::=
+    [ top-level ]
+top-level  ::=
+    "SORT"       [ identifier "=" type ";" ]  |
+    "PREDICATE"  [ identifier { "(" type [ "," type ] ") } ]  |
+    "EXTENSION"  [ identifier "="
+        "{"  ( "THE" [ "&lt;" [ binding ] "&gt;"  expression  |
+             [ "&lt;" tuple "&gt;" ]  "}"
+    "SHOW"  |
+    "QUIT"
+    query
+</pre>
+
+
+<p>
+A session consists of any number of top level commands.
+A top level command is either
+a declaration of =SORT=s or of =PREDICATE=s or
+it is a specification of <code>EXTENSION=s, or it is a request to =SHOW</code> the declared identifiers
+or to <code>QUIT</code> the session,
+or it is a query.
+Each declaration consists of one of three keywords
+followed in each case by zero or more identifiers being declared.
+Any identifier being declared here
+must not have been previously declared.
+For declarations of <code>SORT=s, each identifier is followed by ==</code> and then a type.
+For a specification of =PREDICATE=s,
+each identifier is optionally followed
+by a parenthesised comma-separated list of types.
+For declarations of  <code>EXTENSION=s each identifier is followed by ==</code> and then an expression;
+this is then followed by the specification of a set
+enclosed in braces.
+Such a specification is given either intensionally
+or extensionally.
+An intensional specification consists
+of the word <code>THE</code> followed by a sequence
+of (lambda-bound) typed variables enclosed
+in corners, and then an expression.
+An extensional specification consists
+of any number of tuples of individuals
+enclosed in corners.
+</p>
+
+
+
+<pre class="example">type  ::=  ("(" [identifier] ")"  |  identifier)  { "|" type }
+</pre>
+
+
+<p>
+A type is either a parenthesised list of identifers, or an identifier.  In the first case the identifiers will be entered as names of individuals in the domain, in the second case the identifier has to be a sort name.  A type can be further followed by <code>|</code> and another type, but that has to be of the second kind.
+</p>
+
+
+
+<pre class="example">query  ::=
+    ( "WHICH" | "FIRST" ) binding query  |
+    expression
+</pre>
+
+
+<p>
+A query consists of either a <code>WHICH</code> (or <code>FIRST</code>) question or just an expression.  A <code>WHICH</code> question such as <code>WHICH x:person likes(x,john)</code> produces those persons who like John.  A <code>WHICH</code> (or <code>FIRST</code>) question binds a variable to a type and otherwise consists of a query.  These bindings are similar to the quantifier bindings produced by <code>ALL</code> and <code>SOME</code>.  The syntax of the two kinds of bindings is chosen so that any combination is allowed except that a <code>WHICH</code> binding cannot occur in the scope of a quantifier binding and it cannot occur in a truth functionally compound formula.  The reason for this restriction is semantic: there seems to be no sensible meaning one could assign to aberrant expressions such as
+</p>
+
+
+
+<pre class="example">ALL x:t1 (WHICH y:t2 r(x,y)  AND  WHICH z:t3 r(z,x))
+</pre>
+
+
+<p>
+The requirement is achieved by insisting that <code>WHICH</code> and <code>FIRST</code> bindings occur outermost, as it is enforced by the above production.
+</p>
+
+
+
+<pre class="example">binding  ::=  identifier ":" type
+</pre>
+
+
+<p>
+A binding consists of an identifier, then a colon <code>:</code> and a type.  The identifier will be bound to the type.
+</p>
+
+
+
+<pre class="example">expression  ::=
+    simp_expression  [("IFF" | "IMP") simp_expression]
+simp_expression  ::=
+    term  ["OR" term]
+term  ::=
+    factor  ["AND" factor]
+</pre>
+
+
+<p>
+An expression consists of one or more simple expressions separated by the truth functional operators <code>IMP</code> or <code>IFF</code>, for material implication and material equivalence.  A simple expression consists of one or more terms separated by the truth functional <code>OR</code> operator for inclusive disjunction.  A term consists of one or more factors separated by the truth functional <code>AND</code> operator for conjunction.
+</p>
+
+
+
+<pre class="example">factor  ::=
+    identifier { "(" identifier [ "," identifier ] ")" }  |
+    identifier "(" identifier ")"  |
+    identifier "=" identifier  |
+    ( "ALL" | "SOME" ) binding factor  |
+    "TRUE" | "FALSE"  |
+    "NOT" factor  |
+    "(" expression ")
+</pre>
+
+
+<p>
+A factor can consist of an identifier optionally followed by a parenthesised sequence of comma-separated identifers.  The identifier must have been previously declared as a predicate, and the length of the sequence of identifiers or actual parameters must be equal to the number of formal parameters of the predicate, and each actual parameter of the sequence must be of a type that is a subtype of the corresponding formal parameter.  A factor can also consist of an identifier followed by an identifier in parentheses.  The first identifier must have been declared as a sort, and the second identifier must be a constant or a variable whose type is a supertype of the sort.  A factor can also consist of two identifiers separated by the identity symbol.  Each of the two identifiers can be a constant or a variable.  A factor may also consist of one of the binding symbols <code>ALL</code>, <code>SOME</code> or <code>THE</code>, followed by a binding and a factor.  A factor may also consist of curly braces enclosing zero or more tuples each consisting of angle corners enclosing a sequence.  Finally, a factor may consist of the symbols <code>TRUE</code> or <code>FALSE</code>, or <code>NOT</code> followed by a factor, or a parenthesised expression.
+</p>
+<p>
+The scopes of bindings are as follows: In declarations of <code>EXTENSION=s any =THE</code>-binding extends to the end of the expression.  In a query any <code>WHICH</code>- or <code>FIRST</code>-binding extends to the end of the query.  In a factor, any <code>ALL</code>- or <code>SOME</code>-binding extends to the end of the factor.
+
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> The implementation</h2>
+<div class="outline-text-2" id="text-5">
+
+
+<p>
+The context free syntax is so simple that it needs little discussion except for error recovery.  The context sensitive syntax and the semantics is described in detail.
+</p>
+
+</div>
+
+<div id="outline-container-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> General and context free syntax</h3>
+<div class="outline-text-3" id="text-5-1">
+
+
+
+</div>
+
+<div id="outline-container-5-1-1" class="outline-4">
+<h4 id="sec-5-1-1"><span class="section-number-4">5.1.1</span> <i>Utilities</i>:</h4>
+<div class="outline-text-4" id="text-5-1-1">
+
+<p>Just as the program in the previous chapter, this program makes use of the utilities almost everywhere.  So again the utilities have to be processed by the Pascal compiler before the program proper can be processed.  Since the utilities are not entirely stand alone, several declarations have to occur first.  Most of these declarations are sufficiently similar to those in the previous chapter that it is not necessary to discuss them here.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-1-2" class="outline-4">
+<h4 id="sec-5-1-2"><span class="section-number-4">5.1.2</span> <i>Main</i>:</h4>
+<div class="outline-text-4" id="text-5-1-2">
+
+<p>The main program begins by calling an initialisation procedure whose body consists of calls to procedures in the utilities: one call to initialise the scanner, several calls to enter the reserved symbols, and several calls to enter the standard identifiers.  The main program then enters its principal read-execute loop.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-1-3" class="outline-4">
+<h4 id="sec-5-1-3"><span class="section-number-4">5.1.3</span> <i>Context free parsing and error recovery</i>:</h4>
+<div class="outline-text-4" id="text-5-1-3">
+
+<p>As in most programs before, the recursive descent parsing procedures are modelled on the productions of the grammar.  Visibility requirements are met by the the following nesting structure:
+</p>
+
+
+
+<pre class="example">top-level
+    typ
+    bind
+    tuple
+    expression
+        simple-expression
+            term
+                factor
+    query
+</pre>
+
+
+<p>
+Error detection is as usual, but this program also does a little more than just detect the first error.  Ideally a program should be able to determine the user's intent, and perhaps do what is called error <i>repair</i>.  But this is far too difficult.  Instead, this program does error <i>recovery</i>: rather than aborting after the first error, it continues as best it can, if necessary skipping a few symbols so that the parser can synchronise with the input.  The method is described in Wirth (1976, pp 320 - 330), and the program given below is based on the one given by Wirth.  So only a brief summary of the method will be given here.  Essentially every parsing procedure is given a value parameter which is a set of symbols.  At any one time, the current set contains precisely those symbols which may follow the non-terminal being parsed.  For the initial call, the actual parameter is a set containing just the terminating symbol period <code>.</code>.  For every procedure which parses infix symbols, any calls in that procedure augment the set by precisely the infix symbols parsed by that procedure.  For other procedures, such as those for parsing factors, a test is made at the end to check that the factor that has been parsed is indeed followed by a legal symbol &mdash; if not, input symbols are skipped until a legal one is found.  Note that the parsing procedures for infix operators again do not follow the grammar verbatim, this helps to generate right linear trees for the code.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-5-2" class="outline-3">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> Context sensitive syntax</h3>
+<div class="outline-text-3" id="text-5-2">
+
+
+<p>
+The parser has to do more context sensitive checking than was necessary in previous programs.  All of this will be handled by a symbol table and another table for the formal parameters of predicates.  To summarise from the manual: 1: In declarations of sorts, individuals and predicates any identifiers must not have been previously declared.  Note that this does not apply to variables introduced by queries or by quantifications.  In use, i.e. outside declarations, any identifier must have been previously declared.  2: In use any identifier must be the right kind of object &mdash; a constant or a variable, a type or a predicate.  3: In use a predicate must have the right number of actual parameters, and each actual parameter must be compatible with its corresponding formal parameter.  Similarly, in extensions of predicates given by <code>THE</code> declarations and an expression, the type of each declaration must be compatible with the formal parameters of the predicate.
+</p>
+<p>
+These requirements are rather standard for many programming languages.  Requirements 1 and 2 we have encountered earlier, they are most readily implemented by means of a symbol table.  Requirement 3 will be implemented by a further table of parameters.  The parts of the program needed to satisfy the three requirements are best described in three separate steps.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-3" class="outline-3">
+<h3 id="sec-5-3"><span class="section-number-3">5.3</span> <i>Step 1 - Symbol Table</i>:</h3>
+<div class="outline-text-3" id="text-5-3">
+
+<p>For the handling of user defined identifiers it is necessary to use a symbol table.  Two procedures are used to manipulate it: one to <i>enter</i> new symbols into the table, another to <i>lookup</i> symbols to retrieve information associated with them.  When a symbol is being declared, the <code>enter</code> procedure is used to enter the symbol itself.  When a symbol has been read which the scanner (in the utilities) does not recognise as a reserved word, the <code>lookup</code> procedure is used to retrieve information associated with the symbol.  Users can declare symbols in any order, so it is not possible to implement the binary search that works so well with fixed collections of symbols such as reserved words.  In previous programs the table of user defined symbols was always implemented as a simple linear list (or, in the case of Datalog, as three different linear lists).  The same method was used in the early stages of the development of this program.  The table was an array with an associated index initially set to zero.  Procedure <code>enter</code> incremented this index and deposited relevant information at the indexed position, and procedure <code>lookup</code> performed a linear search (with sentinel) starting at the most recent entry.
+</p>
+<p>
+In any but the most trivial applications the number of individuals in SORT declarations will be quite large.  Since each individual requires an entry in the symbol table, the linear search method would become too slow.  To gain efficiency, the linear method can be replaced by a <i>hash</i> method.  For some references, see Wirth (1976, pp 264 - 274), Tremblay and Bunt (1979, pp 531 - 549), or any good book on data structures or on compilers.  The method used here is called direct or separate chaining.  Essentially the identifier is used to compute a small number in a range from 1 to N, where N may be, say, 100 or 1000, but a prime number is best.  The method used here is dependent on the implementation of Pascal.  The hashing function first copies the identifier, a string of 16 bytes, into a record which in one of its variants is such a string.  In another variant the record consists of four integers, each of four bytes.  The four integers are simply added, producing a sum (implicitly modulo maxint) and then the modulus of the prime number N is taken.  The resulting number is then used to index into an <code>ARRAY [0 .. N]</code>, containing the starting point of a (quite short) linked list of those identifiers in the symbol table which yield the same hash value.  That list can then be searched linearly, by passing along link fields in the records.  The hash method can be implemented on top of the earlier linear search method, by adding the hash array as a new global data structure and by adding the link field to the records of the table.  Only the enter and the <code>lookup</code> procedures needed some small changes.  For debugging it was found useful to make the initial size of the prime number N and hence the hashtable absurdly small, say 13, to maximise the chances of collisions.
+</p>
+<p>
+The number of symbols that are declared as individuals, sorts and predicates can be large, and the scope of the declarations is always the remainder of the session.  Importantly, these declarations never have to be undone, and in such a situation the hash method works very well.  However, there are also variables that are introduced in queries and in quantifications.  These always have a very limited scope, and at the end of that scope they are not wanted any further.  Indeed, it would be good if the space they have used can be re-used.  But removing symbols from a hash table can be tedious.  Fortunately at any one time the number of active variables with limited scope is very small.  Hence they can be searched linearly before the remainder of the symbol table is hash searched.  The deletion of these symbols is done by simply resetting an index variable.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-4" class="outline-3">
+<h3 id="sec-5-4"><span class="section-number-3">5.4</span> <i>Step 2:</i></h3>
+<div class="outline-text-3" id="text-5-4">
+
+<p>The symbol table as described above can be used to enter symbols into the table and to lookup to see whether the symbol is there already.  This takes care of the first requirement.  Each record in the table can then be given an additional field to store what kind of object a symbol is: an individual, a type, a predicate or a bound variable.  A parameter to the entering procedure handles assignments to this field, and after lookup the field can be inspected.  This takes care of the second requirement.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-5" class="outline-3">
+<h3 id="sec-5-5"><span class="section-number-3">5.5</span> <i>Step 3:</i></h3>
+<div class="outline-text-3" id="text-5-5">
+
+<p>Further refinements are needed to check whether actual parameters of predicates match the formal parameters in number and in type.  A similar problem arises in conventional programming languages such as Pascal.  In these languages the formal parameters of procedures and functions have names, and these names are handled rather like the names of local variables: they are entered into the symbol table together with their type.  Then, inside the body, the names of the formal parameters are visible, but outside the body, for a call, only their number and type is known, and the table is consulted to check agreement in number and type between the actual and the formal parameters.  This method could also be used here, even though the formal parameters do not have names.  However, one should be reluctant to clutter up the table for nameless entities.  So it is probably best to introduce a separate table for parameters.  For each predicate the entry in the symbol table contains a link to a sequence of formal parameter types in the parameter table.  In that table the records contain, for each parameter, the type of the parameter and a boolean flag which for all but the last parameter is set to false.  Thus when a sequence of actual parameters is to be checked for conformity with the formal parameter types, a simple stepping process can compare the actuals with the formals.
+</p>
+<p>
+The <i>types</i> are just set unions of sorts.  For every sort that is declared by enumeration, a counter of sorts is incremented, and the sort being declared has that new integer assigned to it.  For every sort that is declared as a union, the union is computed from the constituent types.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-6" class="outline-3">
+<h3 id="sec-5-6"><span class="section-number-3">5.6</span> Semantics &mdash; closed atomic formulas</h3>
+<div class="outline-text-3" id="text-5-6">
+
+
+<p>
+The program essentially determines whether formulas are true or false in an interpretation.  To do so, it has to determine whether atomic formulas are true in the interpretation.  Hence, at the very least, an interpretation is a function which for each closed atomic formula, such as <code>p(a,b,c)</code>, returns one of the two truth values, or perhaps neither.
+</p>
+
+</div>
+
+<div id="outline-container-5-6-1" class="outline-4">
+<h4 id="sec-5-6-1"><span class="section-number-4">5.6.1</span> <i>Predicates as truth functions</i>:</h4>
+<div class="outline-text-4" id="text-5-6-1">
+
+<p>As a first step, we may think of the interpretation as consisting of several functions, one for each predicate.  For an n-ary predicate there would be an n-ary function.  Thus to compute the truth value of the atomic formula <code>p(a,b,c)</code> we have to compute the value of the function associated with the predicate <code>p</code> for the actual parameters <code>(a,b,c)</code>.
+</p>
+<p>
+Next, we consider how these functions are to be implemented.  The number of possible parameters is finite, in fact quite small, in particular because of the system of sorts.  So the most natural way to implement the function needed for an n-ary predicate is as an n-dimensional array.  Thus for <code>p(a,b,c)</code> we need to look up a three dimensional array of truth values and perhaps the undefined value.  The required value is to be found in this array at a position which depends on the types of the formal parameters, and on the position, within those types, of the actual parameters <code>a,b,c</code>.  It is important to note that for a different predicate, say <code>q</code>, which also takes three parameters and for which the parameters <code>(a,b,c)</code> are also legal, the position of <code>q(a,b,c)</code> might be quite different from what it is for <code>p(a,b,c)</code>.  This will happen if one or more of the parameters of the one predicate is a union but for the other predicate it is a different union or a basic sort.
+</p>
+<p>
+In general, each formal parameter to a predicate will be the union of basic sorts.  Hence the size of the dimension corresponding to a formal parameter will be the sum of the sizes of the basic sorts in that union.  To find the address of an actual parameter, we have to take its ordinal value within the basic sort in which it was declared.  But in general its basic sort will not be the first in that union, so the ordinal value will have to added to the sum of the sizes of the preceding sorts in the union:
+</p>
+
+
+
+<pre class="example">address of current actual parameter  =
+    sum of sizes of preceding sorts in the union
+  + ordinal value of current actual parameter in its sort
+</pre>
+
+
+<p>
+The sum of sizes of preceding sorts can be computed once and for all when the predicate is being declared.  Since the sum needed depends on the sort of the actual parameter, separate sums are needed for each sort in the union.  It is best to have another table which is entered from the parameter table.  For each of the basic sorts in the union of sorts for a formal parameter this table contains the sum of the sizes of the preceding sorts.  For a declaration of a predicate with three formal parameters these table entries have to be done three times.  Then, for an atomic formula such as <code>p(a,b,c)</code>, a triple of addresses has to be computed, each using the above formula.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-6-2" class="outline-4">
+<h4 id="sec-5-6-2"><span class="section-number-4">5.6.2</span> <i>Linearising the array</i>:</h4>
+<div class="outline-text-4" id="text-5-6-2">
+
+<p>The addresses are for an imaginary array which has as many dimensions as the predicate takes parameters.  In practice, of course, the array cannot be implemented like this, because the dimensions needed will vary for different runs of the program.  Instead the implementation will have to do what is a routine technique in the implementation of standard programming languages: all arrays of whatever dimensions are taken as consecutive portions in one single long array, the computer memory.  To do this, the addresses computed in the preceding paragraphs have to be adjusted so that they become addresses in a linear array.
+</p>
+<p>
+For the time being we shall assume that the n-dimensional array for the n-ary predicate is to be implemented as a separate one-dimensional array starting at virtual address zero.  We must now translate each n-tuple of addresses in the n-dimensional array into a single address in the one-dimensional array.  The total size of the one-dimensional array is the n-fold product of the sizes of the dimensions of the n-dimensional array.  For example, for n = 2 for a predicate <code>p(x,y)</code> in which <code>x</code> can take 4 values and <code>y</code> can take 5, the 2-dimensional array is 4 * 5, and it has to be mapped onto an array of size 20.  To map a pair, say <code>&lt;2,3&gt;</code>, of addresses, we add the address for the first ordinate, 2, to the address of the second ordinate, 3, multiplied by the size of the preceding ordinate, the first ordinate, which is 4.  This gives as the address 2 + (4 * 3) = 14.  It might help to look at the entire mapping: The row headings are for the x-ordinate, the column headings are for the y-ordinate.  The matrix entries are the addresses in the linearised array.
+</p>
+
+
+
+<pre class="example">        y
+
+        0   1   2   3   4
+      +------------------
+x  0  | 0   4   8  12  16
+   1  | 1   5   9  13  17
+   2  | 2   6  10  14  18
+   3  | 3   7  11  15  19
+</pre>
+
+
+<p>
+If there were a further dimension, <code>z</code>, then addresses in this dimension would have to be multiplied by the product of the sizes of the preceding dimensions, which is 20.  To generalise, an n-tuple of addresses is translated into the sum of the addresses of the ordinates, each multiplied by the product of the sizes of the preceding dimensions.  We can now adjust the addresses for actual parameters given earlier: the contribution of an actual parameter to the final sum is given by
+</p>
+
+
+
+<pre class="example">address contribution of current actual parameter  =
+    product of sizes of preceding parameters
+    *  (  sum of sizes of preceding sorts in the union
+        + ordinal value of current actual parameter in its sort)
+</pre>
+
+
+<p>
+The product of the sizes of the preceding parameters can be computed once and for all when the predicate is being declared.  So, for each parameter the sizes are multiplied to form a cumulative product.  Then, for formal parameters the product of the sizes of the preceding parameters can be entered into the table of parameters.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-6-3" class="outline-4">
+<h4 id="sec-5-6-3"><span class="section-number-4">5.6.3</span> <i>A single array for all predicates</i>:</h4>
+<div class="outline-text-4" id="text-5-6-3">
+
+<p>The address contributions of all actual parameters eventually have to be added to yield the address in the linear array corresponding to the predicate.  In practice it is not possible to have a separate linear array for each predicate, because the sizes of these arrays will vary from run to run.  Instead the implementation will again have to do what is standard in the implementation of programming languages: all these linear arrays are taken from one single array.  So the sum of the address contributions mentioned earlier will have to be given a further offset which is the beginning of the space for the predicate.  Hence the actual address in the single array is given by:
+</p>
+
+
+
+<pre class="example">actual address =
+    sum of sizes of preceding predicates
+    + SUM, for all actual parameters i,
+        of address contribution of actual parameter i
+</pre>
+
+
+<p>
+Retracing these steps backwards, we see that the following has to be done for predicate declarations: 1: A cumulative sum, starting at 0, of sizes of predicates has to be kept.  When a predicate is being declared, the previous value of that sum has to be entered into the symbol table as the start address of that predicate.  The sum is updated when the predicate has been fully declared, to be used as the start address of the next predicate, if any.  The sum has to be a global variable to survive different groups of top-level commands.  2: For each predicate a cumulative product, starting at 1, of sizes of parameters has to be kept.  When a parameter is being declared, the previous value of that product has to be entered into the parameter table as the multiplier for the current parameter.  The product is updated when the parameter has been fully declared, to be used as the multiplier for the next parameter, if any.  The product can be a variable local to <code>top_level</code>.  3: For each parameter of a predicate a cumulative sum, starting at 0, of sizes of sorts has to be kept.  When the type of the parameter is being analysed into its constituent sorts, for each sort the previous value of that sum has to be entered into the parameter type table as the sum of sizes of preceding sorts.  The sum is updated when the sort has been analysed, to be used for the next sort in the union, if any.  The sum can be a variable local to <code>top_level</code>.
+</p>
+<p>
+Note that the three accumulating variables just described are being used for making entries in the three tables: the symbol table, the parameter table for predicates, and the sort table for parameters.  The entries in the tables are needed for code generation.
+</p>
+<p>
+The entries in the three tables are used for computing the addresses required for atomic formulas such as <code>p(a,b,c)</code>.  The calculation of an address can be done while the atomic formula is being read, and it results in a single code node being generated.  In this way the interpreter does not have to recalculate the required address each time it needs to evaluate the formula.  The calculation of the address takes place in several steps: one for the predicate <code>p</code>, and one for each of the parameters <code>(a,b,c)</code>.  The first step, when reading the predicate <code>p</code>, looks up the symbol table for the start address of the predicate and generates a code node with that start address.  The additional steps, one for each of the parameters, perform a fixup on the code node, by adding the address contributions of each actual parameter.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-6-4" class="outline-4">
+<h4 id="sec-5-6-4"><span class="section-number-4">5.6.4</span> <i>Extensions</i>:</h4>
+<div class="outline-text-4" id="text-5-6-4">
+
+<p>The method described is used for generating code for atomic formulas to be used by the interpreter for looking up the memory array to determine the truth value of such atomic formulas.  Essentially the same method can be used for assigning literal <code>EXTENSION=s to predicates, i.e. of the form =p = {&lt;a b c&gt; &lt;d e f&gt;..}</code>, for setting the memory array in the first place.  For both tasks a tuple of actual parameters has to be processed; for atomic formulas the tuple is of the form <code>(a,b,c)</code>, for extensions it is of the form <code>&lt;a,b,c&gt;</code>.  The two different brackets are handled by different procedures: <code>(</code> and <code>)</code> are handled by procedure <code>factor</code>, <code>{</code> and <code>}</code> are handled by procedure <code>top_level</code>.  at different places.  But the treatment of the parameters can be made identical inside procedure <code>tuple</code>.  For atomic formulas <code>p(a,b,c)</code> this results in a fixup of the node generated when the predicate <code>p</code> was being read.  But for <code>EXTENSION=s the code node has to be generated for each triple =&lt;a,b,c&gt;</code> in the extension of the predicate.  Each such node will be fixed up in a way that is specific to the triple, but the node has to be generated in the first place.
+</p>
+<p>
+The other, non-literal method of assigning extensions, i.e. those of the form <code>p = {THE &lt;x:t, y:u, ..&gt; expression}</code>, is described at the end of the next section.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-5-7" class="outline-3">
+<h3 id="sec-5-7"><span class="section-number-3">5.7</span> Semantics &mdash; variables</h3>
+<div class="outline-text-3" id="text-5-7">
+
+
+
+</div>
+
+<div id="outline-container-5-7-1" class="outline-4">
+<h4 id="sec-5-7-1"><span class="section-number-4">5.7.1</span> <i>Requirements</i>:</h4>
+<div class="outline-text-4" id="text-5-7-1">
+
+<p>In this section we consider formulas containing variables introduced by either quantifiers or by <code>WHICH</code> declarations.  For finite interpretations, but only for finite interpretations, a universally quantified formula is logically equivalent to a conjunction, an existentially quantified formula is logically equivalent to a disjunction.
+</p>
+<p>
+The conjuncts or disjuncts have to be substitution instances of the given formula in which all occurrences of the variable that are bound by the quantifier are replaced by a reference to an individual in the domain.
+</p>
+<p>
+In the case of a sorted system the substitutions have to range over all individuals having the type of the quantification.  Much the same holds for variables bound by <code>WHICH</code> declarations: substitutions have to be made using al individuals having the type in the declarations.  Then, for each substitution, the remainder of the formula has to be evaluated.  If it is true, then the variable and its current substitution have to be printed.
+</p>
+<p>
+There are many ways in which variables and their binding can be implemented.  One naive implementation would use literal substitutions to generate long conjunctions and disjunctions for quantified formulas and use a similar expansion for <code>WHICH</code> and <code>FIRST</code> queries.  Essentially this would treat quantification as a macro mechanism: from the compiled internal code it would not be possible to tell whether the user wrote a quantified formula or a long conjunction or disjunction.  A similar treatment would be given to <code>WHICH</code> and <code>FIRST</code> queries.  The big disadvantage of this implementation method is the large amount of internal code that has to be generated.
+</p>
+<p>
+Another method would be this: instead of performing the substitutions at compile time, they could be postponed till run time.  The interpreter would then create each of the disjuncts and conjuncts on the fly, possibly by modifying the code.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-7-2" class="outline-4">
+<h4 id="sec-5-7-2"><span class="section-number-4">5.7.2</span> <i>Implementing substitution</i>:</h4>
+<div class="outline-text-4" id="text-5-7-2">
+
+<p>But there is another way again, by using a mechanism which does not perform any literal substitution but something equivalent.  Again some code would be generated for the formula and some additional code for the binding.  This latter code is then used by the interpreter to perform actions equivalent to the substitution.  It may help to think of an analogy in procedural programming.  There a <code>FOR</code> loop generates code for the loop body and some additional code for sequencing the <code>FOR</code> variable through its values.  During each execution of the loop body any reference to the <code>FOR</code> variable looks up its current value.  A similar method can be used to implement quantifier binding and query binding.  The formula corresponds to the loop body, and the additional code for the binding corresponds to the sequencing code of the <code>FOR</code> variable.  In both cases the additional code has to do much the same: A <code>FOR</code> variable has to be stepped from its low value to its high value, or vice versa for the <code>DOWNTO</code> version.  A quantified variable or a query variable also has to be stepped through all its values, although there is no particular order required.  During each execution of the code for the formula, any reference to the bound variable looks up its current value.  For an unsorted system the stepping has to go through the entire domain.  For a sorted system the code has to be executed only for those individuals whose sort is included in the binding.
+</p>
+<p>
+The simplest way of implementing this is to generate the additional code for the binding in a form which contains the set of those sorts that are included in the binding.  The interpreter then steps through all the individuals in the interpretation and if its sort is a member of the sort included in the binding, then it proceeds to execute the code for the formula.  The disadvantage of this implementation method is that it fails to make use of one of the promised efficiency advantages of the sorted system.  By stepping through all individuals in the interpretation and checking their sort, the sorted interpreter does much the same as what an unsorted interpreter would do by testing an additional formula.  For example, the sorted formula <code>SOME x:t f(x)</code> would be processed in much the same way as the unsorted formula <code>SOME x (t(x) AND f(x))</code> would be processed: stepping through all individuals and testing whether <code>t(x)</code> holds before going on to <code>f(x)</code>.  In short, the expected gain in execution speed is largely lost.  It is not lost entirely, because checking that a particular individual is of a particular sort will still be faster than checking whether the formula <code>t(x)</code> is true, especially if type <code>t</code> is really a union of sorts <code>s1, s2, ..sN</code>, and what has to be checked is a disjunction <code>s1(x) OR s2(x) OR .. sN(x)</code>.
+</p>
+<p>
+There is a simple remedy to this.  Instead of stepping through all the individuals in the interpretation, the interpreter can first step through all the sorts.  If a particular sort is a member of the set of sorts included in the binding, then the interpreter steps through the individuals of that sort and for each of them executes the code for the formula.  Since the number of sorts is substantially smaller than the number of individuals, the stepping through all sorts and ignoring those that are not required constitutes only a minimal overhead for the interpreter.
+</p>
+<p>
+It might be thought that it is possible to improve this even further.  The sorts that have to be stepped through are known at compile time, so the stepping could be done then.  The compiler would then have to generate appropriate code for each sort that is included in the binding.  This would save the interpreter from having to do the stepping, and if the interpreter had to do the entire stepping repeatedly, some saving would result.  However, nothing would be saved in the case of <code>WHICH</code> bindings since they are always outermost and only interpreted once.  For database queries even quantifier bindings tend not to be embedded deeply in truthfunctionally compound formulas.  Since the overhead of stepping through unnecessary sorts repeatedly is likely to be small, this optimisation will not be considered any further.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-7-3" class="outline-4">
+<h4 id="sec-5-7-3"><span class="section-number-4">5.7.3</span> <i>Verifying existentials</i>:</h4>
+<div class="outline-text-4" id="text-5-7-3">
+
+<p>The above design has the following implications for the interpreter: For <code>WHICH</code> and <code>FIRST</code> queries, and for making existentially quantified formulas true and making universally quantified formulas false, the interpreter enters a double <code>FOR</code> loop.  The outer loop steps through all the sorts that have been declared.  One of the fields of the instruction contains a pointer to the symbol table for the bound variable.  The interpreter can now inspect the set of sorts for that variable.  If the sort of the outer <code>FOR</code> loop is in this set, then the interpreter enters its inner <code>FOR</code> loop, with the bounds obtained from the table of sorts for the current sort.  The inner <code>FOR</code> loop now steps through all the individuals in that sort.  Information about the current individual has to be put somewhere to be picked up later when the individual variable is being referenced.  Since bindings can be nested, the place to put this information is a run time stack.  The information that is needed is in part the same as what was computed at compile time for atomic formulas with constants (see preceding section): The sum of sizes of preceding sorts in the union of sorts being bound, plus the ordinal value of the current individual in its own sort.  A very simple mechanism achieves this: a field of the top of the stack is initialised to 0 and incremented at the end of the inner <code>FOR</code> loop.  It is useful, mainly for tracing purposes, to give the stack elements two other fields, one to record the name of the variable being bound, another to record the name of the individual that has been made the value of the variable.  Instead of actual names, it is better to record indices into the symbol table.  The main business of the inner <code>FOR</code> loop is to call the interpreter recursively using the remainder of the formulas a parameter.  If that call produced at least one success, it is desirable to jump out of the two loops except for <code>WHICH</code> queries.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-7-4" class="outline-4">
+<h4 id="sec-5-7-4"><span class="section-number-4">5.7.4</span> <i>Verifying universals</i>:</h4>
+<div class="outline-text-4" id="text-5-7-4">
+
+<p>For making universally quantified formulas true and for making existentially quantified formulas false, one cannot use the double <code>FOR</code> loop method.  Instead a method has to be used which we have already encountered in Chapter 15 for the monadic logic theorem prover.  There we used continuations to obtain the effect of stepping through all the individuals in the domain.  The situation is more complicated because we have to simulate two nested <code>FOR</code> loops: an outer one to step through all the sorts, and, for those sorts that are included in the binding, an inner loop to step through all the individuals in that sort.  Again it is not possible to use real loops, because simulating the conjunction requires implementation by continuations.
+</p>
+<p>
+When the interpreter sees a universally quantified formula to be made true (or an existentially quantified formula to be made false), then it has to set up what in effect is the outer loop for stepping through the sorts, and then call a parameterless procedure for finding the next sort, initially the first sort.  That procedure will be called repeatedly, but some later calls are indirect, as continuations.  The body of that procedure has to check whether all sorts have been stepped through, and in that case it can pop the stack and call the continuation procedure to the interpreter.  Otherwise it conducts a (sentinel) search through the sorts to find the next sort included in the binding.  If there are no further sorts to be found, then it can pop the stack and call the continuation.  But if there is a further sort, then it can set up the simulation of the inner loop and call a procedure for stepping through the individuals of that sort.  That procedure takes a continuation procedure, and for this initial call the actual continuation has to be the procedure for stepping through the sorts, itself.  The body of that procedure has to check whether there is another individual in the current sort.  If not, it directly calls the procedure for taking the next sort.  Otherwise it sets up the binding of the variable on the top of the stack to the current individual, and then calls the interpreter recursively.  For this call it uses the remainder of the formula as the one parameter.  The other parameter has to be a parameterless continuation.  Ideally it should be the procedure to take the next individual, but since that procedure takes a continuation this method is not possible.  Instead the other actual parameter can be made a local parameterless procedure which when called will call the procedure to take the next individual.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-7-5" class="outline-4">
+<h4 id="sec-5-7-5"><span class="section-number-4">5.7.5</span> <i>Atoms with variables</i>:</h4>
+<div class="outline-text-4" id="text-5-7-5">
+
+<p>For atomic formulas such as <code>p(a,x,c)</code>, the address contributions of the predicate <code>p</code> and the two constants <code>a</code> and <code>c</code> have been computed at compile time and form part of the instruction for the predicate.  But the contribution of the variable <code>x</code> can only be known at run time, when (nominally) a constant, say <code>b</code>, has been substituted.  However the contribution of that constant also depends on the fact that in this atomic formula it is the second parameter, and hence the address contribution has to be multiplied by the product of the sizes of preceding parameters.  This product is known at compile time, and it has to be made one part of the instruction.  The other part is the location in the stack, which also has to be known at compile time, and where the additive part for the current constant is to be found.  Since an atomic formula can contain any number of occurrences of variables, it is not possible to fit the code for an atomic formula into a fixed length instruction.  Instead it is necessary to generate an additional instruction for each actual parameter that is a bound variable.
+</p>
+<p>
+So, when the interpreter sees an instruction for a predicate, it places the compile time address contribution into a global accumulator.  Then, for each following instruction for a variable it multiplies the product part of the instruction with the contents of the stack at the address part of the instruction and adds this to the accumulator.  At this point the accumulator contains the required address in memory.  If the memory at that address contains the required value, then the continuation procedure is called.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-7-6" class="outline-4">
+<h4 id="sec-5-7-6"><span class="section-number-4">5.7.6</span> <i>=THE= declarations</i>:</h4>
+<div class="outline-text-4" id="text-5-7-6">
+
+<p>In declarations of extensions of predicates, when the extension is given by a <code>THE</code>-formula, the binding is treated like an existential.  The interpreter is then run to find those tuples which make the following expression true.  But instead of showing the tuples, the interpreter has to set the extension of the predicate.
+</p>
+<p>
+
+</p></div>
+</div>
+
+</div>
+
+<div id="outline-container-5-8" class="outline-3">
+<h3 id="sec-5-8"><span class="section-number-3">5.8</span> Semantics &mdash; other aspects</h3>
+<div class="outline-text-3" id="text-5-8">
+
+
+
+</div>
+
+<div id="outline-container-5-8-1" class="outline-4">
+<h4 id="sec-5-8-1"><span class="section-number-4">5.8.1</span> <i>Logical operations</i>:</h4>
+<div class="outline-text-4" id="text-5-8-1">
+
+<p>For the two constants <code>TRUE</code> and <code>FALSE</code> and for the unary operator <code>NOT</code> both the code generation and its interpretation are entirely obvious.  For the binary operators the code generation is also quite straightforward.  However, their interpretation requires a small elaboration that we have not yet encountered in previous programs.  To prevent unnecessary branching when making disjunctions true, it is desirable to prevent the execution of the second disjunct if there are no <code>WHICH</code> variables and the execution of the first disjunct produced at least one solution.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-8-2" class="outline-4">
+<h4 id="sec-5-8-2"><span class="section-number-4">5.8.2</span> <i>Sorts Used As Predicates</i>:</h4>
+<div class="outline-text-4" id="text-5-8-2">
+
+<p>Atomic formulas can be of the form <code>s(i)</code>, where <code>s</code> is a sort and <code>i</code> is either a constant &mdash; perhaps not very common &mdash; or a variable.  If <code>i</code> is a constant, then the code to be generated has to be a <code>TRUE</code> or <code>FALSE</code> node, depending whether <code>i</code> is in the sort <code>s</code>.  If <code>i</code> is a variable, then a special node can be generated: Its left field is the stackaddress of the variable, its right field is a pointer to the sort in the symbol table.  When this node is interpreted later, it will succeed just in case the current sort of the stack variable is a subsort of the sort indicated by the right field.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-8-3" class="outline-4">
+<h4 id="sec-5-8-3"><span class="section-number-4">5.8.3</span> <i>Identity Statements</i>:</h4>
+<div class="outline-text-4" id="text-5-8-3">
+
+<p>These are of the form <code>i = j</code>, where <code>i</code> and <code>j</code> are either constants or variables.  In the uninteresting case where both are constants, the code that has to be generated is a <code>TRUE</code> or <code>FALSE</code> node depending on whether they are the same constant.  If one is a constant and the other is a variable, then a special node can be generated: Its left field is the stack address of the variable, its right field is the pointer to the constant in the symbol table.  When the code is interpreted, it will succeed just in case the current value of the stack variable is identical with the constant.  If both parts of the identity statement are variables, then another kind of node has to be generated in which both the left and the right field are stack addresses.  At run time such a node succeeds just in case the current values of the two variables are identical.
+</p>
+<p>
+The internal code used is mainly binary tree code, generated by calls to a code generating procedure.  The code for the truth functional connectives is entirely familiar.  The code for the quantifiers <code>ALL</code> and <code>SOME</code> and for the query binders <code>WHICH</code> and <code>FIRST</code> is like that for the unary operator <code>NOT</code>, except that information about the variable being bound has to be stored somewhere, such as the vacant left field of the code nodes.  The really difficult part of the code generation concerns the calculation of addresses into memory, as described in the previous section.
+</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> The program</h2>
+<div class="outline-text-2" id="text-6">
+
+
+<p>
+The following is the Pascal source file.  It is not quite standard, because it uses the utilities of the previous chapter in an <code>INCLUDE</code> file.  If your Pascal does not allow included files, you will have to physically include that file at the point where the <code>INCLUDE</code> directive occurs, about half a page down.  If your Pascal insists that declarations of labels, types, variables and procedures and functions occur strictly in this order &mdash; then the various declarations will have to be merged.
+</p>
+<p>
+From the utilities of Chapter~17 procedure <code>check</code> is used extensively to produce an error message in case a required symbol is not seen.  Importantly, the procedure will then accept some reasonable approximation to the required symbol &mdash; a likely typing error &mdash; to keep the parser in step with the input.  Note that for small values (1..3) of the utility variable <code>writelisting</code> additional information is written to both the output file and the listing file.  For larger values (10..15) voluminous but sometimes indispensible tracing information will be written to the listing file only.
+</p>
+
+
+
+<pre class="example">PROGRAM datbas(input,output);
+
+LABEL 10,90,99;
+
+CONST
+    errormark = '%DB';
+    list_filename = '43datbas.lst';
+    reslength = 12; emptyres = '            ';
+    maxrestab = 35;
+    identlength = 32;
+    emptyident = '                                ';
+    maxstdidenttab = 1; (* dummy *)
+
+TYPE
+    symbol =
+        (undefined,show_,quit_,predicate_,determinable_,determinate_,
+        sort_,individual_,extension_,the_,
+        all_,all_det,some_,some_det,which_,which_det,first_,first_det,
+        and_,iff_,imp_,not_,or_,true_,false_,equal,equalc,
+        leftbrace,rightbrace,rightparenthesis,
+        comma,period,colon,semic,leftangle,rightangle,altern_,
+        (* compulsory for scanutilities: *)
+        charconst,stringconst,numberconst,
+        leftparenthesis,hyphen,identifier);
+    standardident = (dummy);
+
+%INCLUDE '41SCANUT.PAS'
+
+PROCEDURE initialise;
+VAR i : integer;
+BEGIN (* initialise *)
+iniscanner;
+specials_repeat := ['='];
+erw( '(           ' ,leftparenthesis); (* not used *)
+erw( ')           ' ,rightparenthesis);
+erw( ',           ' ,comma);
+erw( '.           ' ,period);
+erw( ':           ' ,colon);
+erw( ';           ' ,semic);
+erw( '&lt;           ' ,leftangle);
+erw( '=           ' ,equal);
+erw( '&gt;           ' ,rightangle);
+erw( 'ALL         ' ,all_);
+erw( 'AND         ' ,and_);
+erw( 'DETERMINABLE' ,determinable_);
+erw( 'DETERMINATE ' ,determinate_);
+erw( 'EXTENSION   ' ,extension_);
+erw( 'FALSE       ' ,false_);
+erw( 'FIRST       ' ,first_);
+erw( 'IFF         ' ,iff_);
+erw( 'IMP         ' ,imp_);
+erw( 'INDIVIDUAL  ' ,individual_);
+erw( 'NOT         ' ,not_);
+erw( 'OR          ' ,or_);
+erw( 'PREDICATE   ' ,predicate_);
+erw( 'QUIT        ' ,quit_);
+erw( 'SHOW        ' ,show_);
+erw( 'SOME        ' ,some_);
+erw( 'SORT        ' ,sort_);
+erw( 'THE         ' ,the_);
+erw( 'TRUE        ', true_);
+erw( 'WHICH       ' ,which_);
+erw( '{           ' ,leftbrace);
+erw( '|           ' ,altern_);
+erw( '}           ' ,rightbrace);
+END; (* initialise *)
+
+CONST
+    prime_number = 47;  (* e.g. 997 *)
+    maxtable = 300;
+    maxparamtable = 500;
+    maxsorts = 31;
+    maxpartyptable = 1000;
+    maxcode = 100;
+    maxmemory = 1000;
+    maxbindingstack = 10;
+    maxval = 225;
+TYPE
+    sortrange = 0 .. maxsorts;
+    sortset = SET OF sortrange;
+    tablerange = 0..maxtable;
+    hashrange = 0..prime_number;
+    paramrange = 0..maxparamtable;
+    partyprange = 1..maxpartyptable;
+    memrange = 0..maxmemory;
+    coderange = 0..maxcode;
+    stackrange = 0..maxbindingstack;
+    valrange = 0..maxval;
+VAR
+    facbegsys,querybegsys,top_levelbegsys,typebegsys : symset;
+    table : ARRAY [tablerange] OF RECORD
+                alf : identalfa; next : tablerange;
+                CASE ob : symbol OF
+                    sort_ :
+                        (s_sort : sortset;
+                         s_sortaddress : sortrange;
+                         s_size : tablerange);
+                    individual_ :
+                        (i_sortaddress : sortrange;
+                         i_ord : tablerange);
+                    predicate_,determinable_,determinate_,
+                    all_det,some_det,which_det,first_det :
+                        (p_params : partyprange;
+                         p_mem : memrange;
+                         p_val : valrange;
+                         p_info : memrange (* only for trace *) );
+                    all_,some_,which_,first_,the_ :
+                        (b_sort : sortset;
+                         b_stackaddress : stackrange);
+                    END; (* CASE, RECORD *)
+    lasttable,locatn,sentinel : tablerange;
+    hashtable : ARRAY [hashrange] OF tablerange;
+    h : hashrange;
+    sorttable : ARRAY [sortrange] OF
+        RECORD tabl_ptr : tablerange; sort_size : tablerange END;
+    lastsort : sortrange;
+
+    paramtable : ARRAY [paramrange] OF RECORD
+        ad : integer;
+        sorts : sortset;
+        firstsort : partyprange;
+        paramsize : integer;
+        mult : integer;
+        islast : boolean
+        END;
+    lastparamtable : paramrange;
+    partyptable : ARRAY [partyprange] OF
+        RECORD tblptr : tablerange; add : integer END;
+    lastpartyptable : partyprange;
+
+    code : ARRAY [coderange] OF
+        RECORD
+            op : symbol;
+            left:tablerange; right : memrange;
+            val : valrange
+            END;
+    cx : coderange;
+    memory : ARRAY [memrange] OF valrange;
+    mx : memrange;
+
+    bindingstack : ARRAY [stackrange] OF
+        RECORD add,adr,var_ptr : tablerange END;
+    top,indvars,detvars : stackrange;
+    actualaddress : memrange;
+    num_successes : integer;
+    clock_start : integer;
+    calls_to_make : integer;
+
+PROCEDURE writeset(s : sortset);
+VAR i : integer;
+BEGIN
+putch('[');
+FOR i := 0 TO maxsorts DO
+    IF i IN s THEN BEGIN putch(' '); writeinteger(i) END;
+putch(']')
+END; (* writeset *)
+
+(* - - - - -   I N T E R P R E T E R   - - - - - *)
+
+PROCEDURE listcode(i : coderange);
+BEGIN
+WITH code[i] DO
+    BEGIN
+    write(listing,i:4,'    ',op,left:4,right:4,'    ');
+    IF op IN [predicate_,determinable_,determinate_,
+              all_,some_,which_,first_,the_] THEN
+        BEGIN
+        write(listing,table[left].alf,' (',val:0,')');
+        IF op = determinate_ THEN write(listing,'(',val:0,')')
+        END;
+    writeln(listing)
+    END
+END; (* listcode *)
+
+PROCEDURE show;
+VAR i,j : integer;
+BEGIN (* show *)
+num_successes := num_successes + 1;
+writeinteger(num_successes); putch(':'); writeline;
+FOR i := 1 TO indvars + detvars DO
+    WITH bindingstack[i] DO
+        BEGIN
+        FOR j := 1 TO 4 DO putch(' ');
+        writeident(table[var_ptr].alf);
+        putch(' '); putch('='); putch(' ');
+        writeident(table[adr].alf); writeline
+        END;
+END; (* show *)
+
+PROCEDURE make(g : boolean; f : coderange; PROCEDURE cp);
+LABEL 5,6;
+VAR i,j,k : integer;
+
+    PROCEDURE trueright;
+    BEGIN make(true,code[f].right,cp) END;
+
+    PROCEDURE falseright;
+    BEGIN make(false,code[f].right,cp) END;
+
+    PROCEDURE sameright;
+    BEGIN make(g,code[f].right,cp) END;
+
+    PROCEDURE popstack;
+    BEGIN top := k - 1; cp END;
+
+    PROCEDURE nexttype;
+    VAR s : sortset;
+
+        PROCEDURE nextinstance(PROCEDURE cp);
+
+            PROCEDURE furtherinstance;
+            BEGIN nextinstance(cp) END;
+
+        BEGIN (* nextinstance *)
+        j := j + 1;
+        WITH sorttable[i] DO
+            IF j &gt; tabl_ptr + sort_size THEN nexttype ELSE
+                BEGIN
+                IF writelisting &gt; 12 THEN
+                    BEGIN
+                    write(listing,'instance = ',table[j].alf,' in ');
+                    listcode(f)
+                    END;
+                WITH bindingstack[k] DO
+                    BEGIN adr := j; add := add + 1 END;
+                IF writelisting &gt; 10  THEN
+                    writeln(listing,'universal instance, add = ',
+                        bindingstack[k].add:0);
+                make(g,code[f].right,furtherinstance)
+                END
+        END; (* nextinstance *)
+
+    BEGIN (* nexttype *)
+    IF i &gt; lastsort THEN popstack ELSE
+        BEGIN
+        s := table[code[f].left].b_sort
+             + [lastsort + 1]; (* sentinel *)
+        REPEAT i := i + 1 UNTIL i IN s;
+        IF i &gt; lastsort THEN popstack ELSE
+            BEGIN
+            j := sorttable[i].tabl_ptr;
+            nextinstance(nexttype)
+            END
+        END
+    END; (* nexttype *)
+
+    PROCEDURE nextdeterminate;
+    BEGIN (* nextdeterminate *)
+    WITH bindingstack[k] DO
+        BEGIN
+        add := add + 1;
+        IF writelisting &gt; 13 THEN
+            writeln(listing,'add = ',add:0);
+        IF add &gt; j THEN popstack ELSE
+            make(g,code[f].right,nextdeterminate)
+        END
+    END; (* nextdeterminate *)
+
+BEGIN (* make *)
+calls_to_make := calls_to_make + 1;
+IF writelisting &gt; 10 THEN
+    BEGIN write(listing,g:1); listcode(f) END;
+WITH code[f] DO
+    CASE op OF
+        predicate_,determinate_,determinable_ :
+            BEGIN
+            actualaddress := right;
+            (* NOTE that the following requires the LAST code
+               to be a dummy to stop previous query interfering *)
+            i := f + 1;
+            WHILE code[i].op = individual_ DO
+                BEGIN
+                IF writelisting &gt; 10 THEN
+                    BEGIN
+                    write(listing,g:1,'  ');
+                    listcode(i)
+                    END;
+                WITH code[i] DO
+                    BEGIN
+                    actualaddress :=
+                        actualaddress +
+                            left * bindingstack[right].add;
+                    IF writelisting &gt; 13 THEN
+                        WITH bindingstack[right] DO
+                          writeln(listing,table[var_ptr].alf,
+                            ' := ',table[adr].alf)
+                    END;
+(* here would be a correction for sorts in parameter that
+  are not sorts in the binding; add (size * multiplier *)
+                i := i + 1
+                END;
+            IF op = determinable_
+                THEN i := bindingstack[val].add
+                ELSE i := val;
+            IF (memory[actualaddress] = i) = g THEN
+                BEGIN
+                IF writelisting &gt; 10 THEN writeln(listing,'SUCCESS');
+                cp
+                END
+              ELSE
+                IF writelisting &gt; 10 THEN writeln(listing,'FAIL')
+            END;
+        all_,some_,which_,first_,the_ :
+            BEGIN
+            top := top + 1;
+            IF op IN [which_,first_ ]
+                THEN indvars := indvars + 1;
+            WITH bindingstack[top] DO
+                BEGIN
+                var_ptr := left; add := 0;
+                IF (op IN [some_,which_,first_,the_ ]) = g THEN
+                    BEGIN
+                    FOR i := 1 TO lastsort DO
+                        IF i IN table[left].b_sort THEN
+                            WITH sorttable[i] DO
+                                BEGIN
+                                IF writelisting &gt; 11 THEN
+                                  BEGIN
+                                  write(listing,
+                                    'sort is: ',table[tabl_ptr].alf);
+                                  listcode(f)
+                                  END;
+                                FOR j := tabl_ptr + 1 TO
+                                    tabl_ptr + sort_size  DO
+                                  BEGIN
+                                  adr := j;
+                                  IF writelisting &gt; 12 THEN
+                                    BEGIN
+                                    write(listing,'instance = ',
+                                      table[adr].alf);
+                                      listcode(f)
+                                    END;
+                                  k := num_successes;
+                                  make(g,right,cp);
+                                  IF NOT (op IN [which_,the_]) THEN
+                                    IF num_successes &gt; k
+                                      THEN GOTO 5;
+                                  add := add + 1
+                                  END (* FOR j *)
+                                END; (* WITH sorttable[i]  IF *)
+                    5:
+                    IF op IN [which_,first_,the_]
+                        THEN indvars := indvars - 1;
+                    top := top - 1
+                    END (* IF *)
+                ELSE (* universal/true or existential/false *)
+                    BEGIN
+                    k := top; add := -1; i := 0;
+                    nexttype;
+                    top := k - 1
+                    END;
+                END;  (* WITH bindingstack *)
+            END;
+        sort_ :
+            IF (table[bindingstack[left].adr].i_sortaddress
+                IN table[right].s_sort) = g THEN cp;
+        equal :
+            IF (bindingstack[left].adr =
+                bindingstack[right].adr) = g THEN cp;
+        equalc :
+            IF (bindingstack[left].adr = right) = g THEN cp;
+        true_,false_ :
+            IF (op = true_) = g THEN cp;
+        not_ :
+            make(NOT g, right,cp);
+        and_,or_ :
+            IF (op = and_) = g THEN make(g,left,sameright) ELSE
+                BEGIN
+                k := num_successes; make(g,left,cp);
+                IF (indvars &gt; 0) OR (k = num_successes)
+                     THEN make(g,right,cp)
+                END;
+        imp_ :
+            IF NOT g THEN make(true,left,falseright) ELSE
+                BEGIN
+                k := num_successes; make(false,left,cp);
+                IF (indvars &gt; 0) OR (k = num_successes)
+                    THEN make(g,right,cp)
+                END;
+        iff_ :
+            BEGIN
+            k := num_successes; make(g,left,trueright);
+            IF (indvars &gt; 0) OR (k = num_successes)
+                THEN make(NOT g,left,falseright)
+            END;
+        all_det,some_det,which_det,first_det :
+            BEGIN
+            top := top + 1;
+            IF op IN [which_det,first_det]
+                THEN detvars := detvars + 1;
+            WITH bindingstack[top] DO
+                BEGIN
+                var_ptr := left; (* the variable *)
+                adr := table[left].p_info;
+                IF (op IN [which_det,first_det,some_det]) = g THEN
+                    BEGIN (* existential *)
+                    FOR i := 0 TO table[adr].p_val - 1 DO
+                        BEGIN
+                        adr := adr + 1; add := i;
+                        k := num_successes; make(g,right,cp);
+                        IF NOT (op = which_det) THEN
+                            IF num_successes &gt; k THEN GOTO 6;
+                        END;
+                    6:
+                    top := top - 1;
+                    IF op IN [which_det,first_det]
+                        THEN detvars := detvars - 1;
+                    END
+                  ELSE
+                    BEGIN (* universal *)
+                    k := top; add := -1;
+                    j := table[adr].p_val - 1;
+                    IF writelisting &gt; 12 THEN
+                        writeln(listing,'universal with ',
+                            j + 1:0,' values');
+                    nextdeterminate;
+                    top := k - 1
+                    END
+                END
+            END;
+        OTHERWISE point('F','internal in "make"            ');
+        END; (* CASE *)
+  END; (* make *)
+
+(* - - - - -   T R A N S L A T O R   - - - - - *)
+
+PROCEDURE top_level(fsys : symset);
+VAR siz,ty : integer; address : integer; ss : sortset;
+    tabadr : tablerange;
+    current_param : integer;
+    savelocation : integer; (* transmit extension to factor *)
+    i,j : integer;
+    multiplier, adder : integer;
+    cx0 : integer;
+
+  FUNCTION hash : hashrange;
+  (* NOTE: this is dependent on the PASCAL implementation *)
+  VAR x : RECORD CASE boolean OF
+                false : (a : identalfa);
+                true  : (i1,i2,i3,i4 : integer);
+                END;
+  BEGIN (* hash *)
+  WITH x DO
+      BEGIN
+      a := ident;
+      hash := (i1 + i2 + i3 + i4) MOD prime_number
+      END
+  END; (* hash *)
+
+  PROCEDURE ent(k : symbol; n : tablerange);
+  BEGIN (* ent *)
+  lasttable := lasttable + 1;
+  IF lasttable &gt; maxtable THEN
+      point('F','symbol table overflow         ');
+  WITH table[lasttable] DO
+      BEGIN alf := ident; ob := k; next := n END
+  END; (* ent *)
+
+  PROCEDURE lookup;
+  BEGIN (* lookup *)
+  IF sentinel &gt; 0 THEN
+      BEGIN (* linear search for bound variables *)
+      table[sentinel].alf := ident; locatn := lasttable;
+      WHILE table[locatn].alf &lt;&gt; ident DO locatn := locatn - 1
+      END;
+  IF (sentinel = 0) OR (locatn = sentinel) THEN
+      BEGIN (* hash search for global identifiers *)
+      table[0].alf := ident; locatn := hashtable[hash];
+      WHILE table[locatn].alf &lt;&gt; ident DO locatn :=table[locatn].next
+      END;
+  IF writelisting &gt; 12 THEN
+      WITH table[locatn] DO
+          writeln(listing,
+              'lookup : "',ident,'" at ',locatn:0,' is ',ob)
+  END; (* lookup *)
+
+  PROCEDURE enter(k : symbol; VAR where : tablerange);
+  VAR h : hashrange;
+  BEGIN (* enter *)
+  lookup;
+  IF locatn &gt; 0 THEN
+      point('E','previously declared           ');
+  h := hash;
+  IF writelisting &gt; 12 THEN
+      IF hashtable[h] &lt;&gt; 0 THEN
+          IF ident &lt;&gt; table[hashtable[h]].alf THEN
+              writeln(listing,'collision ',ident,' = ',
+                table[hashtable[h]].alf);
+  ent(k,hashtable[h]);
+  hashtable[h] := lasttable;
+  where := lasttable
+  END; (* enter *)
+
+  PROCEDURE gen(o : symbol; l,r : integer);
+  BEGIN (* gen *)
+  IF cx = maxcode THEN
+      point('F','input too big                 ');
+  cx := cx + 1;
+  WITH code[cx] DO
+      BEGIN op := o; left := l; right := r; val := 0 END
+  END; (* gen *)
+
+  PROCEDURE typ(fsys : symset; VAR siz,ty : integer; VAR ss : sortset);
+  VAR siz1,ty1 : integer; ss1 : sortset; where : tablerange;
+  BEGIN (* typ *)
+  test(typebegsys,fsys,'start of sort expected        ');
+  IF sym IN typebegsys THEN
+      CASE sym OF
+          leftparenthesis :
+              BEGIN
+              getsym; siz := 0; ty := 0;
+              WHILE sym = identifier DO
+                  BEGIN
+                  enter(individual_,where);
+                  WITH table[where] DO
+                    BEGIN i_sortaddress := address; i_ord := siz END;
+                  siz := siz + 1; getsym
+                  END;
+              ss := [lastsort];
+              check(rightparenthesis,[],
+                  '")" expected                  ');
+              IF sym = altern_ THEN
+                  point('E','illegal after enumeration     ')
+              END;
+          identifier :
+              BEGIN
+              lookup;
+              ty := locatn;
+              WITH table[locatn] DO
+                  CASE ob OF
+                    sort_ :
+                      BEGIN siz := s_size; ss := s_sort; END;
+                    determinable_ :
+                      BEGIN
+                      END;
+                    OTHERWISE
+                      point('E','identifier is of wrong kind   ')
+                    END; (* CASE *)
+              getsym
+              END;
+          OTHERWISE
+              point('E','illegal start of sort         ');
+          END; (* CASE *)
+  IF sym = altern_ THEN
+      BEGIN
+      getsym;
+      IF sym = leftparenthesis THEN
+          point('E','illegal after alternation     ');
+      typ(fsys + [altern_],siz1,ty1,ss1);
+      siz := siz + siz1; ss := ss + ss1
+      END;
+  test(fsys,[],'illegal symbol after type     ')
+  END; (* typ *)
+  PROCEDURE bind(fsys : symset; s : symbol; VAR where : tablerange);
+  VAR siz,ty : integer;
+  BEGIN (* bind *)
+  IF sym = identifier THEN
+      BEGIN
+      ent(s,0); where := lasttable; getsym;
+      check(colon,[semic],'":" expected                  ');
+      typ(fsys,siz,ty,ss);
+      IF table[ty].ob = sort_ THEN
+          WITH table[where] DO
+              BEGIN b_sort := ss; b_stackaddress := top END
+        ELSE
+          WITH table[where] DO
+              BEGIN
+              ob := succ(s);
+              p_params := table[ty].p_params;
+              p_mem := table[ty].p_mem;
+              p_val := top; (* of the run time stack *)
+              p_info := ty
+              END
+      END
+    ELSE point('E','variable expected             ')
+  END; (* bind *)
+
+  PROCEDURE tuple(fsys : symset; cx0 : integer);
+  VAR i : partyprange;
+  BEGIN (* tuple *)
+  REPEAT
+  getsym;
+    IF sym &lt;&gt; identifier THEN
+       point('E','identifier expected           ')
+     ELSE
+       BEGIN
+       lookup;
+       WITH table[locatn] DO
+         CASE ob OF
+           individual_ :
+              IF NOT(table[i_sortaddress].s_sort
+                   &lt;= paramtable[current_param].sorts) THEN
+                  point('E','constant has wrong type       ')
+              ELSE
+                  BEGIN
+                  i := paramtable[current_param].firstsort;
+                  WHILE i_sortaddress &lt;&gt; partyptable[i].tblptr
+                    DO i := i + 1;
+                  IF writelisting &gt; 11 THEN
+                    BEGIN
+                    writeln(listing,'the type of ',alf,' is ',
+                      table[partyptable[i].tblptr].alf);
+                    writeln(listing,
+                      'mult = ',
+                        paramtable[current_param].mult:0,
+                      ' add = ',
+                        partyptable[i].add:0,
+                      ' ord = ',i_ord:0);
+                    END;
+                  WITH code[cx0] DO
+                   right := right +
+                    paramtable[current_param].mult *
+                    (partyptable[i].add + i_ord);
+                  END;
+           all_,some_,which_,first_,the_ :
+              IF NOT(b_sort
+                   &lt;= paramtable[current_param].sorts) THEN
+                  point('E','variable has wrong type       ')
+(* NOTE: it is desirable to weaken the above = to &lt;= so that
+subtypes can be used. But this requires further instructions to
+skip parameter sorts not included in the binding sorst *)
+              ELSE
+                  gen(individual_,
+                    paramtable[current_param].mult,
+                    b_stackaddress);
+           OTHERWISE
+              point('E','constant or variable expected ')
+           END
+       END; (* ELSE *)
+    getsym;
+    WITH paramtable[current_param] DO
+     IF islast AND (sym = comma) THEN
+       point('E','too many actual parameters    ')
+     ELSE IF NOT islast AND (sym &lt;&gt; comma) THEN
+       point('E','too few actual parameters     ');
+    current_param := current_param + 1;
+    UNTIL sym &lt;&gt; comma;
+  test(fsys,[],'illegal symbol after tuple ')
+  END; (* tuple *)
+
+  PROCEDURE expression(fsys : symset; VAR cx0 : integer);
+  VAR left,right : integer; localop : symbol;
+
+    PROCEDURE simpl_expr(fsys : symset; VAR cx0 : integer);
+    VAR left,right : integer;
+
+      PROCEDURE term(fsys : symset; VAR cx0 : integer);
+      VAR left,right : integer;
+
+          PROCEDURE factor(fsys : symset; VAR cx0 : integer);
+          VAR locatn0 : integer; localop : symbol;
+          tabadr : tablerange;
+          ss : sortset;
+
+          BEGIN (* factor *)
+          test(facbegsys,fsys,
+              'start of factor expected      ');
+          WHILE sym IN facbegsys DO
+              BEGIN
+              CASE sym OF
+                  identifier :
+                      BEGIN
+                      lookup; locatn0 := locatn;
+                      CASE table[locatn].ob OF
+                          predicate_,determinate_,
+                          all_det,some_det,which_det,first_det :
+                            BEGIN
+                            current_param := table[locatn].p_params;
+                            IF table[locatn0].ob &lt; all_det THEN
+                                gen(table[locatn0].ob,locatn0,
+                                    table[locatn0].p_mem)
+                              ELSE
+                                gen(determinable_,locatn0,
+                                    table[locatn0].p_mem);
+
+                            code[cx].val := table[locatn0].p_val;
+                            cx0 := cx;
+                            getsym;
+                            IF sym = leftparenthesis THEN
+                              BEGIN
+                              tuple(fsys + [rightparenthesis],cx0);
+                              check(rightparenthesis,
+                                [rightbrace,rightangle],
+                                '")" expected                  ')
+                              END;
+                            END; (* predicate_ *)
+                          sort_ :
+                            BEGIN
+                            getsym;
+                            IF sym &lt;&gt; leftparenthesis THEN
+                              point('E',
+                                '"(" expected after sort       ')
+                            ELSE
+                              BEGIN
+                              getsym;
+                              IF sym &lt;&gt; identifier THEN
+                                point('E',
+                                  'identifier expected           ')
+                              ELSE
+                                BEGIN
+                                lookup;
+                                WITH table[locatn] DO CASE ob OF
+                                  individual_ :
+                                    IF table[i_sortaddress].s_sort
+                                        &lt;= table[locatn0].s_sort
+                                      THEN gen(true_,0,0)
+                                      ELSE gen(false_,0,0);
+                                  all_,some_,which_,first_,the_ :
+                                    gen(sort_,
+                                        table[locatn].b_stackaddress,
+                                        locatn0);
+                                  OTHERWISE
+                                    point('E',
+                                    'constant or variable expected ')
+                                  END; (* CASE,WITH *)
+                                cx0 := cx; getsym
+                                END;
+                              check(rightparenthesis,
+                                [rightbrace,rightangle],
+                                '")" expected                  ')
+                              END
+                            END;
+                          individual_,all_,some_,which_,first_,the_ :
+                            BEGIN
+                            getsym;
+                            IF sym = equal THEN getsym ELSE
+                              point('E',
+                                '"=" expected                  ');
+                            IF sym &lt;&gt; identifier THEN
+                              point('E',
+                                'identifier expected           ')
+                            ELSE
+                              BEGIN
+                              lookup;
+                              WITH table[locatn] DO CASE ob OF
+                                individual_ :
+                                  IF table[locatn0].ob = individual_
+                                    THEN
+                                      IF locatn = locatn0
+                                        THEN gen(true_,0,0)
+                                        ELSE gen(false_,0,0)
+                                    ELSE
+                                      gen(equalc,
+                                        table[locatn0].b_stackaddress,
+                                        locatn);
+                                all_,some_,which_,first_,the_:
+                                  IF table[locatn0].ob = individual_
+                                    THEN
+                                      gen(equalc,
+                                        table[locatn].b_stackaddress,
+                                        locatn0)
+                                    ELSE
+                                      gen(equal,
+                                        table[locatn0].b_stackaddress,
+                                        table[locatn].b_stackaddress);
+                                OTHERWISE
+                                  point('E',
+                                    'constant or variable expected ')
+                                END; (* CASE *)
+                              cx0 := cx; getsym
+                              END (* ELSE *)
+                            END;
+                          OTHERWISE
+                            point('E',
+                              'identifier is of wrong kind   ')
+                          END (* CASE *)
+                      END; (* identifier_ *)
+                  all_,some_ :
+                      BEGIN
+                      localop := sym; top := top + 1; getsym;
+                      bind(fsys + facbegsys,localop,tabadr);
+                      factor(fsys,cx0); top := top - 1;
+                      gen(table[tabadr].ob,tabadr,cx0); cx0 := cx
+                      END;
+                  true_,false_:
+                      BEGIN
+                      gen(sym,0,0); cx0 := cx;
+                      getsym
+                      END;
+                  not_ :
+                      BEGIN
+                      getsym;
+                      factor(fsys,cx0);
+                      gen(not_,0,cx0); cx0 := cx
+                      END;
+                  leftparenthesis :
+                      BEGIN
+                      getsym;
+                      expression(fsys + [rightparenthesis],cx0);
+                      check(rightparenthesis,[rightbrace,rightangle],
+                          '")" expected                  ')
+                      END;
+                  OTHERWISE
+                      point('E','start of factor expected      ')
+                  END; (* CASE *)
+              test(fsys,[leftparenthesis],
+                  'illegal symbol after factor   ')
+              END;
+          END; (* factor *)
+
+      BEGIN (* term *)
+      factor(fsys + [and_],cx0);
+      IF sym = and_ THEN
+          BEGIN
+          getsym; term(fsys,right);
+          gen(and_,cx0,right); cx0 := cx
+          END;
+      END; (* term *)
+
+    BEGIN (* simpl_expr *)
+    term(fsys + [or_],cx0);
+    IF sym = or_ THEN
+        BEGIN
+        getsym; simpl_expr(fsys,right);
+        gen(or_,cx0,right); cx0 := cx
+        END;
+    END; (* simpl_expr *)
+
+  BEGIN (* expression *)
+  simpl_expr(fsys + [iff_,imp_],cx0);
+  IF sym IN [iff_,imp_] THEN
+      BEGIN
+      localop := sym; getsym; expression(fsys,right);
+      gen(localop,cx0,right); cx0 := cx
+      END;
+  END; (* expression *)
+
+  PROCEDURE query(fsys : symset; VAR cx0 : integer);
+  VAR tabadr : integer; localop : symbol;
+  BEGIN (* query *)
+  IF sym IN [which_,first_] THEN
+      BEGIN
+      localop := sym; top := top + 1; getsym;
+      bind(fsys + querybegsys,localop,tabadr);
+      query(fsys,cx0); top := top - 1;
+      gen(table[tabadr].ob,tabadr,cx0); cx0 := cx
+      END
+  ELSE expression(fsys,cx0)
+  END; (* query *)
+
+  PROCEDURE setatom; (* called as a continuation *)
+  VAR i, current_param : integer;
+  BEGIN (* setatom *)
+  WITH table[savelocation] DO
+      BEGIN actualaddress := p_mem; current_param := p_params END;
+  FOR i := 1 TO top DO
+      BEGIN
+      actualaddress := actualaddress +
+        paramtable[current_param].mult * bindingstack[i].add;
+      current_param := current_param + 1;
+      END;
+  memory[actualaddress] := table[savelocation].p_val
+  END; (* setatom *)
+
+BEGIN (* top_level *)
+test(top_levelbegsys,fsys,'command or query expected     ');
+IF sym IN top_levelbegsys THEN CASE sym OF
+    sort_ :
+        BEGIN
+        getsym;
+        WHILE sym = identifier DO
+            BEGIN
+            enter(sort_,address);
+            lastsort := lastsort + 1;
+            sorttable[lastsort].tabl_ptr := address;
+            getsym;
+            IF sym = equal THEN getsym ELSE
+                point('E','"=" expected                  ');
+            typ(fsys + [semic],siz,ty,ss);
+            sorttable[lastsort].sort_size := siz;
+            WITH table[address] DO
+                BEGIN
+                s_sortaddress := lastsort; s_size := siz; s_sort:= ss
+                END;
+            IF sym = semic THEN getsym
+            END (* WHILE *)
+        END;
+    predicate_ :
+        BEGIN
+        getsym;
+        WHILE sym = identifier DO
+            BEGIN
+            enter(predicate_,address);
+            getsym;
+            multiplier := 1;
+            IF sym = leftparenthesis THEN
+                BEGIN
+                WITH table[address] DO
+                    BEGIN
+                    p_params := lastparamtable + 1; p_val := 1
+                    END;
+                REPEAT
+                    getsym;
+                    typ(fsys + [comma,rightparenthesis],siz,ty,ss);
+                    lastparamtable := lastparamtable + 1;
+                    WITH paramtable[lastparamtable] DO
+                        BEGIN
+                        ad := ty;
+                        sorts := ss;
+                        firstsort := lastpartyptable + 1;
+                        paramsize := 0;
+                        mult := multiplier;
+                        islast := sym &lt;&gt; comma
+                        END;
+                    adder := 0;
+                    FOR i := 1 TO lastsort DO
+                        IF i IN ss THEN
+                            BEGIN
+                            IF writelisting &gt; 9 THEN
+                                writeln(listing,
+                                    'type = ',
+                                    table[sorttable[i].tabl_ptr].alf);
+                            WITH paramtable[lastparamtable] DO
+                              paramsize :=
+                                paramsize + sorttable[i].sort_size;
+                            lastpartyptable := lastpartyptable + 1;
+                            WITH partyptable[lastpartyptable] DO
+                                BEGIN
+                                tblptr := sorttable[i].tabl_ptr;
+                                add := adder
+                                END;
+                            adder := adder + sorttable[i].sort_size
+                            END; (* IF *)
+                    multiplier := multiplier * adder
+                    UNTIL sym &lt;&gt; comma;
+                IF sym = rightparenthesis THEN getsym ELSE
+                    point('E','")" expected                  ');
+                END (* IF *)
+              ELSE
+                table[address].p_params := 0;
+            WITH table[address] DO
+                BEGIN p_mem := mx; p_info := multiplier END;
+            mx := mx + multiplier;
+            IF mx &gt; maxmemory THEN
+                point('F','not enough memory             ');
+            IF sym = equal THEN
+                BEGIN (* determinable *)
+                getsym;
+                check(leftbrace,[leftparenthesis,leftangle],
+                    '"{" expected                  ');
+                WHILE sym = identifier DO
+                    BEGIN (* determinate *)
+                    enter(determinate_,tabadr);
+                    WITH table[tabadr] DO
+                        BEGIN
+                        p_params := table[address].p_params;
+                        p_mem := table[address].p_mem;
+                        p_info := address;
+                        p_val := tabadr - address  - 1
+                        END;
+                    getsym
+                    END; (* WHILE determinate *)
+                WITH table[address] DO
+                    BEGIN
+                    ob := determinable_;
+                    p_val := tabadr-address
+                    END;
+                check(rightbrace,[],'"}" expected                  ')
+                END; (* determinable *)
+            IF sym = semic THEN getsym
+            END (* WHILE *)
+        END;
+    extension_ :
+        BEGIN
+        getsym;
+        WHILE sym = identifier DO
+            BEGIN
+            lookup;
+            WITH table[locatn] DO
+                IF NOT (ob IN [predicate_,determinate_]) THEN
+                    point('E','predicate expected            ')
+                  ELSE
+                    savelocation := locatn;
+            getsym;
+            check(equal,[],'"=" expected                  ');
+            check(leftbrace,[],'"{" expected                  ');
+            IF sym = the_ THEN
+                BEGIN
+                getsym;
+                IF sym &lt;&gt; leftangle THEN
+                    point('E','"&lt;" expected                  ');
+                current_param :=  table[savelocation].p_params;
+                lasttable := lasttable + 1; sentinel := lasttable;
+                cx0 := cx + 1;
+                REPEAT
+                    getsym; top := top + 1;
+                    bind(fsys + [comma,rightangle],the_,tabadr);
+                    IF NOT(table[tabadr].b_sort
+                        &lt;= paramtable[current_param].sorts) THEN
+                          point('E','declaration has wrong type    ');
+                    WITH paramtable[current_param] DO
+                        IF islast AND (sym = comma) THEN
+                          point('E','too many variables in tuple   ')
+                        ELSE IF NOT islast AND (sym &lt;&gt; comma) THEN
+                          point('E','too few variables in tuple    ');
+                    gen(the_,tabadr,cx + 2);
+                    current_param := current_param + 1
+                    UNTIL sym &lt;&gt; comma;
+                check(rightangle,[],'"&gt;" expected                  ');
+                expression(fsys + [rightbrace],code[cx].right);
+                code[cx + 1].op := undefined;
+                top := 0; indvars := 0; detvars := 0;
+                num_successes := 0;
+                IF writelisting &gt; 10 THEN
+                    FOR i := 1 TO cx DO listcode(i);
+                make(true,cx0,setatom);
+                lasttable := sentinel - 1
+                END (* IF the *)
+              ELSE
+                WHILE sym = leftangle DO
+                    BEGIN
+                    gen(predicate_,savelocation,
+                        table[savelocation].p_mem);
+                    cx0 := cx;
+                    current_param := table[savelocation].p_params;
+                    tuple(fsys + [rightangle],cx0);
+                    IF writelisting &gt; 10 THEN
+                        writeln(listing,'setting ',
+                            code[cx0].right);
+                    memory[code[cx0].right] :=
+                        table[savelocation].p_val;
+                    cx := 0;
+                    check(rightangle,[rightparenthesis,rightbrace],
+                        '"&gt;" expected                  ')
+                    END; (* WHILE leftangle *)
+            check(rightbrace,[rightparenthesis,rightangle],
+                '"}" expected                  ');
+            IF sym = semic THEN getsym
+            END (* WHILE *)
+        END;
+    show_ :
+        BEGIN
+        FOR i := 1 TO lasttable DO
+            WITH table[i] DO
+                BEGIN
+                writeresword(reswords[resword_inverse[ob]].alf);
+                putch(' ');
+                writeident(alf);
+                CASE ob OF
+                    sort_ :
+                        BEGIN
+                        END;
+                    individual_ :
+                        BEGIN
+                        putch(':');
+                        writeident(table[i_sortaddress].alf)
+                        END;
+                    predicate_,determinable_ :
+                        BEGIN
+                        IF p_params &gt; 0 THEN
+                            BEGIN
+                            putch('(');
+                            j := p_params;
+                            REPEAT
+                              WITH paramtable[j] DO
+                                BEGIN
+                                writeident(table[ad].alf);
+                                IF writelisting &gt; 5 THEN
+                                  BEGIN
+                                  writeset(paramtable[j].sorts);
+                                  putch(' ');
+                                  writeinteger(paramsize)
+                                  END;
+                                IF NOT islast THEN putch(',');
+                                IF islast THEN j := 0 ELSE j := j + 1;
+                                END;
+                              UNTIL j = 0;
+                            putch(')'); putch(' ');
+                            END; (* IF *)
+                        putch('(');  writeinteger(p_info); putch(')');
+                        writeline;
+                        FOR j := p_mem TO p_mem + p_info - 1 DO
+                            putch(chr(memory[j] + ord('0')))
+                        END; (* predicate *)
+                    determinate_ :
+                        BEGIN
+                        putch(' ');putch('=');putch(' ');
+                        writeident(table[p_info].alf);
+                        putch('['); writeinteger(p_val); putch(']')
+                        END;
+                    END; (* CASE *)
+                writeline
+                END; (* WITH, FOR *)
+        getsym
+        END; (* show *)
+    quit_ :
+        GOTO 99;
+    OTHERWISE
+        BEGIN
+        lasttable := lasttable + 1; sentinel := lasttable;
+        top := 0;
+        cx := 0;
+        query(fsys,cx0);
+        IF errorcount &gt; 0 THEN finalise ELSE
+            BEGIN
+            IF writelisting &gt; 9 THEN
+                FOR i := 1 TO cx DO listcode(i);
+            code[cx + 1].op := undefined;
+              (* see make, predicate_ NOTE *)
+            top := 0; indvars := 0; detvars := 0;
+            num_successes := 0;
+            make(true,cx0,show);
+            IF num_successes = 0
+                THEN writeident('no              ')
+                ELSE writeident('yes             ');
+            writeline
+            END;
+        lasttable := sentinel - 1; sentinel := 0;
+        END
+    END; (* CASE *)
+test(fsys,[],'illegal symbol after top level')
+END; (* top_level *)
+
+(* - - - - -   M A I N   - - - - - *)
+
+PROCEDURE writestatistics(VAR f : text);
+BEGIN (* writestatistics *)
+writeln(f,calls_to_make:0,' calls to make');
+END; (* writestatistics *)
+
+BEGIN (* main *)
+clock_start  := clock; calls_to_make := 0;
+initialise;
+typebegsys := [identifier,leftparenthesis];
+facbegsys := [identifier,all_,some_,the_,not_,true_,false_,
+                leftparenthesis,leftbrace,leftangle];
+querybegsys := facbegsys + [which_,first_];
+top_levelbegsys := querybegsys +
+                [sort_,predicate_,extension_,show_,quit_];
+table[0].ob := undefined; lasttable := 0;
+FOR h := 0 TO prime_number DO hashtable[h] := 0;
+lastparamtable := 0; lastsort := 0; lastpartyptable := 0; mx := 0;
+10:
+REPEAT
+    errorcount := 0; getsym; top_level([period]);
+    UNTIL false;
+90: ;
+99: finalise;
+IF statistics &gt; 0 THEN
+    BEGIN
+    writestatistics(output);
+    IF writelisting &gt; 0 THEN writestatistics(listing)
+    END
+END.
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-7" class="outline-2">
+<h2 id="sec-7"><span class="section-number-2">7</span> Exercises and reading</h2>
+<div class="outline-text-2" id="text-7">
+
+
+</div>
+
+<div id="outline-container-7-1" class="outline-3">
+<h3 id="sec-7-1"><span class="section-number-3">7.1</span> <i>Background Reading</i> :</h3>
+<div class="outline-text-3" id="text-7-1">
+
+<p>Most intermediate textbooks on logic define the notions of interpretations, satisfaction of a formula, and truth of a formulas in an interpretation.  However, all the ones I know only use a single domain, because this makes the metatheory simpler.  Also, textbooks on logic invariably use just ordinary predicates, and no determinable and determinate predicates.  But if you have understood the semantics of <code>vanilla</code> predicate calculus, then the addition of sorts and the addition of determinables and determinates should not present any problems.
+</p>
+<p>
+For some advanced references on sorts and types in logic see Eisinger and Ohlbach (1989, pp 48 - 49).  For the use of sorts to make Prolog searches more efficient, see Buekert (1989, pp 194 - 196).  Another use of types in a Prolog-like setting is described in Van Hentenryck (1989) and in Ait-Kaci and Podelski (1991).  Pletat (1991) gives a detailed description of sorts used in a natural language reasoning system and many recent references.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-7-2" class="outline-3">
+<h3 id="sec-7-2"><span class="section-number-3">7.2</span> <i>Syntactic Sugar - condensed binding</i>:</h3>
+<div class="outline-text-3" id="text-7-2">
+
+<p>If one has several variables, all being bound in the same way, and all of the same type, then it is cumbersome to have to repeat the quantifier and the type for each of them.  It would be convenient to be able to write a list of comma-separated variables where currently only one variable is allowed.  For example, one could then write
+</p>
+
+
+
+<pre class="example">ALL x,y,z : sometype  ( ... )
+</pre>
+
+
+<p>
+Implement this alternative notation.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-7-3" class="outline-3">
+<h3 id="sec-7-3"><span class="section-number-3">7.3</span> <i>Syntactic Sugar - non-identity</i>:</h3>
+<div class="outline-text-3" id="text-7-3">
+
+<p>It is easy enough to say that two individuals are not identical, even that three individuals are not identical, but already for four individuals it becomes tedious, since one has to write
+</p>
+
+
+
+<pre class="example">NOT (a = b OR a = c OR a = d OR b = c OR b = d OR c = d)
+</pre>
+
+
+<p>
+To say that five individuals are all different requires 24
+identity statements. In general, to say that \(N\) individuals
+are different requires \((N^{2}-N)/2\) identity statements.
+It would be more convenient if somehow one could just
+list the individuals that are required to be different,
+perhaps in the form
+</p>
+
+
+
+<pre class="example">diff(a,b,c,d)
+</pre>
+
+
+<p>
+This would be short for the longer formula given earlier.  Implement some notation along these lines.  Note that <code>a,b,c,d</code> can be individual constants or, more often, individual variables.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-7-4" class="outline-3">
+<h3 id="sec-7-4"><span class="section-number-3">7.4</span> <i>Closures</i>:</h3>
+<div class="outline-text-3" id="text-7-4">
+
+<p>The following concerns the extensions of binary relations.  Find a way of expressing that one relation is the reflexive closure of another, or the symmetric closure of another, or the transitive closure of another.  Then implement these additions.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-7-5" class="outline-3">
+<h3 id="sec-7-5"><span class="section-number-3">7.5</span> <i>Functions</i>:</h3>
+<div class="outline-text-3" id="text-7-5">
+
+<p>A function is a special kind of relation.  More precisely, an \(n\)-ary function is an \((n+1)\)-ary relation in which no \((n+1)\)-tuples differ in just their last ordinate.  Find a way of implementing functions in DATBAS.  There are two aspects to this: one is syntactic, having to allow formulas such as
+</p>
+
+
+
+<pre class="example">knows(father(john),mother(mary))
+</pre>
+
+
+<p>
+as semantically equivalent to
+</p>
+
+
+
+<pre class="example">SOME f : person
+  SOME m : person
+    (hasfather(john,f) AND hasmother(mary,m) AND knows(f,m))
+</pre>
+
+
+<p>
+The other aspect has to do with efficiency.  When declaring extensions, functions can be treated just like any other relation.  But it would be more efficient if functions could be explicitly declared as such.  Then the interpreter would not have to look up the value of the binary relation <code>hasfather</code> at <code>&lt;john,f&gt;</code> for all possible values of person <code>f</code>.  Instead it would look up the value of the unary function <code>father</code> at <code>&lt;john&gt;</code>.  Other kinds of formulas that become possible are
+</p>
+
+
+
+<pre class="example">father(jane)  =  teacher(brother(paul))
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-7-6" class="outline-3">
+<h3 id="sec-7-6"><span class="section-number-3">7.6</span> <i>Determinables as predicates</i>:</h3>
+<div class="outline-text-3" id="text-7-6">
+
+<p>Allow determinables as predicates, in formulas such as <code>climate(x) = climate(y)</code>.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-7-7" class="outline-3">
+<h3 id="sec-7-7"><span class="section-number-3">7.7</span> <i>Sparse Memory</i> :</h3>
+<div class="outline-text-3" id="text-7-7">
+
+<p>The memory array does not have to be implemented as a Pascal array.  Indeed, in many applications most of the entries in the array are going to be undefined or false, few will be true.  So the array may well be sparse, and then other implementation methods will be preferable to save on memory at the expense of computation time.  However, considerations of memory will only become important for large applications, and the topic is left as an exercise.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-7-8" class="outline-3">
+<h3 id="sec-7-8"><span class="section-number-3">7.8</span> <i>Constraints instead of Sorts</i> :</h3>
+<div class="outline-text-3" id="text-7-8">
+
+<p>Bueckert (1990) uses a logic in which the variables are typed not by sorts but by constraints which can be arbitrary formulas.  For example (p 180, but changing the notation just minimally), <code>ALL x,y : (parent(x) AND child-of(y,x)) loves(x,y)</code> symbolises <code>All parents love their children</code>.  The parenthesised conjunction following the colon is the constraint.
+</p></div>
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-01-11 07:34:52 CST</p>
+<p class="author">Author: michal</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

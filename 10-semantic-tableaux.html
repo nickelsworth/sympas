@@ -1,0 +1,695 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Chapter 10: Semantic Tableaux</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Chapter 10: Semantic Tableaux"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-01-11 07:38:02 CST"/>
+<meta name="author" content="michal"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Chapter 10: Semantic Tableaux</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 intro</a></li>
+<li><a href="#sec-2">2 TRUTH TABLES VERSUS SEMANTIC TABLEAUX</a></li>
+<li><a href="#sec-3">3 DESIGNING THE IMPLEMENTATION</a>
+<ul>
+<li><a href="#sec-3-1">3.1 A Goal Stack Machine</a></li>
+<li><a href="#sec-3-2">3.2 Predictive Parsing On A Stack</a></li>
+<li><a href="#sec-3-3">3.3 Step 1: <i>Parsing</i>.</a></li>
+<li><a href="#sec-3-4">3.4 Translating On A Stack</a></li>
+<li><a href="#sec-3-5">3.5 Step 2: <i>Generating Postfix</i>.</a></li>
+<li><a href="#sec-3-6">3.6 Step 3: <i>Tree Code</i>.</a></li>
+<li><a href="#sec-3-7">3.7 The Model Generator</a></li>
+</ul>
+</li>
+<li><a href="#sec-4">4 The Program</a></li>
+<li><a href="#sec-5">5 Exercises and Reading</a>
+<ul>
+<li><a href="#sec-5-1">5.1 <i>A puzzle</i>:</a></li>
+<li><a href="#sec-5-2">5.2 <i>Another implementation</i>:</a></li>
+<li><a href="#sec-5-3">5.3 <i>Translation to Prefix</i>:</a></li>
+<li><a href="#sec-5-4">5.4 <i>Tree Code in Infix Order</i>:</a></li>
+<li><a href="#sec-5-5">5.5 <i>A simpler program</i>:</a></li>
+<li><a href="#sec-5-6">5.6 <i>Non-recursive model generator</i>:</a></li>
+<li><a href="#sec-5-7">5.7 <i>Deadlock and  Reachability in Petri Nets</i>:</a></li>
+<li><a href="#sec-5-8">5.8 <i>Optimisation</i>:</a></li>
+<li><a href="#sec-5-9">5.9 <i>Other methods</i>:</a></li>
+<li><a href="#sec-5-10">5.10 <i>Three valued logic</i>:</a></li>
+<li><a href="#sec-5-11">5.11 <i>Tautological Entailment</i>:</a></li>
+<li><a href="#sec-5-12">5.12 <i>For Reflection</i>:</a></li>
+<li><a href="#sec-5-13">5.13 <i>Reading</i>:</a></li>
+</ul>
+</li>
+<li><a href="#sec-6">6 The Identity Calculus</a></li>
+<li><a href="#sec-7">7 <i>Exercise</i>:</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div class="outline-text-2" id="text-1">
+
+<p>The previous chapter has shown how continuations, implemented by procedures as parameters, can be used as a backtracking mechanism in order to explore alternatives presented by a regular expression.  In this chapter the same technique is used again, this time to explore alternative ways of making a formula false while determining whether it is a tautology.  In addition, there is a top down method for parsing and translating which does not use recursive descent.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> TRUTH TABLES VERSUS SEMANTIC TABLEAUX</h2>
+<div class="outline-text-2" id="text-2">
+
+
+<p>
+One way of determining whether a formula is a tautology it to first do a truth table and then search this table for lines in which the formula is false.  If there are any such lines, then the formula is not a tautology.  Another way of determining whether a formula is a tautology is to attempt to find such lines without doing the entire table.  Using the formula itself as a kind of program one can attempt to find the lines in a top down manner.  The method is described in most modern logic text books, under the name of <i>truth trees</i> or <i>semantic tableaux</i>.  To avoid confusion with the other uses of the word "tree" in this book, the term "semantic tableaux" will be used here.  For expositions, see any one of
+</p>
+<ul>
+<li>Jeffrey (1967, pp 63 - 79),
+</li>
+<li>Gustason and Ulrich (1973, pp 251 - 262),
+</li>
+<li>Richards (1978, pp 174 - 189),
+</li>
+<li>Halpin and Girle (1981, pp 153 - 180),
+</li>
+<li>or the rather theoretical Smullyan (1968, pp 15 - 24).
+</li>
+</ul>
+
+
+<p>
+The program that we shall write in this chapter uses this method.
+</p>
+<p>
+The program repeatedly reads formulas of propositional logic in infix notation with operator precedences for the infix operators.  For each formula read it tries to find countermodels - assignments of values to the propositional variables which will make the formula false.  If there are no countermodels, the program reports that the formula is a tautology.  If there are countermodels, the program reports that the formula is not a tautology and then proceeds to list the countermodels, one per line; a countermodel is specified as a list of propositional variables preceded by "+" to indicate truth or "-" to indicate falsity in the countermodel.
+</p>
+<p>
+The following is a (simulated) record of an interactive session with the program:
+</p>
+
+
+
+<pre class="example">?-    p v q v -r.
+not tautology,  countermodels:
+1:   -p -q +r
+?-    p &amp; q &amp; -r.
+not tautology,  countermodels:
+1:   -p
+2:   -q
+3:   +r
+?-    (p v q) &amp; (p &gt; r) &amp; (q &gt; s)  &gt;  (r v s).
+tautology
+?-    (p v q) &amp; (p &gt; r) &amp; (q &gt; s)  &gt;  (r &amp; s).
+not tautology,  countermodels:
+1:   +p -q +r -s
+2:   -p +q -r +s
+?-    p &amp; (q v r)  =  (p &amp; q) v (p &amp; r).
+tautology
+?-    (1 &amp; 0) v 1.
+tautology
+?-    0.
+not tautology,  countermodels:
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> DESIGNING THE IMPLEMENTATION</h2>
+<div class="outline-text-2" id="text-3">
+
+
+<p>
+As for most of our previous programs,
+the implementation falls naturally into two parts:
+</p><ol>
+<li>translating the external representation of the input
+</li>
+</ol>
+
+<p>into a suitable internal form, and 2) interpreting the internal form of the formula either to generate countermodels if there are any, or to report that there are no countermodels.
+</p>
+
+</div>
+
+<div id="outline-container-3-1" class="outline-3">
+<h3 id="sec-3-1"><span class="section-number-3">3.1</span> A Goal Stack Machine</h3>
+<div class="outline-text-3" id="text-3-1">
+
+
+<p>
+What the translator has to do is entirely familiar by now: reading characters from the input file, it has to check that the characters constitute a well-formed formula.  During the reading and checking it has to generate an internal representation of the formula in the form of a binary tree.  Reading characters and detecting errors for infix formulas with operator precedences was first done in our truth table generator (in Chapter 5), generating binary trees was first done in our simple language with types and procedures (in Chapter 7).  It would be a simple matter to adapt the recursive descent parser from the truth table program to produce binary trees as internal code.
+</p>
+<p>
+But for variety we shall now study another technique for parsing and translating which does not use recursive descent.  This technique is still a top down method, in the sense that at all times the parser knows what it expects next, but it does not use recursion.  Instead the recursion is simulated in a simple way using an explicit stack.
+</p>
+<p>
+We have seen an explicit stack already in the evaluator part of the truth table program, where it served the same purpose as the recursive evaluators in Chapters 3 and 7.  The explicit stack contained Boolean values, and what happened to the stack was under the control of a formula in internal postfix notation.  Such stacks of values need not be of type Boolean, they can be of type character or integer or real or of various other types.  Such a stack need not contain values only, it can contain addresses to be saved and later restored.  One very sophisticated kind of stack is the run-time stack of ALGOL-like languages.  (For some advance reading, see the end of Chapter 14.)  What is important for our purposes is that in these kinds of stacks the behaviour is controlled by something external to the stack - a postfix formula, or more generally any postfix expression that is to be evaluated, or more general still, a program to be executed.
+</p>
+<p>
+The stack we use here is quite different, it is not a passive receptacle of data values but an active structure which itself controls behaviour.  In more detail, it is always the element on the top of the stack which determines what is to happen next.  In the most general form the stack represents outstanding tasks to be done or goals to be achieved, either directly or by doing sub-tasks or achieving sub-goals.  The most general structure of such a stack architecture is this:
+</p>
+
+
+
+<pre class="example">push a single goal onto an otherwise empty stack;
+REPEAT
+    CASE top goal on the stack OF
+        something simple and atomic:
+            pop this goal and
+            do what is appropriate;
+        something complex:
+            pop this goal and
+            push one or more simpler goals
+        END (* CASE *)
+    UNTIL the stack is empty
+</pre>
+
+
+<p>
+The goals can be all sorts of things, and there is no presupposition that they concern parsing or translating or evaluating.  Indeed, any program with procedure calls can be rewritten in this form, even if the calls are recursive or mutually recursive.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-2" class="outline-3">
+<h3 id="sec-3-2"><span class="section-number-3">3.2</span> Predictive Parsing On A Stack</h3>
+<div class="outline-text-3" id="text-3-2">
+
+
+<p>
+In earlier chapters we have seen again and again that it is profitable to think of the development of a translator in two stages: first we design a parser, second we augment it to become a translator.  We shall follow the same pattern here.  For parsing the goals that can be put onto the stack are derived from the grammar - and for our current purpose it is a grammar for logical formulas in infix notation with different precedences for the infix operators.  The method can easily be adapted to parsing many other kinds of grammars.  The starting symbol of the grammar is the initial single goal to be pushed onto the stack, so for our grammar it is the goal of parsing a formula.  We now have to describe the way the stack machine is to operate for various goals on the stack.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-3" class="outline-3">
+<h3 id="sec-3-3"><span class="section-number-3">3.3</span> Step 1: <i>Parsing</i>.</h3>
+<div class="outline-text-3" id="text-3-3">
+
+<p>Following the grammar, we see that a formula consists of an expression followed optionally by one of two operators and another formula.  So if the top goal is to parse a formula, this goal is to be achieved by parsing an expression and an optional second part of a formula.  These two subgoals have to replace the top goal in such a way that parsing an expression is attempted first, and that parsing the optional second part of a formula is attempted next.  The first goal that will be attempted is the one to be found on the top of the stack.  So, after popping the goal to parse a formula, we must first push the goal of parsing the second part of a formula, and then push the goal of parsing an expression.  For the goals of parsing an expression or a term the pattern is similar: after popping the goal of parsing an expression we must first push the goal of parsing the second part of an expression and then push the goal of parsing a term, and after popping the goal of parsing a term we must first push the goal of parsing the second part of a term and then push the goal of parsing a factor.
+</p>
+<p>
+For the remaining goals the behaviour is in part dependent on the current input character.  In the case of the factor goal, the permitted cases can be read from the grammar: If the current character is a lower case letter, a propositional variable, then we pop the factor goal and get the next character.  If the character is '-', the negation operator, we pop the factor goal, get the next character and push another factor goal.  The reason for first popping and then pushing the same goal again will be seen later when we come to translation.  If the current character is a left parenthesis, we pop the factor goal, get the next character, push the goal to check for a closing right parenthesis and then push the goal to parse a formula.  If the current character is none of these, then an error is reported.  This concludes the factor goal.  The goal of checking for a right parenthesis does this: if the current character is a right parenthesis then we get the next character, otherwise an error has to be reported.
+</p>
+<p>
+The remaining goals concern the second parts of formula, expression and term.  All three depend on the current character being appropriate for the second part.  If the character is not appropriate, then the goal of parsing this second part is simply popped, otherwise some action has to be taken.  In the case of the second part of formula we must pop the current goal, get the next character and push the goal of parsing a formula.  In the case of parsing the second parts of expression and term the situation is similar: pop the goal, get the next character, for the second part of expression push term and for the second part of term push factor.  But this is not quite right yet, because for the second parts of expression and term we have to simulate two WHILE loops of the recursive descent parser: if after parsing the goals that have just been pushed the current input character is still appropriate, then the same cycle has to be repeated.  The only way to achieve this in a stack machine is to push the goal of possibly repeating a second part again, and this goal is exactly the same as the goal that has just been popped.  Hence, after popping the goal of parsing the second part of expression, we must first push this same goal and only then push the goal of parsing a term.  Similarly, after popping the goal of parsing the second part of term, we must first push this same goal and only then push the goal of parsing a factor.
+</p>
+<p>
+This concludes the predictive parser for logical formulas in infix notation with operator precedences.  When a formula has been read, the stack will now be empty.  The check for the terminating period is best done after exit from the stack machine.  There are some obvious opportunities for optimising several POP-PUSH pairs, but you are advised to get the structure right first.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-4" class="outline-3">
+<h3 id="sec-3-4"><span class="section-number-3">3.4</span> Translating On A Stack</h3>
+<div class="outline-text-3" id="text-3-4">
+
+
+<p>
+We have seen how to get the general goal stack architecture to do parsing, and now we shall extend it to do translating.  The internal notation that we have to translate to is tree code, consisting of nodes which are records containing an operator field and two integer pointer fields.  Initially we concentrate on generating code with just the operator field.  This will look just like postfix notation, and it has to be generated in the same way.  For the goals of parsing a formula, an expression or a term no code is generated, although there may be code generated for their second parts.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-5" class="outline-3">
+<h3 id="sec-3-5"><span class="section-number-3">3.5</span> Step 2: <i>Generating Postfix</i>.</h3>
+<div class="outline-text-3" id="text-3-5">
+
+<p>We begin with generating code for factors.  A factor consisting of just a lower case letter is translated into itself, so all that is needed is a call to the code generating procedure which at this stage merely takes one character parameter which will be the operator of the code to be generated.  A factor consisting of a parenthesised formula does not generate any code apart from the code generated by the enclosed formula.  But for factors which consist of a negated factor the code generation becomes a little more difficult, because the negation operator of the translation has to be generated after the code for the operand factor has been generated.  To achieve this behaviour, before pushing the goal to parse another factor we must push the goal to generate a negation operator for the translation.  Such pushing of goals to generate code will occur elsewhere, and it will be cleanest if there is only one kind of goal having to do with code generation.  That goal will then have to know which operator to generate, and the easiest way is to put the operator to be generated right beside it in the stack.  This will mean that the stack no longer consists merely of goals to be achieved, but each element of the stack will be a record consisting of a goal and an operator - and it is only the code generating goal which ever makes use of the operator.  Hence for factors consisting of negated factors we must: pop the current goal of parsing a factor, get the next character, push the goal of generating code with negation in the operator field, and push the goal of parsing another factor.
+</p>
+<p>
+The other kind of code generation has to occur when infix operators are encountered.  They are detected by the second parts of formula, expression and term, and the relevant code has to be generated after the pushed subgoals of formula, term and factor have been achieved.  So for all three goals of achieving these second parts, a goal to generate the relevant code has to be pushed before the final goal of formula, term and factor is pushed.  So, in the case of the second part of formula, the goal to be pushed is that of generating whichever of '&gt;' or '=' triggered the execution of the second part.  In the case of the second part of expression, the goal to be pushed is that of generating '#', and not 'v' which triggered the second part.  In the case of the second part of term, the goal to be pushed is that of generating '<sub>&amp</sub>;' which also triggered the execution of this second part.
+</p>
+<p>
+The above pushing of a goal to generate code will eventually bring this goal to the top where it has to be executed - just as inside factor for generating atomic code we call the code generating routine to generate the operator which is to be found right beside the goal to generate code.  This concludes the code generation for just the operators and operands, and it produces code in postfix order.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-6" class="outline-3">
+<h3 id="sec-3-6"><span class="section-number-3">3.6</span> Step 3: <i>Tree Code</i>.</h3>
+<div class="outline-text-3" id="text-3-6">
+
+<p>But we need more than just postfix code, we need a binary tree of records containing an operator field and two integer pointer fields.  The code generating procedure now needs two extra parameters whose values become the new fields.  The records do not actually have to be generated in postfix order, as long as the pointer fields are correct.  For atoms in factors, the two extra fields are not needed, so they can be set to anything.  But we must augment the code generation to include the required pointers in the case of those operators where the pointers do indeed point to a subformula.  This is the case for the negation operator and each of the four infix operators.  The postfix order is particularly convenient here, because when the code for the operator is generated, the code for the subformulas has been generated already and the required values of the pointers are known - or at least they were known once and might have been forgotten.  For the right pointer field there is nothing to forget, the required value is always the last code that has been generated.  Since for negation the only pointer needed is the right pointer, the goal of generating code just uses the last generated code as the parameter for the right pointer, and it does not matter what for the left pointer.
+</p>
+<p>
+However, for the infix operators there is a problem already encountered in recursive descent translating.  The code for the left subformula has been generated a while before the code for the infix operator is generated, and in the recursive descent method we used a local variable to save the pointer to the code for the left subformula.  We cannot use a local variable in the stack machine, instead we have to save the pointer to the left subformula on some stack.  And what better stack to use than the goal stack, which apart from goals already contains operators for code generation.  So we add another field for saving pointers to left subformulas.  The goal to generate code now has to call the code generating routine, using as the three parameters the operator which it finds in the operator field of the stack, the pointer which it finds in the new field for saved pointers to left subformulas, and the last code index.  Only one more item needs changing.  Inside the goal cases for parsing the second parts of formula, expression and term, the pushing of a goal to generate code has to include not just the relevant operator, but also a pointer to the last read left subformula, and that is in the last code index.  This concludes the code generation.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-7" class="outline-3">
+<h3 id="sec-3-7"><span class="section-number-3">3.7</span> The Model Generator</h3>
+<div class="outline-text-3" id="text-3-7">
+
+
+<p>
+The code that has been generated while reading a formula now has to be processed by a procedure which attempts to falsify the formula - if this fails, then the formula is a tautology, if it succeeds then the formula is not a tautology and the program has to write out all ways of falsifying the formula which it can find.
+</p>
+<p>
+Since formulas can be conjunctions, disjunctions, and, in particular, negations, a method is needed for falsifying negations, which is the same as verifying the negand.  The simplest method is to have two procedures, for verifying and for falsifying, called <i>ver</i> and <i>fal</i>; the two procedures are duals of each other.  It so turns out that <i>ver</i> is a little easier to design initially.  Inside <i>ver</i> the control structures needed for implementing conjunction and disjunction are identical to the control structures for concatenation and alternation in the regular expression expander of Chapter 9.  For negations the dual procedure <i>fal</i> is called with the negand as the formula parameter.  At any one time in the model generation a particular atom can be true or false or neither.  One way of implementing this is to have two sets, the true variables and the false variables, with both sets initially empty.  Inside <i>ver</i>, to make an atom true we must check whether it is already in the set of false variables, If it is, the path is closed, and no further attempt is made to continue this path.  If it is not, then it may be already in the set of true variables or it may not be.  In either case we call the continuation procedure with the atom added to the set of true variables.  The simplest way is to give each of the model generating procedures two parameters <i>t</i> and <i>f</i> for the two sets.  The following is an outline of procedure <i>ver</i>:
+</p>
+
+
+
+<pre class="example">.TEST PAGE 3
+TYPE vs = SET OF 'a' .. 'z';
+
+PROCEDURE show(t,f : vs):
+BEGIN write the members of t and f END;
+.TEST PAGE 5
+
+PROCEDURE ver(n : tree; PROCEDURE cp(t,f : vs); t,f : vs);
+
+    PROCEDURE ver_right(t,f : vs);
+    BEGIN ver(right of n, cp, t,f) END;
+.TEST PAGE 8
+
+BEGIN (* ver *)
+CASE operator of n OF
+    and  : ver(left of n, ver_right, t,f)
+    or   : ver(left of n, cp, t,f); ver(right of n, cp, t,f)
+    not  : fal(right of n, cp, t,f)
+    atom : IF the atom is not in f THEN cp(t + the atom, f)
+END; (* ver *)
+</pre>
+
+
+<p>
+The two other binary operations and the two Boolean constants are treated analogously, and procedure <i>fal</i> for falsifying a formula is just the dual of <i>ver</i>.  This high level description should be adequate for implementing the two procedures.  In the main program, after a formula has been read, the required call is:
+</p>
+
+
+
+<pre class="example">fal(the formula that has been read, show, [],[])
+</pre>
+
+
+<p>
+To make the interpretation slightly more efficient, the parser and the translator depart from the grammar in inessential ways to obtain right linear tree code.  The details were already explained in the previous chapter.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> The Program</h2>
+<div class="outline-text-2" id="text-4">
+
+
+<p>
+I am still using the material of this Chapter in a course.  So this version of the notes does not include the sources.  The source will probably be made available towards the end of 2003.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Exercises and Reading</h2>
+<div class="outline-text-2" id="text-5">
+
+
+
+</div>
+
+<div id="outline-container-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> <i>A puzzle</i>:</h3>
+<div class="outline-text-3" id="text-5-1">
+
+<p>In Shakespeare's "The Merchant of Venice" the lovely Portia requires her suitors to solve this puzzle.  She has three caskets, made of gold, silver and lead, respectively.  One of them contains her portrait.  Each casket has an inscription on the outside - gold: "the portrait is in this casket", silver: "the portrait is not in this casket", and lead: "the portrait is not in the gold casket".  At most one inscription is true.  Use the tableau program to determine which casket contains her portrait.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-2" class="outline-3">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> <i>Another implementation</i>:</h3>
+<div class="outline-text-3" id="text-5-2">
+
+<p>Schagrin, Rapaport and Dipert (1985, pp 120 - 123) give what they call Wang's algorithm, essentially the same as the tableau method used here.  Compare their method with the program written in this chapter.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-3" class="outline-3">
+<h3 id="sec-5-3"><span class="section-number-3">5.3</span> <i>Translation to Prefix</i>:</h3>
+<div class="outline-text-3" id="text-5-3">
+
+<p>Replace the two procedures for verifying and falsifying a formula by a single (recursive) procedure which traverses the internal tree code and writes a translation of the input formula into prefix notation or into Cambridge notation (see see the exercises at the end of Chapter 2).  Note that the entire translation from visible source to visible target is now a two stage process.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-4" class="outline-3">
+<h3 id="sec-5-4"><span class="section-number-3">5.4</span> <i>Tree Code in Infix Order</i>:</h3>
+<div class="outline-text-3" id="text-5-4">
+
+<p>It is not necessary that the individual records of the tree code are generated in postfix order, instead they can be generated in infix order.  But then the required right address is not known at the time they are generated, and they will have to be fixed up when they are known.  Change the internal tree code generation so that it generates the tree code in infix order by pushing goals to do fixups.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-5" class="outline-3">
+<h3 id="sec-5-5"><span class="section-number-3">5.5</span> <i>A simpler program</i>:</h3>
+<div class="outline-text-3" id="text-5-5">
+
+<ol>
+<li>Replace the two procedures <i>ver</i> and <i>fal</i> by a single procedure which takes an additional Boolean parameter representing whether the formula is to be made true or false.  Thus <i>ver(..)</i> is replaced by <i>make(true,..)</i>, and <i>fal(..)</i> is replaced by <i>make(false,..)</i>.
+
+</li>
+<li>remove the parameters <i>t</i> and <i>f</i> from all the model generating procedures and achieve their effect by two global variables <i>t</i> and <i>f</i> or by one ARRAY [boolean] OF SET OF 'a' .. 'z'. The Boolean parameter of <i>make</i> is useful as an index into this ARRAY.
+</li>
+</ol>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-5-6" class="outline-3">
+<h3 id="sec-5-6"><span class="section-number-3">5.6</span> <i>Non-recursive model generator</i>:</h3>
+<div class="outline-text-3" id="text-5-6">
+
+<p>The non-recursive parser in this program shows that recursive descent can be replaced by an explicit stack machine.  Attempt to design a non-recursive explicit stack machine which does the work of the model generator.  You might think that you need two stacks, one for verifying conjunctions and one for verifying disjunctions, and dually for falsifying.  However, do keep in mind that the second order recursive solution does manage with just one stack, the PASCAL runtime stack.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-7" class="outline-3">
+<h3 id="sec-5-7"><span class="section-number-3">5.7</span> <i>Deadlock and  Reachability in Petri Nets</i>:</h3>
+<div class="outline-text-3" id="text-5-7">
+
+<p>(This assumes you have read the exercise in Chapter 5.)  Adapt the program so that it can read a description of a Petri net and determine
+</p>
+<ol>
+<li>which markings produce deadlock,
+</li>
+<li>which markings are unreachable, and
+</li>
+<li>which reachable markings produce deadlock.
+</li>
+</ol>
+
+
+<p>
+You will have to design your own little language for describing nets.  For some more ideas, see Chapter 20, but you could design a description language which only uses single characters as symbols.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-8" class="outline-3">
+<h3 id="sec-5-8"><span class="section-number-3">5.8</span> <i>Optimisation</i>:</h3>
+<div class="outline-text-3" id="text-5-8">
+
+<p>Every textbook on tableaux recommends: "Delay Branching!", i.e. do trunking rules before branching rules.  Implement this optimisation; collect some timing measurements to see how much is really saved.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-9" class="outline-3">
+<h3 id="sec-5-9"><span class="section-number-3">5.9</span> <i>Other methods</i>:</h3>
+<div class="outline-text-3" id="text-5-9">
+
+<p>The semantic tableaux method is one of whole spectrum of automatic proof methods.  They differ in the extent to which a formula has to be preprocessed before being submitted to the theorem prover.  In the case of the semantic tableaux, there is no preprocessing at all, it is the formula itself that is submitted.  In what follows it will be easier if the theorem prover is taken to solve the satisfiability problem - finding lines in the truth table in which the formula is true.
+</p>
+<p>
+At the other extreme of the spectrum is the <i>resolution</i> method which requires formulas to be transformed into <i>clausal</i> form - consisting of a conjunction in which each conjunct is a disjunction of atoms or negated atoms.  The method works by replacing two conjuncts by a new formula containing all the disjuncts from the original two conjuncts except for one atom from the first disjunct and its negation from the other disjunct.  If this process eventually results in a conjunct which is a degenerate disjunction of no disjuncts at all, then the original formula is not satisfiable.
+</p>
+<p>
+Somewhere in the middle of the spectrum is the <i>matrix</i> method.  It requires formulas to be transformed into conjunctions of disjunctions &hellip; of conjunctions of disjunctions &hellip;  of atoms or negated atoms.  The method attempts to find a consistent path through the outer conjunction by picking a disjunct from each conjunct.  If that disjunct happens to be a conjunction, it does the same there.  When a path has been found, the original formula is satisfiable.
+</p>
+<p>
+A discussion of the relationship between the three methods is given in BLaesius and Buerckert (1989, pp 67 - 103).  Implement either the matrix method or the resolution method.  For the latter you should be able to adopt the program in this chapter to translate from infix form to clausal form.
+</p>
+<p>
+<i>Minimising Output</i>:
+The tableaux method will often give several open paths where one would do.
+For example,
+the formula "p <sub>&amp</sub>; (p v q) <sub>&amp</sub>; -r <sub>&amp</sub>; (-r v -s)."
+will yield four countermodels:
+1: -p, 2: -p -q, 3: +r, 4: +r +s.
+Clearly countermodels 1: and 3: are the only ones needed,
+because between them they subsume the others.
+Formalise this notion of what the needed countermodels are.
+Then implement this in the program.
+You will find it necessary NOT to output open paths when they
+are found, but to collect them in a list (which is initially empty).
+When a new open path is found,
+compare it with the paths collected so far:
+if it is subsumed by a path already collected then ignore it,
+if it subsumes one path already collected then substitute it,
+if it subsumes several paths already collected
+then substitute one and delete the others,
+otherwise add it to the list.
+Output the list only at the very end.
+Probably it is best to implement the list as an ARRAY,
+and since the only important information about paths is
+the SET of true or false atoms it contains,
+you want an ARRAY of pairs of SETs.
+</p>
+<p>
+If you are doing the exercise to translate into clausal form,
+the minimisation just described will be useful there, too.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-10" class="outline-3">
+<h3 id="sec-5-10"><span class="section-number-3">5.10</span> <i>Three valued logic</i>:</h3>
+<div class="outline-text-3" id="text-5-10">
+
+<p>Write a semantic tableaux program for one of the three valued logics.  For a suitable exposition of the two main versions, see Konikowska, Tarlecki and Blikle (1988).
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-11" class="outline-3">
+<h3 id="sec-5-11"><span class="section-number-3">5.11</span> <i>Tautological Entailment</i>:</h3>
+<div class="outline-text-3" id="text-5-11">
+
+<p>Anderson and Belnap (1975, pp 150 - 162) define "A entails B" as a relation which holds iff when A and B are written as disjunctions of conjunctions of literals (atoms or negated atoms), for every disjunct of A there is some disjunct of B such that every literal in the disjunct of B is also a literal of the disjunct of A.  Dunn (1976) shows how to use "coupled" semantic tableaux to determine entailment.  The method lends itself to a modification of our tableaux program; especially if you have done the previous exercise.  A entails B iff each upper path (from A) covers some lower path (from B); where an upper path covers a lower path iff every literal in the lower path occurs in the upper path.  Note that paths do not close because of inconsistency.  For the implementation:
+</p><ol>
+<li>do all the lowers to get a list of sets of literals,
+</li>
+</ol>
+
+<p>using just a make where the clause for atoms does not check for
+consistency but always calls cp.
+</p><ol>
+<li>do the uppers, using as cp a test for inclusion of upper set
+</li>
+</ol>
+
+<p>in one element of the list.
+A "countermodel" then consists of an upper set which does not cover
+any of the lower sets - print out the upper and all the lowers.
+If there is no countermodel, then we have entailment.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-12" class="outline-3">
+<h3 id="sec-5-12"><span class="section-number-3">5.12</span> <i>For Reflection</i>:</h3>
+<div class="outline-text-3" id="text-5-12">
+
+<p>Examine the PROCEDURE getch in all the previous programs, and see how it differs.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-13" class="outline-3">
+<h3 id="sec-5-13"><span class="section-number-3">5.13</span> <i>Reading</i>:</h3>
+<div class="outline-text-3" id="text-5-13">
+
+<p>For some advanced treatment of the tableaux method, see Wallen (1986).
+</p>
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> The Identity Calculus</h2>
+<div class="outline-text-2" id="text-6">
+
+
+<p>
+In the propositional calculus there are truth functional connectives and atomic propositions which may be constants or variables.  In this section we shall study a very simple form of predicate calculus, with individual constants and just one binary predicate and its negation.  Whereas in the propositional calculus an atomic formula has no parts at all, in the identity calculus an atomic formula does have parts, but they are not formulas.  In the identity calculus an atomic formula is of one of the forms "a = b" or "a # b", where "a" and "b" are <i>individual constants</i>.  Truth functionally compound formulas are built from atomic formulas just as in the propositional calculus.
+</p>
+<p>
+An <i>interpretation</i> of the propositional calculus is an assignment of truth values to the atomic formulas - essentially it is a line in the truth table.  An interpretation of the identity calculus has to be something rather different, although the net effect on formulas has to be that they will be true or false in an interpretation.  We define an interpretation of the identity calculus to be a set of things {x, y ..}, called the domain, together with a function which assigns to each individual constant "a" of the language an individual from this domain.  For two individual constants "a" and "b", the atomic formula "a = b" is <i>true in an interpretation</i> if and only if the interpretation assigns the same individual in the domain to "a" and to "b", otherwise it is false.  Likewise, the atomic formula "a # b" is true in an interpretation if and only if the interpretation assigns different individuals in the domain to "a" and "b", otherwise it is false.  An interpretation which makes a formula true is also called a <i>model</i> of the formula.  A formula that has a model is called <i>consistent</i>, otherwise it is inconsistent.  A formula is called a <i>logical truth</i> if its negation is inconsistent.
+</p>
+<p>
+The identity calculus can be used to express puzzles such as the following.
+</p>
+<ul>
+<li>"There are three animals, a dog, a cat and a canary.
+</li>
+<li>One of them is called 'brutus', one of them is called 'sylvestre', and one of them is called 'tweety'.
+</li>
+<li>One of them is young, one of them is old, and one of them is middling.
+</li>
+<li>The dog is not called 'brutus', and
+</li>
+<li>the animal called 'brutus' is not old, and
+</li>
+<li>the old animal is not the cat, and
+</li>
+<li>the cat is not called 'sylvestre', and
+</li>
+<li>the animal called 'sylvestre' is not young, and
+</li>
+<li>the young animal is not the canary, and
+</li>
+<li>the canary is not called 'tweety', and
+</li>
+<li>the animal called 'tweety' is not middling in age, and
+</li>
+<li>the animal that is middling in age is not the dog, and
+</li>
+<li>the dog is not old.
+</li>
+</ul>
+
+
+<p>
+Which animal is called what and how old are they?"
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-7" class="outline-2">
+<h2 id="sec-7"><span class="section-number-2">7</span> <i>Exercise</i>:</h2>
+<div class="outline-text-2" id="text-7">
+
+
+<p>
+Write a program which implements the semantic tableaux method for the identity calculus.  Your program should allow identifiers as atomic propositions AND as names of individuals; though any particular identifier can be used inside a formula only as one or the other.  On the first occurrence of an identifier inside a formula the presence or absence of the identity symbol '=' or of the non-identity symbol '#' on the left or the right indicates whether the identifier is a name for an individual or a proposition.
+</p>
+<p>
+When stating the information in the puzzle, one has to be careful to express assumptions which are implicit in the puzzle.  To get the program to solve the puzzle, the information has to be negated, and the program works by showing that this negation is not a logical truth.  Its answer then consists of a model (of three individuals: 1, 2, 3) which makes the negation false and hence makes the original information true.
+</p></div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-01-11 07:38:02 CST</p>
+<p class="author">Author: michal</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

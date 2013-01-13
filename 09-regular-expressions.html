@@ -1,0 +1,1367 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Chapter 9 : Regular Expressions</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Chapter 9 : Regular Expressions"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-01-11 07:38:04 CST"/>
+<meta name="author" content="michal"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Chapter 9 : Regular Expressions</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 intro</a></li>
+<li><a href="#sec-2">2 Some formal language theory</a>
+<ul>
+<li><a href="#sec-2-1">2.1 Strings and operations on strings</a></li>
+<li><a href="#sec-2-2">2.2 Languages and operations on languages</a></li>
+<li><a href="#sec-2-3">2.3 Regular expressions and regular languages</a></li>
+<li><a href="#sec-2-4">2.4 Exercises and reading</a>
+<ul>
+<li><a href="#sec-2-4-1">2.4.1 <i>Formalisation</i>:</a></li>
+<li><a href="#sec-2-4-2">2.4.2 <i>MU-expression</i>:</a></li>
+<li><a href="#sec-2-4-3">2.4.3 <i>Binary relations</i>:</a></li>
+<li><a href="#sec-2-4-4">2.4.4 <i>Reading</i>:</a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-3">3 A regular expression expander</a>
+<ul>
+<li><a href="#sec-3-1">3.1 User manual</a></li>
+<li><a href="#sec-3-2">3.2 Designing the implementation</a></li>
+<li><a href="#sec-3-3">3.3 The program</a></li>
+<li><a href="#sec-3-4">3.4 Exercises and reading</a></li>
+<li><a href="#sec-3-5">3.5 <i>Parser</i>:</a></li>
+<li><a href="#sec-3-6">3.6 <i>Futility heuristic</i>:</a></li>
+<li><a href="#sec-3-7">3.7 <i>Reading</i>:</a></li>
+<li><a href="#sec-3-8">3.8 <i>Background reading</i>:</a></li>
+<li><a href="#sec-3-9">3.9 <i>MU-expression</i>:</a></li>
+<li><a href="#sec-3-10">3.10 Addendum 2003</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div class="outline-text-2" id="text-1">
+
+
+<p>
+This chapter gives a brief introduction to formal language theory, up to the definition of regular expressions.  Then the technique introduced in the previous chapter is used to construct a program which reads regular expressions and then writes the strings in the language defined by the expression.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Some formal language theory</h2>
+<div class="outline-text-2" id="text-2">
+
+
+<p>
+In the same way as (unordered) sets are treated in set theory, (ordered) sequences or strings are treated formally in what is known as formal language theory.  This section only gives a very simple introduction which is just adequate for describing what the program in the next section does.
+</p>
+
+</div>
+
+<div id="outline-container-2-1" class="outline-3">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> Strings and operations on strings</h3>
+<div class="outline-text-3" id="text-2-1">
+
+
+<p>
+In the following, let A be any finite set of elements.  The set A may be the set of coins in my pocket, or the set of days of the week, or the set <code>{=John, 42, London</code>}=, consisting of the person John, the number 42 and the city London, or the set of English words, or the set of ASCII characters.
+</p>
+<p>
+In formal language theory the set A is often called the <i>alphabet</i>.  We now define <i>strings</i> over an alphabet (sometimes called <i>words</i> over an alphabet): a string S over an alphabet A is a sequence of elements of A.  For example, the sequence <code>&lt;=42, London, 42, 42=&gt;</code> is a string over the third set just mentioned.
+</p>
+<p>
+The following is a string over the set of vowels: <code>&lt;e, i, i, e, u&gt;</code>.  If the alphabet consists of just letters, we allow the alternative notation ="eiieu"=.  It is convenient to allow the empty string =""=.  This may be formalised by the following recursive definition:
+</p>
+
+
+
+<pre class="example">1) The null string "" is a string over any alphabet A.
+2) IF x is an element of the alphabet A,
+        and S is a string over the alphabet A
+   THEN the string consisting of x followed by the elements of S
+        is a string over the alphabet A.
+</pre>
+
+
+<p>
+An important binary operation on strings is <i>concatenation</i>; We use the underscore ="_"= as the explicit infix symbol for concatenation.  Just as the sum of 2 and 3, written 2 + 3, is 5, so the concatenation of ="abc"= and ="de"=, written ="abc"_"de"=, is ="abcde"=.
+</p>
+<p>
+Concatenation is associative &mdash; hence no brackets are needed for multiple concatenations, and the null string is the left and right identity.
+</p>
+<p>
+Every string has a non-negative length, the null string has length 0, and the concatenation of two strings has a length which is the sum of the lengths of the two strings concatenated.  The n-fold concatenation of a string with itself is called its n-th <i>power</i>.  For example, the 3-rd power of ="abc"=, written: ="abc"<code>^3 , is ="abcabcabc"=.  The length of the n-th power of a string is the n-th product of the length of the string.  Clearly, the n-th power of the null string =""= is just =""=, the 1-st power of any string is itself, and by definition the 0-th power of any string is =""=.  Another view which is sometimes useful is that a string over alphabet A is a function from an initial segment of the natural numbers into A; this view makes indexing primary --- for example, using =[</code> and <code>]</code> containing a numeric expression as the index, ="abcd"<sup><a class="footref" name="fnr.1" href="#fn.1">1</a></sup>= = ="b"=.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2-2" class="outline-3">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> Languages and operations on languages</h3>
+<div class="outline-text-3" id="text-2-2">
+
+
+<p>
+A <i>language</i> over an alphabet A is defined to be a set of strings over A.  For example, the finite set <code>{"ae", "eea", "i"}</code> is a finite language over the set of vowels, the infinite set <code>{"0", "1", "10", "11", "100", "101", "110", "111", ...}</code> is the infinite language of binary numerals for natural numbers over the alphabet of binary digits, and the infinite set <code>{"", "a", "aa", "aaa", "aaaa", ...}</code> is the infinite language of all strings over the alphabet <code>{a}</code>.
+</p>
+<p>
+Since languages are sets, the usual set theoretic operations apply; they are: the binary operations of intersection, union, difference and symmetric difference, and a binary operation of complementation with respect to all strings over a given alphabet.  Only union will be important in what follows; in the literature it is often called <i>alternation</i>, written as an infix operator ='|'=, so <code>L | M</code> is the union or alternation of the two languages <code>L</code> and <code>M</code>.
+</p>
+<p>
+Another important operation on languages arises not because languages are sets but because they are composed of strings, and strings can be concatenated.  If <code>S</code> and <code>T</code> are two strings, then their unit sets are the languages <code>{S}</code> and <code>{T}</code>, their concatenation is <code>S _ T</code>, and the unit set of their concatenation is <code>{S _ T}</code>, which we now also write as <code>{S}_{T}</code>, as the <i>concatenation</i> of two <i>languages</i>.  More generally, if <code>L</code> and <code>M</code> are two languages, then their concatenation <code>L _ M</code> is defined to be the language consisting of strings concatenated from two parts, the first from <code>L</code> and the second from <code>M</code>.  The unit language <code>{""}</code>, whose only element is the null string, is the left and right identity of concatenation of languages.  We shall write <code>0</code> for <code>{""}</code>, and it is important to distinguish it from the empty language, the null set <code>{}</code>, which is the left and right identity of alternation.
+</p>
+<p>
+The n-fold concatenation of a language <code>L</code> with itself is its n-th <i>power</i>, written <code>L=^n , and note that the 1-st power, =L=^1 , is just =L</code>, and by definition the 0-th power of L, <code>L=^0 , is just 0, the language ={""}</code>.  The union of all powers, <code>L=^0 =|</code> <code>L=^1 =|</code> <code>L=^2 =|</code> <code>L=^3 =| ...</code>, The union of all positive powers, <code>L=^1 =|</code> <code>L=^2 =|</code> <code>L=^3 =| ...</code>, is written <code>L+</code> and called the positive closure of <code>L</code>.  The union of the first two powers, <code>L=^0 =|</code> <code>L=^1 , is written =L?</code>, and might be called the optional closure of <code>L</code> &mdash; it is just <code>L</code> with the null string added if it was not there already.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2-3" class="outline-3">
+<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Regular expressions and regular languages</h3>
+<div class="outline-text-3" id="text-2-3">
+
+
+<p>
+Regular expressions are language denoting expressions built by means of the language theoretic binary operations of alternation (=union) and concatenation and the unary operation of Kleene closure from unit languages.  The following is an informal definition of the abstract syntax, it is not a definition of the concrete syntax since it says nothing about parenthesising larger expressions or about the relative precedence of the two binary operators.
+</p>
+
+
+
+<pre class="example">A regular expression over an alphabet A is either
+  the expression 0,
+    and it denotes the unit language whose only element is "", or
+  the expression 'a' for some element a of A,
+    and it denotes the unit language whose only element is "a", or
+  the expression L | M,
+      where L and M are regular expressions over A,
+    and it denotes the alternation of
+      the languages denoted by L and M, or
+  the expression L _ M,
+      where L and M are regular expressions over A,
+    and it denotes the concatenation of
+      the languages denoted by L and M, or
+  the expression L*,
+      where L is a regular expression over A,
+    and it denotes the Kleene closure of the language denoted by L.
+</pre>
+
+
+<p>
+&gt;From elementary mathematics you will recall the definition of rational numbers, those which "may be written in the form" m/n, where both m and n are integers.  It came as a great surprise to the Greek mathematicians that there are irrational numbers, such as the square root of 2, or the ratio of the circumference to the diameter of a circle.  Just as rational numbers are defined to be those denoted by fractions, so /regular language/s are defined to be those denoted by regular expressions.  It is not a great surprise to learn that there are languages that are not regular.  A very simple example is the language of well-formed strings of parentheses: <code>{"()", "()()", "(())", "(())()", ...}</code>.
+</p>
+<p>
+Context free grammars, such as the (extended) <i>BNF</i> notation we have been using, are a more powerful language description mechanism, adequate for the language of well-formed parentheses and many others.  We shall look at context free languages in Chapter 11.  But even these are not powerful enough for all languages, and other kinds of descriptions have been investigated, such as context sensitive grammars, attribute grammars, and van Wijngarden's two level grammars.  In all of these an attempt is made to describe infinite languages &mdash; sets containing an infinite number of finitely long strings.  Although the languages are infinite, the descriptions are finitely long and certainly shorter than most of the strings in the language they describe.  It so turns out that there are languages for which there is no finite description mechanism at all; the most important of these is the language of arithmetic truths &mdash; a result proved by G\"{o}del more than half a century ago.  You should consult a book on formal language theory for some details.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2-4" class="outline-3">
+<h3 id="sec-2-4"><span class="section-number-3">2.4</span> Exercises and reading</h3>
+<div class="outline-text-3" id="text-2-4">
+
+
+
+</div>
+
+<div id="outline-container-2-4-1" class="outline-4">
+<h4 id="sec-2-4-1"><span class="section-number-4">2.4.1</span> <i>Formalisation</i>:</h4>
+<div class="outline-text-4" id="text-2-4-1">
+
+<ol>
+<li>Give recursive definitions of all the operations on languages.
+</li>
+<li>Attempt an axiomatisation of all the laws satisfied by the algebra of operations on languages.
+</li>
+</ol>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-2-4-2" class="outline-4">
+<h4 id="sec-2-4-2"><span class="section-number-4">2.4.2</span> <i>MU-expression</i>:</h4>
+<div class="outline-text-4" id="text-2-4-2">
+
+<p>The expressive power of regular expressions can be increased dramatically by <code>MU</code>-expressions, which are a little similar to <code>LET</code>-expressions.  First, suppose we introduced <code>LETREC</code> as a recursive variant of <code>LET</code>, with the difference that in <code>LETREC i = e IN f</code> the identifier <code>i</code> is visible and usable inside <code>e</code>, and that inside <code>e</code> it means just what it has been defined to be.  To stop the recursion, some kind of choice is needed inside <code>e</code>.  Then define <code>MU i = e</code> to be short for <code>LETREC i = e IN i</code>.  The power of <code>LETREC</code> and <code>MU</code> depends very much on what kind of expression <code>e</code> can be.  If <code>e</code> is a regular expression, say <code>b | aic</code> then <code>MU i = b | aic</code> denotes the language <code>{"b", "abc", "aabcc", "aaabccc", ...}</code>.  (The name <code>MU</code> is in analogy with <i>lambda</i>, the function abstraction operator in functional languages such as the lambda-calculus.  One important difference is that a lambda abstraction needs actual parameters whereas <code>MU</code> does not; another difference is that lambda makes abstractions whereas <code>MU</code> does not.)  Include <code>MU</code>-expressions in your study of operations on languages.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2-4-3" class="outline-4">
+<h4 id="sec-2-4-3"><span class="section-number-4">2.4.3</span> <i>Binary relations</i>:</h4>
+<div class="outline-text-4" id="text-2-4-3">
+
+<p>Study the calculus of binary relations.  Do you see any similarities with the calculus of languages?  Which binary relation corresponds to 0?  Which operation on binary relations corresponds to concatenation of languages?  Which operation on languages corresponds to the (unary) converse operation on binary relations?
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2-4-4" class="outline-4">
+<h4 id="sec-2-4-4"><span class="section-number-4">2.4.4</span> <i>Reading</i>:</h4>
+<div class="outline-text-4" id="text-2-4-4">
+
+<p>For regular expressions and regular languages in general, see the reading given in Chapter 11.
+</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> A regular expression expander</h2>
+<div class="outline-text-2" id="text-3">
+
+
+<p>
+In this section we shall write a program which reads regular expressions and expands them to strings which are in the language denoted by the expression.
+</p>
+
+</div>
+
+<div id="outline-container-3-1" class="outline-3">
+<h3 id="sec-3-1"><span class="section-number-3">3.1</span> User manual</h3>
+<div class="outline-text-3" id="text-3-1">
+
+
+<p>
+The program reads regular expressions over the alphabet of lower case letters, and then writes all the strings in the language denoted by the expression.  To avoid the program running forever on infinite languages, or to avoid the program running for too long on large languages, an upper limit can be set for the maximum length of the strings to be generated.
+</p>
+<p>
+The program is intended for interactive use, and it provides a few prompts where appropriate.  The grammar for an interactive session is:
+</p>
+
+
+
+<pre class="example">session      ::=   ['H' | input [ number ]] '.'
+</pre>
+
+
+<p>
+The program repeatedly gives the top level prompt:
+</p>
+
+
+
+<pre class="example">input (for help type H) =
+</pre>
+
+
+<p>
+At this point the user may request help by responding with the character <code>H</code>.  The program then prints the following help message which is the BNF grammar for normal input:
+</p>
+
+
+
+<pre class="example">input        ::=   expression '.'
+expression   ::=   term ['|' term]
+term         ::=   factor [factor]
+factor       ::=   (atom | '(' expression ')') ['*' | '+' | '?']
+atom         ::=   'a' | 'b' | .. 'z' | '0' | '\' any character
+</pre>
+
+
+<p>
+The help message continues with a few examples.  If the user did not request the help message, the program expects an expression terminated by a period <code>.</code>..
+</p>
+<p>
+An expression consists of one or more terms separated by <code>|</code>, and it denotes the union of the languages denoted by these terms.  A term consists of one or more factors, and it denotes the concatenation of the languages denoted by these factors.  Note that there is no explicit concatenation symbol.  A factor is either an atom or an expression enclosed in parentheses, and it may be followed by any number of postfix operators <code>*</code>, <code>+</code> or <code>?</code>.  An atom is either a lower case letter, denoting the language consisting of just that letter, or it is the digit <code>0</code>, denoting the language consisting of just the null string, or it is the escape character <code>\</code> followed by any character and it denotes the language consisting of just that character.  A factor which is just an atom or a parenthesised expression denotes the language denoted by the atom or the expression.  An operand followed by <code>*</code> denotes the Kleene closure of the language denoted by the operand.  An operand followed by <code>+</code> denotes the positive closure of the language denoted by the operand.  An operand followed by <code>?</code> denotes the union of the language containing just the null string with the language denoted by the operand.
+</p>
+<p>
+If an illegal character, say <code>X</code> occurs, an error message is given which will be one of:
+</p>
+
+
+
+<pre class="example">Error: seen "X" when beginning of factor expected
+Error: seen "X" when ")" expected
+Error: seen "X" when "." expected
+Error: seen "X" when regular expression too long
+</pre>
+
+
+<p>
+The last message will only be given for regular expressions containing more that 50 printing characters, not counting parentheses but counting implicit concatenations.  After an error has been given, the rest of the input line is discarded and the program returns to the top level prompt.
+</p>
+<p>
+When an expression terminated by <code>.</code> has been read successfully, the program repeatedly prompts:
+</p>
+
+
+
+<pre class="example">current maximum [0..50] =
+</pre>
+
+
+<p>
+At this point the program expects the user to type an integer, and if the integer typed is greater than 50, it is taken to be 50.  If the integer is positive, the program will now expand the regular expression, and print on separate lines all strings over the alphabet <code>{a .. z}</code> which are in the language denoted by the regular expression and which do not exceed the given integer in length.  The null string does not print, but to avoid accidental infinite loops as may be caused by regular expressions containing <code>0*</code> explicitly or implicitly, the null string is taken to contribute to the length as much as any other atom.  When all strings have been printed, the program returns to the prompt for another integer.  If the integer is not positive, the program returns to the top level prompt.
+</p>
+<p>
+The following is a brief interaction:
+</p>
+
+
+
+<pre class="example">$ RUN 23REGEXP.EXE
+input (for help type H) =
+a*  |  (bcd | efghij) + .
+current maximum [0..50] =
+10
+
+a
+aa
+aaa
+aaaa
+aaaaa
+aaaaaa
+aaaaaaa
+aaaaaaaa
+aaaaaaaaa
+bcd
+efghij
+bcdbcd
+bcdefghij
+bcdbcdbcd
+efghijbcd
+current maximum [0..50] =
+0
+input (for help type H) =
+.
+</pre>
+
+
+<p>
+Note that the length was set to 10, but that no strings are longer than 9.  This because the null-string implicit in the Kleene star operation was taken to contribute 1 to the length, as explained earlier.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-2" class="outline-3">
+<h3 id="sec-3-2"><span class="section-number-3">3.2</span> Designing the implementation</h3>
+<div class="outline-text-3" id="text-3-2">
+
+
+<p>
+The program has to read regular expressions, generate internal code and expand the internal code.  The structure of the main program and of the principal procedures follows the structure of the grammar given in the manual, and there should be no difficulties.  For the parser and translator to internal code we use the design steps of previous chapters.  The steps for satisfying visibility requirements and writing a recursive descent parser are routine by now.  But it is worth mentioning that there is no need to have a separate parsing procedure for the non-terminal atom; in the BNF grammar the notion of atoms was introduced because it makes the description simpler, whereas in the parser the atomic cases are just as readily handled by procedure factor.  For the internal code we take a tree representation similar to the one in Chapter 7 for the TYPROC language, and we use essentially the same method of generating code.  The single number which is the address of the principal node of the internal tree has to be passed as a parameter to the interpreter which expands the regular expression to a list of strings.  The remainder of this section deals with just this expansion process.
+</p>
+<p>
+An ordinary recursive tree traversal will not do, since at best it would produce the regular expression in prefix or infix or postfix format.  A very different kind of traversal is needed.  The traversal to be described here will be useful in several later chapters which deal with AND=/=OR trees of various kinds.  For this reason the algorithm should be well understood.
+</p>
+<p>
+Initially we concentrate on concatenation, alternation and atoms; the three closure operators are treated later.  As a starting point we take the associativity of concatenation and the (right) distributivity of concatenation over alternation, as expressed by the two laws:
+</p>
+
+
+
+<pre class="example">(A B) C      ==    A (B C)
+(A | B) C    ==    A C | B C
+</pre>
+
+
+<p>
+The two laws can of course be used in either direction, but we shall use them left to right in the expansion process, as indicated by the following sketch of an algorithm.  Note that the first two clauses reduce the complexity of the left part of the expression, and that there is always a right part, <code>C</code>.  Eventually the left part will be an atom.
+</p>
+
+
+
+<pre class="example">To expand  (A B) C :
+    expand  A (B C).
+To expand  (A | B) C :
+    expand  A C | B C.
+To expand  'a' C :
+    append 'a' to the output string;
+    expand C.
+</pre>
+
+
+<p>
+Note the presence of <code>C</code> in all three clauses of the sketch; since a regular expression will not always be a concatenation, a dummy <code>C</code> will have to be added in the initial call, and recognised as a dummy by the expansion procedure.  In fact, when the dummy <code>C</code> has been reached, this will be a signal that an output string has been completed and is ready for printing.  Obviously expanding a concatenation <code>X Y</code> must mean expanding <code>X</code> and then expanding <code>Y</code>, and it is natural to take expanding an alternation <code>X | Y</code> to mean expanding <code>X</code> and then expanding <code>Y</code> &mdash; although it could be done the other way around.  But the two occurrences of <i>and then</i> in the previous sentence do not mean the same at all, the first means <i>followed by</i>, and the second means <i>and then do</i> &mdash; the sequencing of actions.  We may formalise this by giving expand two parameters, what to do first and what to do next.
+</p>
+
+
+
+<pre class="example">To expand (A B) and then C :
+    expand A and then (B C).
+To expand (A | B) and then C :
+    expand A and then C;
+    expand B and then C.
+To expand an atom 'a' and then C :
+    append 'a' to the output string;
+    expand C and then nothing;
+    [remove 'a' from the output string]
+</pre>
+
+
+<p>
+Using the technique of a continuation parameter introduced in Chapter 8, it is an easy matter to turn the above pseudo-code into a Pascal procedure.  It has two parameters, what to expand first and what to expand next.  The first parameter is given as a regular expression, or more precisely as an integer pointer to a tree representation of the regular expression.  The second parameter is given as a continuation procedure which, when called, expands whatever else has to be expanded.  The following is a high level description:
+</p>
+
+
+
+<pre class="example">PROCEDURE show;
+BEGIN write the string that has been generated END;
+
+PROCEDURE expand(t : tree; PROCEDURE cp);
+    PROCEDURE expandright;
+    BEGIN expand(right of t; cp) END;
+BEGIN (* expand *)
+CASE operator of t OF
+    cat : expand(left of t; expandright);
+    alt : expand(left of t, cp); expand(right of t, cp);
+    atm : append the atom to the string;
+          cp;
+          delete the atom from the string
+    END (* CASE *)
+END; (* expand *)
+
+BEGIN (* main *)
+...
+   read a regular expression t
+   make the global string empty
+   expand(t,show)
+...
+END. (* main *)
+</pre>
+
+
+<p>
+The description given should be adequate as a guide for writing the expanding procedure.  The three closure operators have to be implemented in a similar way.  If you are writing the implementation yourself, then the three lines that you need might well be the hardest you have ever written.  In addition you will also need one further local procedure to be used as a continuation in two of those lines.
+</p>
+<p>
+To stop expansion beyond the current maximum length, two further additions are required: In the main body of the program the call to <code>expand</code> has to be wrapped inside a loop which writes a prompt for the maximum, reads the maximum, and only then calls <code>expand</code>.  In the body of <code>expand</code> the <code>CASE</code> statement has to be guarded by a test that the length of the string generated so far does already exceed the maximum.
+</p>
+<p>
+For efficiency during the expansion process we can make one more modification.  Up to this point we have always considered straight-forward translation from the productions of the grammar to the parsing and translating procedures <code>expression</code>, <code>term</code> and <code>factor</code>.  The tree code generated this way is not the best, since it is left linear; it would be better if it were right linear.  To obtain right linear trees for both alternation and concatenation, it is best if the parsing and tree generating procedures for expressions and terms are based on the following productions:
+</p>
+
+
+
+<pre class="example">expression   ::=   term {'|' expression}
+term         ::=   factor {term}
+</pre>
+
+
+<p>
+The language of regular expressions is not changed by substituting these two productions for their originals.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-3" class="outline-3">
+<h3 id="sec-3-3"><span class="section-number-3">3.3</span> The program</h3>
+<div class="outline-text-3" id="text-3-3">
+
+
+<p>
+The following is the standard Pascal source program for the regular expression expander.
+</p>
+
+
+
+<pre class="example">PROGRAM regexp(input,output);
+(* REGular Expression eXPander *)
+
+LABEL 1, 99;
+
+CONST
+    mcode = 50;
+    maxstring = 50;
+TYPE
+    message = PACKED ARRAY [1..30] OF char;
+    operator = (nul,sym,cat,alt,rep,pos,opt);
+VAR
+    ch : char;
+    code : ARRAY [1..mcode] OF
+                RECORD op : operator; left,right : integer END;
+    cx,i : integer;
+    finished : boolean;
+
+    s : ARRAY [1..maxstring] OF char;
+    p,m : integer;
+
+(* - - - - -  R E A D E R - - - - - *)
+
+PROCEDURE getch;
+BEGIN
+REPEAT
+    IF eof THEN GOTO 99;
+    read(ch)
+    UNTIL ch &gt; ' '
+END  (* getch *);
+
+PROCEDURE error(mes: message);
+BEGIN
+writeln;
+writeln('Error : seen "',ch,'" when ',mes);
+readln;
+GOTO 1
+END;
+
+PROCEDURE gen(o : operator; l,r : integer);
+BEGIN
+cx := cx + 1;
+IF cx &gt; mcode THEN
+    error('regular expression is too long');
+WITH code[cx] DO
+    BEGIN op := o; left := l; right := r END
+END; (* gen *)
+
+PROCEDURE expression;
+VAR left : integer;
+
+    PROCEDURE term;
+    VAR left : integer;
+
+        PROCEDURE factor;
+        BEGIN (* factor *)
+        CASE ch OF
+            '0' :
+                BEGIN
+                gen(nul,0,0);
+                getch
+                END;
+            'a','b','c','d','e','f','g','h','i',
+            'j','k','l','m','n','o','p','q','r',
+            's','t','u','v','w','x','y','z' :
+                BEGIN
+                gen(sym,ord(ch),0);
+                getch;
+                END;
+            '\' :
+                BEGIN
+                gen(sym,ord(input^),0);
+                read(ch); getch
+                END;
+            '(' :
+                BEGIN
+                getch;
+                expression;
+                IF ch = ')' THEN getch ELSE
+                    error('")" expected                  ')
+                END;
+            END; (* CASE *)
+        WHILE ch IN ['*','+','?'] DO
+            BEGIN
+            CASE ch OF
+                '*' : gen(rep,0,cx);
+                '+' : gen(pos,0,cx);
+                '?' : gen(opt,0,cx)
+                END;
+            getch
+            END (* WHILE *)
+        END; (* factor *)
+
+    BEGIN (* term *)
+    factor;
+    IF ch IN ['0','a'..'z','(','\' ] THEN
+        BEGIN
+        left := cx;
+        term;
+        gen(cat,left,cx)
+        END
+    END (* term *);
+
+BEGIN (* expression *)
+term;
+IF ch = '|' THEN
+    BEGIN
+    getch;
+    left := cx;
+    expression;
+    gen(alt,left,cx)
+    END
+END (* expression *);
+
+(* - - - - -  E X P A N D E R  - - - - - *)
+
+PROCEDURE show;
+VAR i : integer;
+BEGIN (* show *)
+FOR i := 1 TO p DO write(s[i]);
+writeln
+END; (* show *)
+
+PROCEDURE expand(t : integer; PROCEDURE cp);
+
+    PROCEDURE putch(c : integer);
+    BEGIN p := p+1; s[p] := chr(c); cp; p := p-1 END;
+
+    PROCEDURE ditto;
+    BEGIN expand(t,cp) END;
+
+    PROCEDURE expand_right;
+    BEGIN expand(code[t].right,cp) END;
+
+BEGIN (* expand *)
+IF p &lt; m THEN
+    WITH code[t] DO
+        CASE op OF
+            nul : putch(0);
+            sym : putch(left);
+            cat : expand(left,expand_right);
+            alt : BEGIN expand(left,cp); expand(right,cp) END;
+            rep : BEGIN putch(0); expand(right,ditto) END;
+            pos : BEGIN expand(right,cp); expand(right,ditto) END;
+            opt : BEGIN putch(0); expand(right,cp) END;
+            END (* CASE *)
+END; (* expand *)
+
+(* - - - - -  M A I N  - - - - - *)
+
+BEGIN (* main *)
+finished := false;
+1:
+REPEAT
+    writeln('input (for help type H) =  ');
+    getch;
+    IF ch = 'H' THEN
+    BEGIN
+        writeln;
+        writeln('input        ::=   expression ''.''');
+        writeln('expression   ::=   term [''|'' term]');
+        writeln('term         ::=   factor [factor]');
+        writeln('factor       ::=   ',
+                '(atom | ''('' expression '')'') ',
+                '[''*'' | ''+'' | ''?'']');
+        writeln('atom         ::=   ',
+                '''a'' | ''b'' | .. ''z'' | ''0'' | ',
+                ' ''\'' any character');
+        writeln;
+        writeln('examples:');
+        writeln('    a | bc | def .');
+        writeln('    ( a* (bc)+  |  (defg)?  |  hh0hh )*  .');
+        writeln;
+        END
+    ELSE IF ch &amp;lt&gt; '.' THEN
+        BEGIN
+        cx := 0;
+        expression;
+        IF ch &amp;lt&gt; '.' THEN
+            error('"." expected                  ');
+        REPEAT
+            writeln('current maximum [0..',maxstring:0,'] = ');
+            read(m);
+            IF m &gt; maxstring THEN m := maxstring;
+            IF m &gt; 0 THEN BEGIN p := 0; expand(cx,show) END
+            UNTIL m &lt; 1
+        END
+    ELSE finished := true
+    UNTIL finished;
+99:
+END.
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-3-4" class="outline-3">
+<h3 id="sec-3-4"><span class="section-number-3">3.4</span> Exercises and reading</h3>
+<div class="outline-text-3" id="text-3-4">
+
+
+</div>
+
+</div>
+
+<div id="outline-container-3-5" class="outline-3">
+<h3 id="sec-3-5"><span class="section-number-3">3.5</span> <i>Parser</i>:</h3>
+<div class="outline-text-3" id="text-3-5">
+
+<p>The program as given is a regular expression generator.  Modify the program to turn it into a regular expression parser: the program should 1) read a regular expression, and 2) repeatedly read a string and determine whether the string is in the language defined by the expression.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-6" class="outline-3">
+<h3 id="sec-3-6"><span class="section-number-3">3.6</span> <i>Futility heuristic</i>:</h3>
+<div class="outline-text-3" id="text-3-6">
+
+<p>As implemented, the program will often try to generate a string but then fail because the maximum length is exceeded.  It would be possible to avoid this by a different form of internal code, in which every node has an additional integer field which is the minimum length required to complete the string.  These fields can be computed at compile time in a simple manner.  At expansion time the field is examined to determine whether the string to be generated will not exceed the current maximum length.  The technique is equally applicable to generating as it is to parsing.  This is a heuristic used by the Snobol processor, see for example Griswold (1972, p 126).
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-7" class="outline-3">
+<h3 id="sec-3-7"><span class="section-number-3">3.7</span> <i>Reading</i>:</h3>
+<div class="outline-text-3" id="text-3-7">
+
+<p>For a quite different way of implementing regular expression parsing, see Kernighan and Plauger (1981, Ch. 5).  But note that their pattern matcher uses unanchored searches, and it does not have alternation at all.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-8" class="outline-3">
+<h3 id="sec-3-8"><span class="section-number-3">3.8</span> <i>Background reading</i>:</h3>
+<div class="outline-text-3" id="text-3-8">
+
+<p>For a description of the technique of using continuations as parameters to implement backtracking, see Mellish and Hardy (1984, p 150).  Now that you know how procedures as parameters can be used for something useful such as backtracking, you might now wonder how procedures as parameters are implemented &mdash; see MacLennan (1983, pp 247 -250).
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-9" class="outline-3">
+<h3 id="sec-3-9"><span class="section-number-3">3.9</span> <i>MU-expression</i>:</h3>
+<div class="outline-text-3" id="text-3-9">
+
+<p>Add the power of <code>MU</code>-expressions to the expanding program.  To make it easy for yourself, let <code>MU</code> always define single character symbols, say upper case letters.  There are two possibilities for calling a <code>MU</code>-defined symbol: Either they are simply used, but if they are to be taken literally then they are escaped with <code>\</code>.  Or they are escaped with, say, <code>$</code> for use, and left unescaped when they are to be taken literally.  You might want to review the macro expansion program in Chapter 4, both for a possible syntax and for the implementation.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-10" class="outline-3">
+<h3 id="sec-3-10"><span class="section-number-3">3.10</span> Addendum 2003</h3>
+<div class="outline-text-3" id="text-3-10">
+
+
+<p>
+Pascal is one of only a few languages which allows local procedures to be passed as parameters in recursive calls.  It is of some interest to see whether there are other ways to achieve the same effect.  The next program below is again a Pascal program, but it uses an explicit stack of continuations instead of local procedures.
+</p>
+
+
+
+<pre class="example">PROGRAM regexp_no_contin(input,output);
+(* Using explicit links to implement continuation *)
+
+LABEL 1, 99;
+
+CONST
+    mcode = 50;
+    maxstring = 50;
+TYPE
+    message = PACKED ARRAY [1..30] OF char;
+    operator = (nul,sym,cat,alt,rep,pos,opt);
+VAR
+    ch : char;
+    code : ARRAY [1..mcode] OF
+                RECORD op : operator; left,right : integer END;
+    cx,i : integer;
+    finished : boolean;
+
+    s : ARRAY [1..maxstring] OF char;
+    p,m : integer;
+
+    links : ARRAY [1..maxstring] OF
+                RECORD t, cp : integer END;
+    lastlink : integer;
+
+(* - - - - -  R E A D E R - - - - - *)
+
+PROCEDURE getch;
+BEGIN
+REPEAT
+    IF eof THEN GOTO 99;
+    read(ch)
+    UNTIL ch &gt; ' '
+END  (* getch *);
+
+PROCEDURE error(mes: message);
+BEGIN
+writeln;
+writeln('Error : seen "',ch,'" when ',mes);
+readln;
+GOTO 1
+END;
+
+PROCEDURE gen(o : operator; l,r : integer);
+BEGIN
+cx := cx + 1;
+IF cx &gt; mcode THEN
+    error('regular expression is too long');
+WITH code[cx] DO
+    BEGIN op := o; left := l; right := r END
+END; (* gen *)
+
+PROCEDURE expression;
+VAR left : integer;
+
+    PROCEDURE term;
+    VAR left : integer;
+
+        PROCEDURE factor;
+        BEGIN (* factor *)
+        CASE ch OF
+            '0' :
+                BEGIN
+                gen(nul,0,0);
+                getch
+                END;
+            'a','b','c','d','e','f','g','h','i',
+            'j','k','l','m','n','o','p','q','r',
+            's','t','u','v','w','x','y','z' :
+                BEGIN
+                gen(sym,ord(ch),0);
+                getch;
+                END;
+            '\' :
+                BEGIN
+                gen(sym,ord(input^),0);
+                read(ch); getch
+                END;
+            '(' :
+                BEGIN
+                getch;
+                expression;
+                IF ch = ')' THEN getch ELSE
+                    error('")" expected                  ')
+                END;
+            END; (* CASE *)
+        WHILE ch IN ['*','+','?'] DO
+            BEGIN
+            CASE ch OF
+                '*' : gen(rep,0,cx);
+                '+' : gen(pos,0,cx);
+                '?' : gen(opt,0,cx)
+                END;
+            getch
+            END (* WHILE *)
+        END; (* factor *)
+
+    BEGIN (* term *)
+    factor;
+    IF ch IN ['0','a'..'z','(','\' ] THEN
+        BEGIN
+        left := cx;
+        term;
+        gen(cat,left,cx)
+        END
+    END (* term *);
+
+BEGIN (* expression *)
+term;
+IF ch = '|' THEN
+    BEGIN
+    getch;
+    left := cx;
+    expression;
+    gen(alt,left,cx)
+    END
+END (* expression *);
+
+(* - - - - -  E X P A N D E R  - - - - - *)
+
+PROCEDURE expand(t : integer; cp : integer);
+VAR savelastlink : integer;
+
+    PROCEDURE putch(c : integer);
+    BEGIN
+    p := p+1; s[p] := chr(c);
+    IF cp &gt; 0 THEN expand(links[cp].t, links[cp].cp) ELSE
+        BEGIN (* show *)
+        For i := 1 TO p DO write(s[i]);
+        writeln
+        END;
+    p := p-1
+    END;
+
+    FUNCTION newcp(t : integer) : integer;
+    BEGIN
+    lastlink := lastlink + 1;
+    links[lastlink].t := t;
+    links[lastlink].cp := cp;
+    newcp := lastlink
+    END;
+
+BEGIN (* expand *)
+savelastlink := lastlink;
+IF p &lt; m THEN
+    WITH code[t] DO
+        CASE op OF
+            nul : putch(0);
+            sym : putch(left);
+            cat : expand(left,newcp(right));
+            alt : BEGIN expand(left,cp); expand(right,cp) END;
+            rep : BEGIN putch(0); expand(right,newcp(t)) END;
+            pos : BEGIN expand(right,cp); expand(right,newcp(t)) END;
+            opt : BEGIN putch(0); expand(right,cp) END;
+            END; (* CASE *)
+lastlink := savelastlink
+END; (* expand *)
+
+(* - - - - -  M A I N  - - - - - *)
+
+BEGIN (* main *)
+finished := false;
+1:
+REPEAT
+    writeln('input (for help type H) =  ');
+    getch;
+    IF ch = 'H' THEN
+    BEGIN
+        writeln;
+        writeln('input        ::=   expression ''.''');
+        writeln('expression   ::=   term [''|'' term]');
+        writeln('term         ::=   factor [factor]');
+        writeln('factor       ::=   ',
+                '(atom | ''('' expression '')'') ',
+                '[''*'' | ''+'' | ''?'']');
+        writeln('atom         ::=   ',
+                '''a'' | ''b'' | .. ''z'' | ''0'' | ',
+                ' ''\'' any character');
+        writeln;
+        writeln('examples:');
+        writeln('    a | bc | def .');
+        writeln('    ( a* (bc)+  |  (defg)?  |  hh0hh )*  .');
+        writeln;
+        END
+    ELSE IF ch &lt;&gt; '.' THEN
+        BEGIN
+        cx := 0;
+        expression;
+        IF ch &lt;&gt; '.' THEN
+            error('"." expected                  ');
+        REPEAT
+            writeln('current maximum [0..',maxstring:0,'] = ');
+            read(m);
+            IF m &gt; maxstring THEN m := maxstring;
+            IF m &gt; 0 THEN
+                BEGIN lastlink := 0; p := 0; expand(cx,0) END
+            UNTIL m &lt; 1
+        END
+    ELSE finished := true
+    UNTIL finished;
+99:
+END.
+</pre>
+
+
+<p>
+The next program is essentially a translation of the previous program into the C language (which officially does not allow local functions inside other functions).
+</p>
+
+
+
+<pre class="example">/* regular expression expander */
+/* Using explicit links to implement continuation */
+
+#include &lt;stdio.h&gt;
+#include &lt;setjmp.h&gt;
+                                        /* Reading an expression : */
+#define maxcode 200
+jmp_buf begin;
+int echo = 0;
+char ch;
+struct {char op; int left;} code[maxcode];
+int cx;
+void getch();
+void error();
+void generate(char c, int l);
+void expression();
+void term();
+void factor();
+
+void getch()
+{
+do { ch = getchar(); if (echo) putchar(ch); }
+    while (ch &lt;= ' ');
+}
+void error(char * mes)
+{
+    printf("error: seen '%c' when %s\n",ch,mes);
+    do ch = getchar(); while (ch != '\n');
+    longjmp(begin,0);
+}
+void generate(char c, int l)
+{
+    cx++;
+    code[cx].op = c; code[cx].left = l;
+}
+void expression()
+{
+    int left;
+    term();
+    if (ch == '|')
+      { left = cx; getch();
+        expression();
+        generate('|',left); }
+}
+void term()
+{
+    int left;
+    factor();
+    if (ch &gt;= 'a' &amp;&amp; ch &lt;= 'z'  ||  ch == '0'  ||  ch == '(')
+      { left = cx;
+        term();
+        generate('_',left); }
+}
+void factor()
+{
+    if (ch &gt;= 'a' &amp;&amp; ch &lt;= 'z')
+      { generate('a',ch); getch(); }
+    else if (ch == '0')
+      { generate('0',0); getch(); }
+    else if (ch == '(')
+      { getch(); expression();
+        if (ch == ')') getch();
+            else error("')' expected"); }
+    else error("'a'..'z','0' or '(' expected");
+    while (ch == '*' || ch == '+' || ch == '?')
+      { generate(ch,0); getch(); }
+}
+                                        /* Generating the strings */
+#define maxstring 50
+struct {int t; int cp;} links[maxcode];
+int lastlink;
+char s[maxstring];
+int p,m;
+int newcp(int t, int cp);
+void putch(char c, int cp);
+void expand(int t, int cp);
+
+int newcp( int t, int cp)
+{
+    lastlink++;
+    links[lastlink].t = t;
+    links[lastlink].cp = cp;
+    return lastlink;
+}
+void putch(char c, int cp)
+{
+    int i;
+    s[++p] = c;
+    if (cp &gt;= 0) expand(links[cp].t, links[cp].cp);
+    else
+      { for (i = 0; i &lt;= p; i++) printf("%c",s[i]);
+        printf("\n"); }
+    p--;
+}
+void expand(int t, int cp)
+{
+    if (p &lt; m)
+      { char op = code[t].op;
+        int left = code[t].left;
+        int right = t - 1;
+        int savelastlink = lastlink;
+        switch (op)
+          { case 'a' :
+                putch(left,cp);
+                break;
+            case '0' :
+                putch(0,cp);
+                break;
+            case '_' :
+                expand(left,newcp(right,cp));
+                break;
+            case '|' :
+                expand(left,cp);
+                expand(right,cp);
+                break;
+            case '*' :
+                putch(0,cp);
+                expand(right,newcp(t,cp));
+                break;
+            case '+' :
+                expand(right,cp);
+                expand(right,newcp(t,cp));
+                break;
+            case '?' :
+                putch(0,cp);
+                expand(right,cp);
+                break; }
+        lastlink = savelastlink; }
+}
+void main()
+{
+    int finished = 0;
+    setjmp(begin);
+    do
+      { printf("?- "); getch();
+        if (ch == '!') { echo = 1; getch(); }
+        if (ch != '.')
+          { cx = -1; expression();
+            if (ch != '.')  error("'.' expected");
+            do
+              { printf("current maximum [0..%d]\n",maxstring);
+                scanf("%d",&amp;m);
+                if (m &gt; maxstring) m = maxstring;
+                if (m &gt; 0)
+                 { p = -1; lastlink = -1; expand(cx,-1); } }
+            while (m &gt; 0); }
+        else finished = 1; }
+    while (!finished);
+}
+</pre>
+
+
+<p>
+Another way of solving the problem is shown by the following version, also in the C language.
+</p>
+
+
+
+<pre class="example">/* regular expression expander */
+/* using stack addresses to implement continuation */
+
+#include &lt;stdio.h&gt;
+#include &lt;setjmp.h&gt;
+                                        /* Reading an expression : */
+#define maxcode 200
+jmp_buf begin;
+int echo = 0;
+char ch;
+struct {char op; int left;} code[maxcode];
+int cx;
+void getch();
+void error();
+void generate(char c, int l);
+void expression();
+void term();
+void factor();
+
+void getch()
+{
+do { ch = getchar(); if (echo) putchar(ch); }
+    while (ch &lt;= ' ');
+}
+void error(char * mes)
+{
+    printf("error: seen '%c' when %s\n",ch,mes);
+    do ch = getchar(); while (ch != '\n');
+    longjmp(begin,0);
+}
+void generate(char c, int l)
+{
+    cx++;
+    code[cx].op = c; code[cx].left = l;
+}
+void expression()
+{
+    int left;
+    term();
+    if (ch == '|')
+      { left = cx; getch();
+        expression();
+        generate('|',left); }
+}
+void term()
+{
+    int left;
+    factor();
+    if (ch &gt;= 'a' &amp;&amp; ch &lt;= 'z'  ||  ch == '0'  ||  ch == '(')
+      { left = cx;
+        term();
+        generate('_',left); }
+}
+void factor()
+{
+    if (ch &gt;= 'a' &amp;&amp; ch &lt;= 'z')
+      { generate(ch,0); getch(); }
+    else if (ch == '0')
+      { generate('0',0); getch(); }
+    else if (ch == '(')
+      { getch(); expression();
+        if (ch == ')') getch();
+            else error("')' expected"); }
+    else error("'a'..'z','0' or '(' expected");
+    while (ch == '*' || ch == '+' || ch == '?')
+      { generate(ch,0); getch(); }
+}
+                                        /* Generating the strings */
+#define MAXSTRING 50
+char s[MAXSTRING];
+int p,m;
+void putch(char c, int cp);
+void expand(int t, int cp);
+
+void putch(char c, int cp)
+{
+    int i;
+    s[++p] = c;
+    if (cp &gt; 0) expand(*(int *)(cp + 8), *(int *)cp);
+    else
+      { for (i = 0; i &lt;= p; i++) printf("%c",s[i]);
+        printf("\n"); }
+    p--;
+}
+int dummy;
+void expand(int t, int cp)
+{
+    int newt,newcp;
+    #define OP code[t].op
+    #define LEFT code[t].left
+    #define RIGHT (t-1)
+    #define NEXT(T)  (newt = T, newcp = cp, (int)&amp;newcp)
+    dummy = (int)&amp;newt - (int)&amp;newcp; /* delete this at your peril ! */
+    if (p &lt; m)
+        switch (OP)
+          { case '0' :
+                putch(0,cp);
+                break;
+            case '_' :
+                expand(LEFT,NEXT(RIGHT));
+                break;
+            case '|' :
+                expand(LEFT,cp);
+                expand(RIGHT,cp);
+                break;
+            case '*' :
+                putch(0,cp);
+                expand(RIGHT,NEXT(t));
+                break;
+            case '+' :
+                expand(RIGHT,cp);
+                expand(RIGHT,NEXT(t));
+                break;
+            case '?' :
+                putch(0,cp);
+                expand(RIGHT,cp);
+                break;
+            default :
+                putch(OP,cp);
+                break; }
+}
+void main()
+{
+    int finished = 0;
+    setjmp(begin);
+    do
+      { printf("?- "); getch();
+        if (ch == '!') { echo = 1; getch(); }
+        if (ch != '.')
+          { cx = -1; expression();
+            if (ch != '.')  error("'.' expected");
+            do
+              { printf("current maximum [0..%d]\n",MAXSTRING);
+                scanf("%d",&amp;m);
+                if (m &gt; MAXSTRING) m = MAXSTRING;
+                if (m &gt; 0)
+                 { p = -1; expand(cx,0); } }
+            while (m &gt; 0); }
+        else finished = 1; }
+    while (!finished);
+}
+</pre>
+
+
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+<p class="footnote"><sup><a class="footnum" name="fn.1" href="#fnr.1">1</a></sup> DEFINITION NOT FOUND: 2
+</p>
+
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-01-11 07:38:04 CST</p>
+<p class="author">Author: michal</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

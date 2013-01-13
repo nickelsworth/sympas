@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Chapter 1 : Getting started: a truth table pogram</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Chapter 1 : Getting started: a truth table pogram"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-01-11 07:38:12 CST"/>
+<meta name="author" content="michal"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Chapter 1 : Getting started: a truth table pogram</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 intro</a></li>
+<li><a href="#sec-2">2 Hello world</a></li>
+<li><a href="#sec-3">3 Truth table</a></li>
+<li><a href="#sec-4">4 The program</a></li>
+<li><a href="#sec-5">5 assignments</a>
+<ul>
+<li><a href="#sec-5-1">5.1 <i>Different constants</i>:</a></li>
+<li><a href="#sec-5-2">5.2 <i>A different programming language</i>:</a></li>
+<li><a href="#sec-5-3">5.3 <i>Other connectives</i>:</a></li>
+<li><a href="#sec-5-4">5.4 <i>Summary</i>:</a></li>
+<li><a href="#sec-5-5">5.5 <i>Values of subformulas</i>:</a></li>
+<li><a href="#sec-5-6">5.6 <i>Non-classical logic</i>:</a></li>
+<li><a href="#sec-5-7">5.7 <i>Reading</i>:</a></li>
+<li><a href="#sec-5-8">5.8 <i>A puzzle</i>:</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div class="outline-text-2" id="text-1">
+
+
+<p>
+In this introductory chapter we write one very small program which will produce the truth table for one particular formula.  The method is easily adapted to writing similar programs for other, even much larger formulas.  Readers familiar with Pascal will want to skip this chapter entirely.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Hello world</h2>
+<div class="outline-text-2" id="text-2">
+
+
+<p>
+If you have never written a Pascal program on the computer that you are using, then you should write a tiny little program and get it running.  Otherwise you will want to skip this section.
+</p>
+<p>
+To write a program you need an <i>editor</i> to create and edit a file which will remain permanently on your disk area.  If the program is a Pascal program, then it has to be processed by the Pascal <i>compiler</i> to produce another file. In most systems this resulting file has to be processed further by a <i>linker</i> which produces another file again.  Only this last file is eventually executed by the computer.
+</p>
+<p>
+To get started it is useful to begin with something entirely trivial.  The following is the sort of program that you might use:
+</p>
+
+
+
+<pre class="example">PROGRAM hello(output);
+BEGIN
+writeln('hello world')
+END.
+</pre>
+
+
+<p>
+You should use your editor to create this file, and you might call it <code>HELLO.PAS</code> or something like that.  On a VAX you then compile it with the command
+</p>
+
+
+
+<pre class="example">$ PASCAL HELLO
+</pre>
+
+
+<p>
+and then you link it with the command
+</p>
+
+
+
+<pre class="example">$ LINK HELLO
+</pre>
+
+
+<p>
+and then you run it with the command
+</p>
+
+
+
+<pre class="example">$ RUN HELLO
+</pre>
+
+
+<p>
+which will produce the output line
+</p>
+
+
+
+<pre class="example">hello world
+</pre>
+
+
+<p>
+and then give you the <code>$</code>-prompt again.  If the program contained an error which the Pascal compiler detected, then you should not try to link the faulty program but go back to the editor to correct the error.  If the program when running did not produce the right output, you should also go back to the editor to correct it.  On a Unix system the commands will be different but essentially similar.
+</p>
+<p>
+For most programs it is necessary to go through many cycles of editing, compiling, linking and running.  Suppose your program is called <code>MYPROG</code>, then the cycle is quite well described by the following:
+</p>
+
+
+
+<pre class="example">REPEAT
+        $ EDIT MYPROG.PAS
+          ... here make your changes
+          make sure you exit properly from the editor
+        $ PASCAL MYPROG
+        IF there were no errors detected by the compiler THEN
+                $ LINK MYPROG
+                $ RUN MYPROG
+UNTIL completely satisfied
+</pre>
+
+
+<p>
+Do make sure you understand this. Try it out by getting the <code>HELLO</code> program to write
+</p>
+
+
+
+<pre class="example">hello beautiful world
+</pre>
+
+
+<p>
+instead.  If you had any problems with getting the first or the second <code>HELLO</code> program to work properly, then you should get help from somebody.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Truth table</h2>
+<div class="outline-text-2" id="text-3">
+
+
+<p>
+In the remainder of this chapter we shall learn how to write a program which will produce the complete truth table for a particular formula of propositional logic.  Different, but similar programs are easily written for different formulas.  In Chapter 5 we shall write one program which can read any formula of propositional logic and produce its truth table.  But such a general purpose program is not entirely trivial, so in this chapter we shall be content with writing special purpose programs for just one formula.
+</p>
+<p>
+To make matters as easy as possible, we select as a demonstration formula one which only uses those propositional operators for which Pascal has obviously corresponding Boolean operators:
+</p>
+
+
+
+<pre class="example">NOT (p OR q AND r)  OR  q AND (r OR p)
+</pre>
+
+
+<p>
+We shall assume that our propositional logic follows the same conventions about precedences as Pascal does: <code>NOT</code> binds more strongly than <code>AND</code>, which binds more strongly than <code>OR</code>.  It is as if the formula were bracketed like this:
+</p>
+
+
+
+<pre class="example">(NOT (p OR (q AND r)))  OR  (q AND (r OR p))
+</pre>
+
+
+<p>
+The formula contains three atomic formulas: <code>p</code>, <code>q</code> and <code>r</code>.  So the full truth table will contain 2<sup>3</sup> = 8 lines.  Each such line should contain the current values of the atomic formulas, together with the value of the big formula.  The 8 lines should be preceded by a header line containing the names of the three atoms, then a space and then the formula.  In the header line and in each of the 8 lines of the table, the names of the atoms or the values of the atoms should be separated by a space.  For the 8 values of the formula, it will look best if they occur immediately below the main operator of the formula, which is the second <code>OR</code>.  The truth values of the atomic formulas and of the big formula could be written as <code>1</code> and <code>0</code>, which is easiest on the eyes, or as <code>T</code> and <code>F</code> which is just marginally easier to program.  This is what the output should look like:
+</p>
+
+
+
+<pre class="example">p q r     NOT (p OR q AND r)  OR  q AND (r OR p)
+T T T                         T
+T T F                         T
+T F T                         F
+T F F                         F
+F T T                         T
+F T F                         T
+F F T                         T
+F F F                         T
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> The program</h2>
+<div class="outline-text-2" id="text-4">
+
+
+<p>
+The program has to start by writing the header line containing the three atoms separated by a space, then a larger space followed by the formula.  Because in the 8 lines of the table the value of the formula has to be written directly underneath the main operator of the formula, it is useful to define two <code>CONST</code> strings: one is the formula preceded by a few spaces, the other is a blank string of spaces as long as the formula string up to its main operator.  This is an easy way of ensuring the alignment.  Thus, to write the header line, a string =p q r = is written out, followed by the string constant for the formula.
+</p>
+<p>
+Now the 8 lines of the table have to be written.  For each line it is necessary to produce the truth values of the three atoms, to write them out, and then to write the truth value of the formula for these values.  However, it is best not to think in terms of 8 lines but in terms of what has to be done for each of the 3 atoms.
+</p>
+<p>
+Starting with <code>p</code>, then <code>q</code> and then <code>r</code>, for each atom the values true and false have to be assigned.  When r has been assigned a value, the formula itself can be evaluated and the current line written out.  To assign first <code>true</code> and then <code>false</code> to an atom, a <code>FOR</code> loop is useful.  It may be that you are only familiar with <code>FOR</code> loops that use integers, but they work equally well with boolean values.  It may be that you are only familiar with <code>FOR</code> loops which go upward, but by saying <code>DOWNTO</code> instead of <code>TO</code> they can be made to go downwards.  In the case of Boolean values, downwards means first <code>true</code> then <code>false</code>.  The form of such loops is:
+</p>
+
+
+
+<pre class="example">FOR a := true  DOWNTO false DO
+    something-or-other
+</pre>
+
+
+<p>
+In our case we have three atomic formulas <code>p</code>, <code>q</code> and <code>r</code>, and to obtain a truth table with all the possible combinations of values we nest the <code>FOR</code> loops for the three atomic formulas:
+</p>
+
+
+
+<pre class="example">FOR p := true DOWNTO false DO
+  FOR q := true DOWNTO false DO
+    FOR r := true DOWNTO false DO
+      something-or-other
+</pre>
+
+
+<p>
+The three variables <code>p</code>, <code>q</code> and <code>r</code> have to be declared as Boolean variables in a <code>VAR</code> section at the beginning of the program.
+</p>
+<p>
+In our case doing something or other means writing out a line in the truth table.  So a <code>write</code> statement is called for which will write the current values of the three atoms and the current value of the formula.  All four of these are boolean values, and Pascal would normally write them as <code>TRUE</code> and <code>FALSE</code>.  This would make a correct but unnecessarily wordy table, it looks nicer if only single characters <code>T</code> and <code>F</code> are used.  These happen to be the first characters of what Pascal would normally write, so if we specify that the values are to be written in a field of just one character, only <code>T</code> or <code>F</code> will be written.  For example, if <code>b</code> is a Boolean expression, then
+</p>
+
+
+
+<pre class="example">write(b:1)
+</pre>
+
+
+<p>
+will write the value of <code>b</code> as just one character, <code>T</code> or <code>F</code>.  Since in the header line each atom was followed by a space, to achieve alignment the current value of each atom has to be followed by a space.
+</p>
+<p>
+Finally the value of the formula has to be written, but it has to be preceded by a blank which is as long as the formula up to its main operator.  This is the <code>CONST</code> string referred to earlier.  The value of the formula, now given not as a string but as a Boolean expression, is written next.  Each line in the truth table is written by one single <code>writeln</code> statement.
+</p>
+<p>
+The following is the standard Pascal source for the truth table program.
+</p>
+
+
+
+<pre class="example">PROGRAM truthtable(output);
+CONST formula = '    NOT (p OR q AND r)  OR  q AND (r OR p)';
+        blank = '                        ';
+VAR p, q, r : boolean;
+BEGIN
+writeln('p q r ',formula);
+FOR p := true DOWNTO false DO
+  FOR q := true DOWNTO false DO
+    FOR r := true DOWNTO false DO
+      writeln(p:1,' ',q:1,' ',r:1,' ',blank,
+        NOT (p OR q AND r)  OR  q AND (r OR p):1)
+END.
+</pre>
+
+
+<p>
+You might think that it is hardly worthwhile to write a 12 line Pascal program to produce a truth table of 8 lines plus one header line.  On the other hand, consider a formula with, say, six atomic formulas.  This will require a table of 2<sup>6</sup> = 64 lines, but how long will the program be?  There are three more atomic formulas than in the program that we have written, so there will have to be three more nested <code>FOR</code> loops, each of one extra line each.  That will make 15 lines in all.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> <span class="target">assignments</span></h2>
+<div class="outline-text-2" id="text-5">
+
+
+</div>
+
+<div id="outline-container-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> <i>Different constants</i>:</h3>
+<div class="outline-text-3" id="text-5-1">
+
+
+<p>
+Modify the program so that instead of writing <code>T</code> and <code>F</code> for the truth values it writes <code>1</code> and <code>0</code>.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-2" class="outline-3">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> <i>A different programming language</i>:</h3>
+<div class="outline-text-3" id="text-5-2">
+
+
+<p>
+If you know another programming language, like perhaps the C language, write the program in that language.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-3" class="outline-3">
+<h3 id="sec-5-3"><span class="section-number-3">5.3</span> <i>Other connectives</i>:</h3>
+<div class="outline-text-3" id="text-5-3">
+
+
+<p>
+Assume that the material implication connective is written <code>IMP</code> and that the material equivalence connective is written <code>IFF</code>.  Write a formula using these connectives, then write a Pascal program to produce a truth table for this formula.  Note that <code>IMP</code> and <code>IFF</code> are not Pascal operators, so you will have to find a way around that.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-4" class="outline-3">
+<h3 id="sec-5-4"><span class="section-number-3">5.4</span> <i>Summary</i>:</h3>
+<div class="outline-text-3" id="text-5-4">
+
+
+<p>
+It would be useful if the truth table program could say at the end "tautology" if the formula was true in every line, or "contradiction" if the formula was false in every line, or "contingent" otherwise.  Modify the program accordingly.  Sometimes one does not even want to see the whole truth table but only this one-word summary.  Modify the program so that it only writes the summary.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-5" class="outline-3">
+<h3 id="sec-5-5"><span class="section-number-3">5.5</span> <i>Values of subformulas</i>:</h3>
+<div class="outline-text-3" id="text-5-5">
+
+
+<p>
+For teaching purposes many books show truth tables in which the truth value of each subformula is written under its main operator.  This of course is how one does truth tables by hand.  Think about how you would modify the program to write the values of subformulas.  But do not bother to actually make the program do it &mdash; for a program which only writes the table for a single formula it really is not worth it.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-6" class="outline-3">
+<h3 id="sec-5-6"><span class="section-number-3">5.6</span> <i>Non-classical logic</i>:</h3>
+<div class="outline-text-3" id="text-5-6">
+
+
+<p>
+There are some logics which use more than two truth values &mdash; three, four, even eight.  If you know some of them, write a program to write a table for a single formula with these unconventional truth value.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-7" class="outline-3">
+<h3 id="sec-5-7"><span class="section-number-3">5.7</span> <i>Reading</i>:</h3>
+<div class="outline-text-3" id="text-5-7">
+
+
+<p>
+If you had problems with understanding the Pascal program, then you should consult any one of the many and often very good introductory books on Pascal.  Some of those recommended are:
+</p>
+<ul>
+<li>Cooper and Clancy (1985),
+</li>
+<li>Leestma and Nyhoff (1990),
+</li>
+<li>Peters (1986).
+</li>
+</ul>
+
+
+<p>
+If you had problems getting your program into the computer, read the manual for your editor.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-5-8" class="outline-3">
+<h3 id="sec-5-8"><span class="section-number-3">5.8</span> <i>A puzzle</i>:</h3>
+<div class="outline-text-3" id="text-5-8">
+
+
+<p>
+The following is taken from "The Mind of the Year" competition in <i>The Weekend Australian</i>, September 8-9 1990, p 10.
+</p>
+<p>
+At a quadruple marriage ceremony four men Arthur, Bill, Charlie and Don were marrying Erica, Fanny, Georgina and Helen, though not necessarily in that order.  Consider the following statements:
+</p>
+<p>
+If Fanny is not marrying Arthur, then Georgina is not marrying Charlie.  If either Georgina or Helen is marrying Bill, then Arthur is marrying Fanny.  If Charlie is not marrying Erica, then Bill is marrying Helen.  If Georgina is marrying Don, then Bill is not marrying Fanny.  If Don is not marrying Fanny, then Fanny is marrying Bill.
+</p>
+<p>
+Who is marrying whom?  Write a Pascal program to solve this puzzle.
+</p>
+<p>
+(Hint: think of the four women as variables, think of the four men as values.)
+</p>
+</div>
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-01-11 07:38:12 CST</p>
+<p class="author">Author: michal</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

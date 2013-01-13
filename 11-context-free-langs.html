@@ -1,0 +1,1645 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Chapter x : Context free languages</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Chapter x : Context free languages"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-01-11 07:38:01 CST"/>
+<meta name="author" content="michal"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Chapter x : Context free languages</h1>
+
+<p>&lt;HTML&gt;
+&lt;head&gt;
+&lt;TITLE&gt;SYMBOLIC PROCESSING IN PASCAL - Chapter 11&lt;/TITLE&gt;
+&lt;/head&gt;
+</p>
+<p>
+&lt;body&gt;
+</p>
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 intro</a></li>
+<li><a href="#sec-2">2 Grammars</a>
+<ul>
+<li><a href="#sec-2-1">2.1 User manual</a></li>
+<li><a href="#sec-2-2">2.2 An example run</a></li>
+</ul>
+</li>
+<li><a href="#sec-3">3 Designing the implementation</a>
+<ul>
+<li><a href="#sec-3-1">3.1 Reading and storing the grammar</a></li>
+<li><a href="#sec-3-2">3.2 Processing input strings</a></li>
+</ul>
+</li>
+<li><a href="#sec-4">4 The program</a></li>
+<li><a href="#sec-5">5 Exercises and reading</a></li>
+<li><a href="#sec-6">6 Proplog &mdash; propositional Prolog</a>
+<ul>
+<li><a href="#sec-6-1">6.1 Generalising the use of grammars</a></li>
+<li><a href="#sec-6-2">6.2 A dramatic restriction on productions</a></li>
+<li><a href="#sec-6-3">6.3 A logical interpretation</a></li>
+<li><a href="#sec-6-4">6.4 <i>Exercise</i>:</a></li>
+<li><a href="#sec-6-5">6.5 <i>Negation</i>:</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div class="outline-text-2" id="text-1">
+
+
+<p>
+In this chapter we write a small program
+which parses strings in accordance with
+a grammar.
+The program uses the same backtracking technique
+as the programs in the preceding two chapters.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Grammars</h2>
+<div class="outline-text-2" id="text-2">
+
+
+<p>
+We return to the topic of formal language theory.
+So far we have used grammars for describing the syntax
+of the input languages of most of our programs.
+Now we shall study grammars and parsing in a more abstract way.
+Context free grammars differ from regular expressions
+in that they allow defined symbols.
+This we encountered already in the macro expander of Chapter 4,
+although recursion was not allowed.
+In grammars definitions can also be recursive,
+and they are now called <i>productions</i>.
+They allow a string consisting of just a defined symbol on the left
+of the production to be replaced by the string on the right
+of the production.
+Grammars in which the left of a production consists of a single
+symbol allow the replacement independently of any context,
+so they are called context free.
+It is often useful to allow the right side of a production
+to consist not just of concatenations
+but to allow the various repetition operators of regular expressions.
+These are then the (extended) BNF grammars we have been using already.
+The program to be written will read a context free grammar
+and then determine whether input strings
+provided by the user are in the language
+defined by the grammar.
+</p>
+<p>
+In most languages white space characters such as
+blanks, tabs and new lines play a very special role:
+they rarely mean anything at all, and at most they serve
+as separators. It is interesting to note that in ancient Greek
+and in early Latin there were no spaces between words.
+If white space characters are to be handled by the grammar explicitly,
+then the grammar often becomes quite messy.
+So in the program that we shall write,
+white space is to be allowed for readable input,
+but will not be passed as input to the parser.
+</p>
+
+</div>
+
+<div id="outline-container-2-1" class="outline-3">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> User manual</h3>
+<div class="outline-text-3" id="text-2-1">
+
+
+<p>
+The program reads one context free grammar
+and then it repeatedly reads strings to determine whether
+they or an initial segment are in the language defined by the grammar.
+The grammar that is read at the beginning has to be
+in accordance with the following grammar,
+so this is a <i>grammar</i> for <i>grammars</i>:
+</p>
+
+
+
+<pre class="example">grammar         ::=   production  [ ';' production ]  '.'
+production      ::=   identifier  '='  expression
+identifier      ::=   letter  [ letter | digit | underscore ]
+letter          ::=   'A' .. 'Z' | 'a' .. 'z'
+digit           ::=   '0' .. '9'
+underscore      ::=   '_'
+expression      ::=   term  [ '|' term ]
+term            ::=   factor  [ factor ]
+factor          ::=   identifier
+                |  ''' any-printing-character (except '.')
+                |  '(' expression ')'
+                |  '[' expression ']'
+                |  '{' expression '}'
+</pre>
+
+
+<p>
+Thus a grammar consists of one or more productions
+separated by semicolons, and then a terminating period.
+A production consists of an identifier followed by the equals
+sign followed by an expression.
+An identifier consists of a letter followed optionally
+by more letters or digits or underscores,
+up to a maximum of 16 characters in all,
+any further ones are ignored.
+Note that there is no simple way to express this in a grammar.
+An expression consists of one or more terms
+separated by the alternation symbol,
+and a term consists of one or more factors
+which are taken to be concatenated.
+A factor consists of either an identifier,
+which will be taken to be a non-terminal defined somewhere in the grammar,
+or a singly quoted printing character (but not a period),
+which will be taken to be a terminal,
+or an expression in (round) parentheses for overriding precedences,
+or an expression in (square) brackets to be repeated zero or more times,
+or an expression in (curly) braces to be repeated zero or one times.
+</p>
+<p>
+A further restriction,
+one which cannot be expressed by the above context free grammar,
+is that any identifier which occurs as a factor must
+occur on the left hand side of some production.
+It does not matter whether the definition of that identifier
+occurs before or after its first use in a factor.
+</p>
+<p>
+During the reading of the program any context free errors are reported
+in the form
+</p>
+
+
+
+<pre class="example">error: seen "X" when MESSAGE
+</pre>
+
+
+<p>
+where <code>X</code> is the last identifier or single character seen, and
+<code>MESSAGE</code> is one of the following:
+</p>
+
+
+
+<pre class="example">no white space as terminal              no "." as terminal
+this character is illegal               beginning of factor expected
+")" expected                            "]" expected
+"}" expected                            non-terminal for production
+"=" expected in production              "." expected at end of grammar
+</pre>
+
+
+<p>
+There is one possible context sensitive error:
+if after the reading of the grammar a non-terminal <code>N</code>
+is found to be undefined, then
+an error is reported in the form
+</p>
+
+
+
+<pre class="example">undefined non-terminal N
+</pre>
+
+
+<p>
+The first error found in the grammar causes the program to exit.
+</p>
+<p>
+When the grammar has been read successfully,
+the program is ready to read any number of strings,
+each terminated by a period.
+The strings may contain white space &mdash; blanks, tabs and newlines,
+but such white space is ignored.
+A string may contain up to a maximum of 100 printing characters.
+For each string that has been read an attempt is made
+to parse any initial segment of the string,
+including the whole string, in accordance with the grammar.
+If there are successful parses of any initial segments,
+the message = &hellip; well-formed -= is written on an output line.
+Then follow sequentially numbered lines each containing
+first an initial segment, then a longer space,
+and then the remainder, if any, of the input string.
+If any one segment can be parsed in different ways,
+then the segment will be printed out as often as it can be parsed.
+On the other hand,
+if there are no successful parses of any initial segment of the input string,
+then the message = &hellip; ill-formed=
+is written on one line.
+The program terminates when the end of the input file
+has been reached, even if this occurs
+during the reading of the grammar or during the reading
+of an input string.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2-2" class="outline-3">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> An example run</h3>
+<div class="outline-text-3" id="text-2-2">
+
+
+<p>
+The following is the output from a run of the program.
+The first half consists of the grammar as it was written out by
+the program while reading it from the input file.
+The second part consists of input strings and responses by the system.
+The grammar is for a usable version of predicate logic.
+It was chosen because the syntax
+of the two quantifiers <code>(Ax)</code> and <code>(Ex)</code>,
+pronounced <i>For all x</i> and <i>There exists an x</i>
+where <code>x</code> is a variable,
+makes the grammar nondeterministic:
+whether such a sequence of symbols is a quantifier or
+a parenthesised atomic formula <code>Ax</code> or <code>Ex</code>,
+with predicate <code>A</code> or <code>E</code>,
+can often only be determined much further to the right
+in the formula in which they occur.
+Another source of ambiguity is the character <code>v</code>
+which can mean the disjunction symbol between any two terms,
+or it can be  variable belonging to a predicate in an atomic formula.
+So again the parser will have to be able to backtrack.
+When designing languages,
+one normally avoids the need for this,
+it was chosen here to illustrate the need for backtracking
+and to illustrate its implementation.
+</p>
+
+
+
+<pre class="example">FORMULA         =  EXPRESSION  { ('&gt; | '=) FORMULA };
+EXPRESSION      =  TERM  [ 'v  TERM ];
+TERM            =  FACTOR  [ '&amp; FACTOR ];
+FACTOR          =  PREDICATE  [ CONSTANT | VARIABLE ]
+                |  '-  FACTOR
+                |  '(  FORMULA  ')
+                |  '(  ('A | 'E)  VARIABLE  ')  FACTOR;
+PREDICATE       =  'A | 'B | 'C | 'D | 'E | 'F | 'G | 'H | 'I
+                |  'J | 'K | 'L | 'M | 'N | 'O | 'P | 'Q | 'R
+                |  'S | 'T | 'U | 'V | 'W | 'X | 'Y | 'Z;
+CONSTANT        =  'a | 'b | 'c | 'd | 'e | 'f | 'g;
+VARIABLE        =  'u | 'v | 'w | 'x | 'y | 'z.
+
+P v (Q &gt; -(R &amp; S)).
+ ... well-formed -
+1:      P                v(Q&gt;-(R&amp;S))
+2:      Pv(Q&gt;-(R&amp;S))
+3:      Pv                (Q&gt;-(R&amp;S))
+
+Gb v Hcd  &gt;  Iabc.
+ ... well-formed -
+1:      G                bvHcd&gt;Iabc
+2:      Gb                vHcd&gt;Iabc
+3:      GbvH                cd&gt;Iabc
+4:      GbvHc                d&gt;Iabc
+5:      GbvHcd                &gt;Iabc
+6:      GbvHcd&gt;I                abc
+7:      GbvHcd&gt;Ia                bc
+8:      GbvHcd&gt;Iab                c
+9:      GbvHcd&gt;Iabc
+10:     Gbv                Hcd&gt;Iabc
+
+(Ax)(Fx v Gx).
+ ... well-formed -
+1:      (Ax)                (FxvGx)
+2:      (Ax)(FxvGx)
+
+(Ex)(Ay)(Ez)(Fx &amp; Gxy &amp; Hyz).
+ ... well-formed -
+1:      (Ex)                (Ay)(Ez)(Fx&amp;Gxy&amp;Hyz)
+2:      (Ex)(Ay)                (Ez)(Fx&amp;Gxy&amp;Hyz)
+3:      (Ex)(Ay)(Ez)                (Fx&amp;Gxy&amp;Hyz)
+4:      (Ex)(Ay)(Ez)(Fx&amp;Gxy&amp;Hyz)
+
+P = Q.
+ ... well-formed -
+1:      P                =Q
+2:      P=Q
+
+(Ab)(Cd).
+ ... well-formed -
+1:      (Ab)                (Cd)
+
+a &amp; b  &gt;  c v d.
+ ... ill-formed
+
+a = b.
+ ... ill-formed
+
+(Ai &amp; Bj  &gt;  Cx).
+ ... ill-formed
+
+</pre>
+
+
+<p>
+The second part of the above output consists of echoed strings
+from the input file,
+each followed by a verdict by the parser to say whether
+a leading substring of the string was ill-formed or well-formed.
+If there were one or more leading well-formed substrings
+then they are written out, followed by a separating space,
+followed by the remainder of the input string.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Designing the implementation</h2>
+<div class="outline-text-2" id="text-3">
+
+
+<p>
+The program 1) reads one grammar,
+and then 2) repeatedly reads strings to determine whether
+they are in the language defined by grammar.
+It is best to break up the implementation into these two components.
+</p>
+
+</div>
+
+<div id="outline-container-3-1" class="outline-3">
+<h3 id="sec-3-1"><span class="section-number-3">3.1</span> Reading and storing the grammar</h3>
+<div class="outline-text-3" id="text-3-1">
+
+
+<p>
+The input grammar has to be read and stored in some
+suitable internal form so that when a string is to be
+processed, the parser can match up the string against the grammar.
+Reading and storing the grammar
+is a by now largely familiar process,
+the only really new aspects concern
+the handling of the non-terminals
+which are user declared identifiers.
+</p>
+<p>
+This part of the program falls naturally into five sections:
+the scanner, the parser, the code generator,
+the context sensitive check that all non-terminals are defined,
+and a relatively minor code optimisation.
+</p>
+<p>
+<i>The Scanner</i>:
+The scanner has to skip leading white space characters
+and then be able to recognise identifiers and the ten
+different single character symbols required by the grammar.
+</p>
+<p>
+To recognise identifiers,
+up to 16 characters have to be read into an otherwise blank string,
+and any additional characters are also read but they are not entered
+into the string.
+This part is independent of whether the strings are inbuilt
+reserved words &mdash; as they were in Chapter 7,
+or whether they are user declared identifiers.
+For the grammar processor to be written here,
+they are always user declared,
+and when a particular identifier is encountered the first time,
+then it has to be remembered
+to ensure that the same identifier always means the same thing.
+The remembering is best done by a symbol table.
+So, when an identifier is encountered,
+then the table is searched to determine whether it is there already.
+If it is not, then this occurrence is the first one,
+and then the identifier is entered.
+The number of non-terminals in a grammar
+is not likely to be large,
+so a linear search is quite adequate.
+An efficient linear search method uses a "sentinel"
+(see Wirth, 1976, p 13 and also in function <code>position</code>, pp 316, 327, 340):
+To determine whether an identifier is in the table,
+we put a copy of it in a special place at the end of the table,
+then we step from the front of the table comparing
+what is in the table with the identifier being searched for,
+until a match is found &mdash; and there is guaranteed to be a match,
+at least at the end of the table.
+If the match occurs at the special place at the end,
+then this is because the identifier was not already in the
+remainder of the table.
+In that case the identifier is entered properly,
+at the next free place in the table.
+The scanner has to report back to the parser
+that the symbol was an identifier &mdash; in our case always
+a non-terminal.
+In addition it has to report the location &mdash; old or new ---
+of the identifier.
+It is only in very simple cases,
+like the grammar processor,
+that the entire symbol table management can be handled by the scanner.
+</p>
+<p>
+To recognise the ten different single character symbols,
+the scanner just needs a <code>CASE</code> statement with ten cases,
+assigning ten appropriate values to a global variable <code>sym</code>
+that will be inspected by the parser.
+The eleventh value of that variable is reported
+when an identifier has been found.
+This completes the scanner.
+</p>
+<p>
+<i>The Parser</i>:
+For the parser most steps are quite familiar.
+However, since the non-terminal <code>grammar</code> is not called
+recursively, and in fact it is called only once,
+there is no need to have a parsing procedure by that name.
+Instead the right hand side of the production
+for the non-terminal <code>grammar</code> can be handled directly in the main program
+by a loop to process one or more productions.
+Furthermore,
+since the non-terminal <code>production</code> is not called recursively
+and in fact only once,
+and since the code for such productions will not need to be linked
+together,
+there is no need for a parsing procedure for productions either.
+So, the body of the loop just referred to
+can be made to handle the parsing of the right hand side
+of the production for the non-terminal <code>production</code>.
+The loop handling productions
+will be exited when there is no further semicolon
+as a production separator.
+At this point the main program should enforce a period,
+as required by the grammar.
+</p>
+<p>
+It is a good idea to allow instead of the period,
+say, a question mark
+&mdash; as the eleventh single character symbol in the scanner:
+it can be used during debugging to signal
+that some internal reporting is to take place.
+Useful debugging information is
+</p><ol>
+<li>a list of the non-terminals together with
+</li>
+</ol>
+
+<p>the root node for their expression tree,
+</p><ol>
+<li>the entire code that has been generated for the grammar, and
+</li>
+<li>during parsing of each input string
+</li>
+</ol>
+
+<p>the node currently being executed.
+This secret feature of the program was used while it was being developed,
+but it is not used in the demonstration run shown earlier.
+</p>
+<p>
+However, for the remaining non-terminals,
+namely <code>expression</code>, <code>term</code> and <code>factor</code>,
+it is necessary to have explicit parsing procedures
+because of the recursion.
+But these procedures are very similar to the corresponding ones
+in Chapter 9.
+Only the parsing procedure factor is a little more involved,
+since a factor is either
+a non-terminal (an identifier),
+or a terminal (a quoted character),
+or a parenthesised expression inside <code>()</code>,
+or a bracketed expression inside <code>[]</code>
+or a braced expression inside <code>{}</code>.
+As far as the parsing is concerned,
+there is no difference between parentheses, brackets or braces ---
+as long as they are matched.
+This completes the parsing of the input grammars.
+</p>
+<p>
+<i>Internal Code Generation</i>:
+It is best to make the internal code as simple and familiar
+as possible &mdash; as so often before the binary tree form
+recommends itself.
+The nodes of the tree can be binary nodes
+for alternation and concatenation,
+or unary nodes for repetitions and options,
+and nodes for non-terminals and terminals.
+Inside factor,
+there is a kind of chicken and egg problem:
+a factor might be part of a production
+defining a non-terminal N,
+and this particular factor is a call to the non-terminal M
+which has not yet been defined,
+so the code for it has not yet been generated.
+So, for factors that are non-terminals
+one can only generate a code node which records
+the position of the non-terminal in the symbol table.
+That position will always be known at this point,
+even if this was the first occurrence of that non-terminal.
+In all other respects the code for factors
+is unproblematic:
+for bracketed and braced expressions
+the code to be generated is a unary
+repetition node or a unary option node.
+The code generation for terms and factors
+is routine by now.
+</p>
+<p>
+In the main program the body of the loop
+which handles productions must contain a call to the parsing
+procedure <code>expression</code>.
+When this call has returned,
+then the last code that has been generated will be the principal
+node for that expression.
+At this point that code has to be attached to the location
+in the symbol table of the non-terminal
+for the production currently being processed by the loop.
+So, in the body of the loop,
+when the non-terminal has been read,
+its location in the symbol table has to be saved.
+Then, when the expression has been read,
+the code address of the last generated node
+has to be placed into the symbol table
+at the saved location.
+</p>
+<p>
+This completes the initial code generation:
+the symbol table should now contain
+an entry for each non-terminal
+and beside that an entry for the address
+of the principal node of the expression for that non-terminal.
+</p>
+<p>
+<i>Checking whether all non-terminals are defined</i>:
+When the parsing and code generating is completed,
+the symbol table should contain code for every non-terminal
+in the grammar, but of course it might not.
+This would happen if a non-terminal was used inside a factor
+somewhere, but there was no production for it.
+This error can only be detected at the end of reading the grammar,
+after the terminal period <code>.</code> has been checked in the main program.
+It is an easy matter now to step through the symbol table
+to see whether for every non-terminal there is a non-zero entry
+for the code.
+If there is a zero entry, then that non-terminal has never been
+defined in a production,
+and the input grammar is erroneous.
+This is a context-sensitive error which
+could not be specified by the rules of the formal grammar
+as given in the manual.
+If such an error occurs,
+the undefined non-terminal has to be reported
+and a message given before program termination.
+</p>
+<p>
+<i>A minor code optimisation</i>:
+If the main program has reached this point,
+every non-terminal entry in the symbol table
+will contain a code entry alongside.
+It would be possible to use the code
+as it is, as follows:
+the code that has been generated for factors
+consisting of a call to a non-terminal
+currently contains only the location of that non-terminal
+in the symbol table,
+because at the time such a factor was processed
+the non-terminal might not yet have been defined.
+To use this code,
+the symbol table would have to be consulted
+every time the code for that call is processed.
+This is slightly inefficient,
+so instead of the location in the symbol table
+we could now use the code that is now known to be
+associated with that non-terminal.
+To do this, the main program can make a single
+linear sweep through all the code
+that has been generated,
+and for each call of a non-terminal
+we put the code address of the code for the non-terminal
+into the call instruction itself.
+There is no need to delete the original location in the instruction,
+since there are two fields available in the instruction.
+Indeed, if one wanted to,
+the parser to be described in the next section
+could be given a tracing facility
+to write out the names of non-terminals
+when they are being called.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3-2" class="outline-3">
+<h3 id="sec-3-2"><span class="section-number-3">3.2</span> Processing input strings</h3>
+<div class="outline-text-3" id="text-3-2">
+
+
+<p>
+After reading and storing a grammar,
+the program repeatedly reads input strings and determines
+whether they or an initial segment are in the language
+defined by the grammar.
+Hence after the grammar has been read and checked by the main
+program, a <code>REPEAT</code> loop is needed to process input strings.
+The processing of the input strings falls naturally into
+three parts:
+</p><ol>
+<li>the input string has to be read and stored
+</li>
+</ol>
+
+<p>in some internal form,
+</p><ol>
+<li>the internal form of the string
+</li>
+</ol>
+
+<p>together with the internal form of the grammar
+have to be passed to a parsing routine, and
+</p><ol>
+<li>if the parsing of the string or an initial segment was
+</li>
+</ol>
+
+<p>successful then this has to be reported in some way,
+and if it was unsuccessful an error has to be reported.
+</p>
+<p>
+<i>Storing the input string</i>:
+For many likely uses input strings will be allowed to contain
+white space characters which are not significant;
+for example in the various languages we have seen so far
+this is the case.
+In programs that we have written for these languages
+the scanning procedure <i>getch</i>
+simply skipped white space characters.
+The simplest solution for the present purposes
+is to allow white space in the input strings,
+but to store only the printing characters.
+This will have the consequence that
+any quoted white space in the grammar will never match.
+The alternative, of forcing users to treat
+white space explicitly in the grammar
+is equally easy to implement,
+but makes the writing of the grammar itself cumbersome
+(see one of the exercises).
+Therefore we shall store the input strings without white space
+characters.
+Since we now need an explicit terminator for the
+input string, we select the period <code>.</code>.
+</p>
+<p>
+To implement this,
+we need to declare a string variable
+of some reasonable size (say 100),
+together with an integer variable which is the length of
+the actual string that has been read.
+Initially the length variable is set to 0;
+then we repeatedly read printing characters
+and put them into the string until
+the last such character is the string terminator period <code>.</code>.
+This completes the saving of the input string.
+</p>
+<p>
+<i>The parsing routine</i>:
+This is very similar to the expanding procedure
+of the regular expression program in Chapter 9.
+Indeed for the operators of concatenation, alternation,
+repetition and option the cases are identical.
+</p>
+<p>
+The first major difference concerns the atomic case of a terminal symbol.
+In the regular expression expander the character encoded in
+the instruction had to be written into the output buffer,
+then the continuation procedure had to be called,
+and upon return the character had to be removed from the output buffer
+by decrementing the buffer pointer.
+Here the situation is different:
+we are not creating new strings in an output buffer
+but we are testing existing strings in an input buffer.
+So the character encoded in the instruction
+has to be compared with the character
+in the input buffer at the current pointer position.
+If the two are identical,
+then parsing can proceed:
+the pointer is incremented,
+the continuation procedure is called,
+and when that returns the pointer is decremented again.
+On the other hand, if the two characters in the instruction
+and in the input buffer are not identical,
+then nothing happens &mdash; the continuation procedure is ignored
+and the recursive call simply returns.
+</p>
+<p>
+The second major difference concerns the case of non-terminal symbols.
+These result in a recursive call of the parsing procedure,
+just as in Chapter 7 a procedure call statement
+resulted in a recursive call of the
+interpreting procedure which executes statements.
+So, for non-terminals the parsing procedure
+has to call itself,
+using as the parameter the code which
+was originally stored in the symbol table
+and which in the optimisation stage was put into the
+calling instruction itself.
+</p>
+<p>
+<i>Reporting on the parse</i>:
+In the initial global call of the parsing procedure
+the first parameter is the code associated
+with the first non-terminal of the input grammar,
+and the second parameter is a global procedure
+which reports on the success of the parse.
+This global procedure is a continuation procedure,
+if it is ever called then an initial substring
+of the input string is in the language defined by the input grammar.
+A reasonable way to indicate this is by writing
+the accepted part of the input string up to the current pointer position,
+then a space,
+and then the remainder of the input string.
+This global procedure may be called several times,
+but always indirectly as a continuation.
+If it has not been called, then the main program
+has to report that the input string is ill-formed.
+To make this possible,
+before the call to the parsing procedure
+a counter is initialised to zero,
+and upon return the main program can inspect the counter
+to see whether it is still zero.
+The reporting procedure increments this counter
+every time it is called,
+it is also useful to write out the value of the counter
+before writing out the two parts of the input string.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> The program</h2>
+<div class="outline-text-2" id="text-4">
+
+
+<p>
+The following is the standard Pascal source program
+for the context free grammar parser.
+</p>
+
+
+
+<pre class="example">PROGRAM confre(input,output);
+(*  parser for CONtext FREe grammars *)
+(*  uses "continuation" procedures as parameters        *)
+
+LABEL 99;
+
+CONST
+    alfalength = 16;
+    emptyalfa = '                '; (* 16 spaces *)
+    maxnonterminals = 50;
+    maxcode = 1000;
+    maxstring = 100;
+
+TYPE
+    alfa = PACKED ARRAY [1..alfalength] OF char;
+    message = PACKED ARRAY [1..30] OF char;
+    pointer = 0..maxcode;
+    symbol = (badchar,query,nonterminal,quote,altern,equal,
+        lparen,rparen,lbrack,rbrack,lbrace,rbrace,semcol,period);
+    operator = (tsy,nsy,alt,cat,rep,opt);
+    node = RECORD op : operator; a,b : integer END;
+VAR
+    ch,lastch : char;
+    sym : symbol;
+    al : alfa;
+    table : ARRAY [0 .. maxnonterminals] OF
+        RECORD name : alfa; adr : integer END;
+    lasttable,location : integer;
+    code : ARRAY [1..maxcode] OF node;
+    lastcode : pointer;
+
+    instring : ARRAY [1..maxstring] OF char;
+    sp,sl : integer;
+
+    tracing : boolean;
+    i : integer;
+    num_parses : integer;
+
+PROCEDURE getch;
+BEGIN
+IF eof THEN GOTO 99;
+IF eoln THEN BEGIN readln; writeln; ch := ' ' END
+        ELSE BEGIN read(ch); write(ch) END;
+END;
+
+(* - - - - -   R E A D I N G   T H E   G R A M M A R   - - - - - *)
+
+PROCEDURE error(mes : message);
+BEGIN
+write('error: seen "');
+IF sym = nonterminal THEN write(al) ELSE write(lastch);
+writeln('" when ',mes);
+GOTO 99
+END (* error *);
+
+PROCEDURE getsym;
+VAR k : integer;
+BEGIN
+WHILE ch &amp;lt= ' ' DO getch;
+IF ch IN ['A'..'Z','a'..'z'] THEN
+    BEGIN
+    sym := nonterminal; k := 0; al := emptyalfa;
+    REPEAT
+        IF k &lt; alfalength  THEN
+            BEGIN k := k + 1; al[k] := ch  END;
+        getch
+        UNTIL NOT (ch IN ['A'..'Z','a'..'z','0'..'9','_']);
+    table[0].name := al;
+    location := lasttable;
+    WHILE table[location].name &amp;lt&gt; al
+        DO location := location - 1;
+    IF location = 0 THEN
+        BEGIN
+        lasttable := lasttable + 1;
+        WITH table[lasttable] DO
+            BEGIN name := al; adr := 0 END;
+        location := lasttable
+        END
+    END
+ELSE
+    BEGIN
+    lastch := ch; getch;
+    CASE lastch OF
+        '?' : sym := query;
+        '=' : sym := equal;
+       '''' : sym := quote;
+        '|' : sym := altern;
+        '(' : sym := lparen;
+        ')' : sym := rparen;
+        '[' : sym := lbrack;
+        ']' : sym := rbrack;
+        '{' : sym := lbrace;
+        '}' : sym := rbrace;
+        ';' : sym := semcol;
+        '.' : sym := period;
+        OTHERWISE
+            BEGIN
+            sym := badchar;
+            error('this character is illegal     ')
+            END
+        END (* CASE *)
+    END (* ELSE *)
+END  (* getsym *);
+
+PROCEDURE generate(o : operator; x,y : integer);
+BEGIN
+lastcode := lastcode + 1;
+WITH code[lastcode] DO
+    BEGIN op := o; a := x; b := y END
+END; (* generate *)
+
+PROCEDURE expression;
+VAR left : pointer;
+
+    PROCEDURE term;
+    VAR left : pointer;
+
+        PROCEDURE factor;
+        BEGIN (* factor *)
+        CASE sym OF
+            nonterminal :
+                BEGIN
+                generate(nsy,location,0 (* fixed in main *) );
+                getsym
+                END;
+            quote :
+                BEGIN
+                IF ch &lt; ' ' THEN
+                    error('no white space as terminal    ');
+                IF ch = '.' THEN
+                    error('no "." as terminal            ');
+                generate(tsy,ord(ch),0);
+                getch; getsym;
+                END;
+            lparen :
+                BEGIN
+                getsym;
+                expression;
+                IF sym = rparen THEN getsym ELSE
+                    error('")" expected                  ')
+                END;
+            lbrack :
+                BEGIN
+                getsym;
+                expression;
+                IF sym = rbrack THEN getsym ELSE
+                    error('"]" expected                  ');
+                generate(rep,0,lastcode)
+                END;
+            lbrace :
+                BEGIN
+                getsym;
+                expression;
+                IF sym = rbrace THEN getsym ELSE
+                    error('"}" expected                  ');
+                generate(opt,0,lastcode)
+                END;
+            OTHERWISE
+                error('beginning of factor expected  ')
+            END (* CASE *)
+        END; (* factor *)
+
+    BEGIN (* term *)
+    factor;
+    IF sym IN [nonterminal,quote,lparen,lbrack,lbrace] THEN
+        BEGIN
+        left := lastcode;
+        term;
+        generate(cat,left,lastcode)
+        END
+    END; (* term *)
+
+BEGIN (* expression *)
+term;
+IF sym = altern THEN
+    BEGIN
+    getsym;
+    left := lastcode;
+    expression;
+    generate(alt,left,lastcode)
+    END
+END; (* expression *)
+
+(* - - - - -   I N T E R P R E T E R   - - - - - *)
+
+PROCEDURE show;
+VAR i : integer;
+BEGIN (* show *)
+IF num_parses = 0 THEN writeln(' ... well-formed -');
+num_parses := num_parses + 1;
+write(num_parses:0,':',chr(9) (* tab *) );
+FOR i := 1 TO sp - 1 DO write(instring[i]);
+write('                ');
+FOR i := sp TO sl - 1 DO write(instring[i]);
+writeln
+END; (* show *)
+
+PROCEDURE parse(t : integer; PROCEDURE cp);
+
+    PROCEDURE alsoright;
+    BEGIN parse(code[t].b,cp) END;
+
+    PROCEDURE sameagain;
+    BEGIN parse(t,cp) END;
+
+BEGIN (* parse *)
+WITH code[t] DO
+    BEGIN
+    IF tracing THEN writeln(t,op,a,b);
+    CASE op OF
+        tsy : IF instring[sp] = chr(a) THEN
+                BEGIN sp := sp+1; cp; sp := sp-1 END;
+        nsy : parse(b,cp);
+        cat : parse(a,alsoright);
+        alt : BEGIN parse(a,cp); parse(b,cp) END;
+        rep : BEGIN cp; parse(b,sameagain) END;
+        opt : BEGIN cp; parse(b,cp) END;
+        END (* CASE *)
+    END (* WITH *)
+END; (* parse *)
+
+(* - - - - -   M A I N   - - - - - *)
+
+BEGIN (* main *)
+lastcode := 0; lasttable := 0; ch := ' ';
+REPEAT (* read productions *)
+    getsym;
+    IF sym &amp;lt&gt; nonterminal THEN
+        error('non-terminal for production   ');
+    i := location;
+    getsym;
+    IF sym = equal THEN getsym ELSE
+        error('"=" expected in production    ');
+    expression;
+    table[i].adr := lastcode;
+    UNTIL sym &amp;lt&gt; semcol;
+IF sym = query THEN tracing := true ELSE
+    IF sym = period THEN tracing := false ELSE
+        error('"." expected at end of grammar');
+FOR i := 1 TO lasttable DO
+    IF table[i].adr = 0 THEN
+        BEGIN
+        writeln('undefined non-terminal: ',table[i].name);
+        GOTO 99
+        END;
+FOR i := 1 TO lastcode DO
+    WITH code[i] DO
+        IF op = nsy THEN b := table[a].adr; (* fixup *)
+IF tracing THEN
+    BEGIN
+    writeln('non-terminals:');
+    FOR i := 1 TO lasttable DO
+        WITH table[i] DO writeln(name,' : ',adr:0);
+    writeln('code:');
+    FOR i := 1 TO lastcode DO
+        WITH code[i] DO writeln(i:4, op:12, a:8, b:8);
+    writeln
+    END;
+REPEAT (* read and parse strings *)
+    sl := 0;
+    REPEAT
+        REPEAT getch UNTIL ch &gt; ' ';
+        sl := sl + 1; instring[sl] := ch;
+        UNTIL ch = '.';
+    writeln;
+    IF sl &gt; 1 THEN
+        BEGIN
+        sp := 1; num_parses := 0;
+        parse(table[1].adr,show);
+        IF num_parses = 0 THEN writeln(' ... ill-formed')
+        END;
+    UNTIL false;
+99:
+END.
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Exercises and reading</h2>
+<div class="outline-text-2" id="text-5">
+
+
+<p>
+<i>Another input grammar</i>:
+The following is another input grammar,
+this time for a small programming language,
+followed by a few input strings.
+</p>
+
+
+
+<pre class="example">STATEMENTSEQUENCE =
+      STATEMENT  [ '; STATEMENT ] ;
+
+STATEMENT =
+       LETTER  ': '=  EXPRESSION
+    |  'B 'E 'G 'I 'N  STATEMENTSEQUENCE  'E 'N 'D
+    |  'I 'F  EXPRESSION  'T 'H 'E 'N  STATEMENT
+        { 'E 'L 'S 'E  STATEMENT }
+    |  'W 'H 'I 'L 'E  EXPRESSION  'D 'O  STATEMENT
+    |  'R 'E 'A 'D  LETTER
+    |  'W 'R 'I 'T 'E  EXPRESSION ;
+
+EXPRESSION =
+    FACTOR  [ BINARYOPERATOR FACTOR ] ;
+
+FACTOR =
+       LETTER
+    |  DIGIT  [ DIGIT ]
+    |  '(  EXPRESSION  ') ;
+
+LETTER =
+      'a | 'b | 'c | 'd | 'e | 'f | 'g | 'h | 'i |
+      'j | 'k | 'l | 'm | 'n | 'o | 'p | 'q | 'r |
+      's | 't | 'u | 'v | 'w | 'x | 'y | 'z ;
+
+BINARYOPERATOR =
+      '+ | '- | '* | '/ | 'M 'O 'D | '&lt; | '&gt; | '= | '&lt; '= | '&gt; '= ;
+DIGIT =
+      '0 | '1 | '2 | '3 | '4 | '5 | '6 | '7 | '8 | '9 .
+
+
+i := 10;
+WHILE i &gt;= 1 DO
+  BEGIN WRITE i * i; i := i - 1 END.
+
+BEGIN
+i := 10;
+WHILE i &gt; 0 DO
+  BEGIN WRITE i * i; i := i - 1 END
+END.
+
+IF a = b THEN IF c = d THEN e := f ELSE g := h.
+</pre>
+
+
+<p>
+How many initial segments are accepted for each
+of the three input strings, and what are they?
+Where does the parser have to backtrack?
+Where does the parser find two ways of parsing an input string?
+</p>
+<p>
+<i>A grammar written in itself</i>:
+The grammar given in the manual is a grammar for
+a language for expressing grammars.
+Can you modify the grammar in the manual
+so that it is written in the same language which it describes?
+Alternatively,
+can you devise a different context free grammar
+suitable for describing context free languages,
+including the language it is written in?
+</p>
+<p>
+<i>A subset of English</i>:
+A grammar processor in which the terminals have to be single
+characters is hardly the sort of tool one would use
+to process a grammar of English.
+Nevertheless, as an exercise,
+write a context free grammar for a very small subset of English
+and use the program to parse some candidate sentences.
+The sentence <code>Time flies like an arrow</code>
+is a classic example of structural ambiguity ---
+can your grammar handle it?
+</p>
+<p>
+<i>White space in grammars</i>:
+Assume that you have two programs which read grammars
+and then parse strings.
+One of them is the one we have written,
+the other saves white space characters in the input string
+and allows them in the grammar.
+For each of the two programs,
+write a grammar for propositional logic with operator
+precedences,
+with white space allowed for readability.
+Compare the two grammars that you have written for readability.
+Compare the two programs (one fictitious) for efficiency.
+</p>
+<p>
+<i>No initial segments</i>:
+Modify the program so that a parse is successful
+only  if the entire input string has been consumed.
+</p>
+<p>
+<i>Sets of characters</i>:
+It is very bothersome for people to write long alternatives
+of characters in the grammar, such as ='a | 'b | 'c | 'd= etc.
+It would be more convenient to be able to write a set
+such as <code>{abcd}</code>,
+which is taken to mean the alternation of the characters.
+It is also very inefficient for the computer if
+the parsing procedure has to go through what is effectively
+a linear list of characters.
+It would be more efficient if the occurrence of
+a character, say <code>c</code> in the input string ="efgchi"=
+could be tested by using a faster method for determining
+whether it is in the set of characters <code>{abcd}</code>.
+So there are two independent reasons for
+extending the program.
+Implement such an extension;
+represent an alternation of characters by a <code>SET OF char</code>
+in the tree representation.
+</p>
+<p>
+<i>Reading</i>:
+Sudkamp (1988, pp 82 - 86)
+gives a non-recursive top down algorithm
+for parsing in accordance with a context free grammar,
+it uses an explicit stack to implement the backtracking.
+For a very recent survey of parsing techniques,
+see Grune and Jacobs (1990).
+On pp 253 - 258 it contains the "Unger parser",
+for context free languages,
+which is very different from the backtracking parser
+developed in this chapter.
+</p>
+<p>
+<i>A Language Generator</i>:
+The program in Chapter~9 was a generator,
+the program in this chapter is a parser.
+Modify this parser so that it becomes a generator
+for a given context free grammar.
+As for the regular expression expander of Chapter~9,
+it will be necessary to impose a (preferably flexible)
+length limit on the strings generated.
+</p>
+<p>
+<i>Grammar transformations</i>:
+We have used extended BNF notation for the input grammar
+because it lends itself for efficient parsing.
+In many theoretical expositions only a minimal notation
+is used:
+there are no options, no repetitions and no parentheses.
+For each non-terminal there are one or more productions
+whose right hand sides are alternatives,
+and each right hand side consists of just a concatenation
+of terminals and non-terminals.
+Rewrite the program so that,
+instead of reading an input grammar and then parsing input strings,
+it reads a grammar and then writes out an equivalent grammar
+in this minimal notation.
+This is an example of a grammar transformation.
+Alternatively, rewrite the program to accept grammars
+in this minimal form and then parse strings as before,
+but be prepared for some loss of efficiency (Why ?).
+Other transformations that you might consider are from (extended) BNF
+or from minimal notation
+to one of the so-called standard forms:
+Chomsky normal form and Greibach normal form.
+Aho and Ullman (1977) is a now classic theoretical text
+with chapters on context free grammars and on normal forms.
+Hopcroft and Ullman (1979) is another comprehensive theoretical
+text in the field.
+</p>
+<p>
+<i>Rewriting systems</i>:
+Grammars are only one species of a wide class of what are called
+rewriting systems.
+Some of these, like grammars,
+are <i>generating</i> systems which start in an initial configuration
+and eventually generate a string.
+Others, usually called automata,
+are <i>accepting</i> systems,
+they start with a string and eventually reach
+either an accepting or rejecting configuration.
+Both kinds can be nondeterministic in the sense that
+at any one time several moves or changes are possible.
+For an overview of both kinds of systems,
+see Salomaa (1985, Chapters 2 and 3).
+Many of the systems described there
+lend themselves to an implementation
+using the backtracking techniques of the present
+and the two previous chapters.
+</p>
+<p>
+<i>For Reflection</i>:
+Study the evolution of the procedure <code>getsym</code>
+in most of the previous programs.
+Notice how various capabilities have changed.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> Proplog &mdash; propositional Prolog</h2>
+<div class="outline-text-2" id="text-6">
+
+
+<p>
+This sections describes a very special case of context free grammars
+and its relation to the propositional fragment
+of the programming language Prolog.
+</p>
+
+</div>
+
+<div id="outline-container-6-1" class="outline-3">
+<h3 id="sec-6-1"><span class="section-number-3">6.1</span> Generalising the use of grammars</h3>
+<div class="outline-text-3" id="text-6-1">
+
+
+<p>
+Grammars define languages or sets of strings.
+Context free grammars define a particular species of languages,
+the context free languages.
+Context free grammars may be used by a general parser
+to determine whether a given string is in the language,
+or they may be used by a general generator
+to construct all or some of the strings in the language.
+The program in this chapter was a general parser,
+and one of the exercises invited you to modify it so that
+it becomes a generator.
+In the remainder of this chapter we shall look at grammars
+which define two very special languages:
+the empty language which contains no strings at all,
+and the language which contains just the null string.
+</p>
+<p>
+Grammars consist of one or more productions
+which declare non-terminals.
+Each non-terminal then defines a language or set of strings.
+In grammars one of the non-terminals is normally singled out
+as the starting non-terminal,
+either explicitly or implicitly &mdash; say, the first.
+The language defined by the grammar is then taken to be the one
+defined by the starting non-terminal.
+But grammars can equally well be used without a fixed
+starting non-terminal,
+by selecting different non-terminals as required.
+Hence, whether for parsing or for generating,
+a specific non-terminal of the grammar can be specified
+for different tasks.
+One can go one step further:
+instead of specifying a non-terminal which is defined in the grammar
+one can specify an expression built up from several
+non-terminals and even terminals,
+and then require parsing or generating to be done for that.
+For example, using the grammar of the first exercise,
+one might specify
+</p>
+
+
+
+<pre class="example">STATEMENT  DIGIT  '!  ( FACTOR | '% )
+</pre>
+
+
+<p>
+as the starting expression for parsing or for generating.
+Among the strings accepted or generated will be:
+</p>
+
+
+
+<pre class="example">x := y  8  !  123
+IF  a = b  THEN  c := d  3  !  %
+</pre>
+
+
+<p>
+and so on.
+</p>
+<p>
+In the program for the general parser we have insisted that all
+non-terminals must be defined.
+If a non-terminal is being used somewhere as a factor
+but has not been defined after the reading of the grammar is complete,
+then this was taken to be an error.
+Indeed, in normal usage of grammars an undefined non-terminal
+serves no purpose at all;
+more likely than not it is due to a typing error.
+However, in what follows we shall allow undefined non-terminals
+and make good use of them.
+</p>
+<p>
+In grammars there are generally many terminal symbols,
+and then they occur as factors inside expressions,
+hence inside the right hand sides of productions.
+In the regular expression expander of Chapter 9
+we even allowed the null string, written as <code>0</code>, as a factor.
+Recall that <code>0</code> has the property that for all strings S,
+<code>0=S = S = S=0</code>,
+and hence in particular that <code>00</code> = <code>0</code>.
+It would have been easy to add the null string
+as a possible factor to the general parser of this chapter.
+Parsing the null string always succeeds,
+so in procedure parse we might have had a further case:
+</p>
+
+
+
+<pre class="example">nul : cp;
+</pre>
+
+
+<p>
+In the next section we shall look at grammars in which
+the null string is the <i>only</i> terminal.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-2" class="outline-3">
+<h3 id="sec-6-2"><span class="section-number-3">6.2</span> A dramatic restriction on productions</h3>
+<div class="outline-text-3" id="text-6-2">
+
+
+<p>
+Grammars in which there are no terminals at all can only generate
+the empty language {} which does not contain any strings as members.
+Grammars in which there are no proper terminals would seem quite useless,
+but this is not so.
+Let us now restrict the terminals of a grammar
+to allow only the (improper) terminal, the null string, <code>0</code>.
+Such a grammar can generate at most the language <code>{0}</code>
+whose only member is the null string.
+But note that this language is different from the empty language <code>{}</code>
+which does not have any members at all.
+</p>
+<p>
+Without further loss of generality we stipulate that the right hand
+side of any production is either just the null string,
+or it is an expression built up solely from non-terminals.
+Here is an example:
+</p>
+
+
+
+<pre class="example">alpha  =  0;
+beta  =  0;
+gamma  =  alpha delta;
+epsilon  =  beta;
+zeta  =  eta | epsilon;
+theta  =  iota | gamma.
+</pre>
+
+
+<p>
+Note that delta, eta and iota are used but not defined,
+this is allowed now.
+Remember also that we are no longer assuming that there is a fixed
+non-terminal which is the starting symbol.
+Instead a starting symbol or a whole
+expression has to be specified for generation.
+</p>
+
+
+
+<pre class="example">expression                                              language
+beta                                                    {0}
+delta                                                   {}
+theta                                                   {}
+beta  zeta                                              {0}
+gamma  | iota  |  theta                                 {}
+alpha  epsilon  (zeta | beta | theta)                   {0}
+</pre>
+
+
+<p>
+Think of the expressions in the left column as questions about the grammar &mdash; "what is the language generated by this expression?", and think of the right hand column as the answers to this question.  Since there are only two possible answers, we can treat the questions as being of the form: "is the language generated by this expression the language containing just the null string?".  Answers will no longer be <code>{0}</code> or <code>{}</code>, but <code>yes</code> or <code>no</code> instead.  Note that in normal use of a grammar the interest is in the typically complex languages generated, the grammar itself is only a tool.  Here, however, the interest is in the productions of the grammar itself.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-3" class="outline-3">
+<h3 id="sec-6-3"><span class="section-number-3">6.3</span> A logical interpretation</h3>
+<div class="outline-text-3" id="text-6-3">
+
+
+<p>
+The restricted grammars and the questions in the preceding section can be given a surprisingly different interpretation.  There are two kinds of productions:
+</p>
+<ol>
+<li>those which have the null string as their right hand side &mdash; these we now call <i>facts</i>.
+
+</li>
+<li>those which have an expression built up from non-terminals as their right hand side &mdash; these we now call <i>rules</i>.
+</li>
+</ol>
+
+
+<p>
+The idea is that facts state that something is known to be true, and that rules state that something can be shown to be true if the right hand side can be shown to be true.  A <i>database</i> is a collection of facts and rules.  Questions are interpreted as requests to show that something is true &mdash; a <code>yes</code> answer indicates that it can be shown, a <code>no</code> answer indicates that it cannot.  In expressions the explicit alternation symbol <code>|</code> is taken to mean OR, the (implicit) concatenations are taken to mean AND; there is no negation.
+</p>
+<p>
+This is the essence of Proplog, the propositional fragment of the programming language Prolog.  The fragment, its use and an implementation are described in detail in Maier and Warren (1988 Part I).  To make the surface syntax identical to that of Prolog, we make the following changes: Productions are not separated by semicolons but terminated with periods.  For productions that are facts the === and the <code>0</code> are not written at all.  For productions that are rules the === is replaced by a turnstyle <code>:-</code> to mean <i>if</i>.  In expressions, alternations are now called disjunctions and written with an infix semicolon <code>;</code> to mean <i>or</i>.  Concatenations are now called conjunctions and are written with an explicit infix comma =,= to mean <i>and</i>.
+</p>
+<p>
+The following is a tiny database written in this form, followed by several questions.  The entries to the database are preceded by a <code>+</code>, there are two facts and four rules.  The questions are preceded by a <code>-</code>, there are six questions, each followed immediately by a yes/no answer.
+</p>
+
+
+
+<pre class="example">+
+Sun_is_shining.
+Peter_is_happy.
+Weather_is_nice  :-  Sun_is_shining, It_is_warm.
+Peter_is_pleasant  :-  Peter_is_happy.
+Mary_is_happy  :-  John_is_pleasant ; Peter_is_pleasant.
+John_is_happy  :-  John_won_lottery ; Weather_is_nice.
+-
+Peter_is_happy.
+ ... yes
+It_is_warm.
+ ... no
+John_is_happy.
+ ... no
+Peter_is_happy, Mary_is_happy.
+ ... yes
+Weather_is_nice ; John_won_lottery ; John_is_happy.
+ ... no
+Sun_is_shining, Peter_is_pleasant,
+  (Mary_is_happy ; Peter_is_happy ; John_is_happy).
+ ... yes
+</pre>
+
+
+<p>
+Note that the database and the questions and answers are <i>isomorphic</i> to the grammar and the expressions and languages of the previous section.
+</p>
+<p>
+Proplog is less expressive than propositional logic, just as Prolog is less expressive than predicate logic.  For example, Proplog cannot be used to demonstrate the validity of the complex constructive dilemma: <code>p v q, p &gt; r, q &gt; s, therefore s v r</code>.  In the same way, Prolog cannot be used to demonstrate the validity of: <code>Everything is F v G, ALL F are H, ALL G are I, therefore Everything is H v I</code>.  Nevertheless, Prolog is an immensely useful programming language, especially in applications that require backtracking.  Its propositional fragment Proplog illustrates its basic structure and its origins in grammars.  An understanding of the difference between Proplog and classical propositional logic goes a long way towards explaining the difference between Prolog and classical predicate logic.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-4" class="outline-3">
+<h3 id="sec-6-4"><span class="section-number-3">6.4</span> <i>Exercise</i>:</h3>
+<div class="outline-text-3" id="text-6-4">
+
+
+<p>
+Modify the general parser for context free grammars so that it becomes a theorem prover for Proplog.  You will need to distinguish between adding new facts and rules to the database on the one hand, and asking questions on the other.  One way is to precede each question with a question mark.  Another is to have two modes: entering mode and questioning mode, together with some way of switching between the two.  For instance, <code>+</code> and <code>-</code> could be used for the switching, as in the example given above.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-5" class="outline-3">
+<h3 id="sec-6-5"><span class="section-number-3">6.5</span> <i>Negation</i>:</h3>
+<div class="outline-text-3" id="text-6-5">
+
+
+<p>
+All Prolog systems have a form of negation; however, it is different from the classical one.  For a given database, if <code>p</code> can be proven inside an expression, then <code>not p</code> cannot, and if <code>p</code> cannot be proven, then <code>not p</code> can.  But there is no way of entering negative facts into the database.  However, if it is assumed that the database contains all the positive facts and rules that are relevant, then the absence of a fact or rule should be sufficient to establish its falsity.  This assumption is called the <i>closed world assumption</i>, and it makes Proplog's and Prolog's <i>negation by failure</i> quite different from its counterpart in classical logic.  Note that negation of either kind does not correspond to anything familiar in grammars.  Implement negation by failure in your theorem prover for Proplog.
+</p></div>
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-01-11 07:38:01 CST</p>
+<p class="author">Author: michal</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>

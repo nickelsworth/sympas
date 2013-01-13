@@ -1,0 +1,1180 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Chapter 13 : A deterministic parser</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="Chapter 13 : A deterministic parser"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-01-11 07:37:59 CST"/>
+<meta name="author" content="michal"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">Chapter 13 : A deterministic parser</h1>
+
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 intro</a></li>
+<li><a href="#sec-2">2 A very simple parsing machine</a></li>
+<li><a href="#sec-3">3 Sample runs</a></li>
+<li><a href="#sec-4">4 Designing the implementation</a>
+<ul>
+<li><a href="#sec-4-1">4.1 The parsing procedures</a></li>
+<li><a href="#sec-4-2">4.2 <i>The scanner</i>:</a></li>
+<li><a href="#sec-4-3">4.3 <i>Reading the Grammar</i>:</a></li>
+<li><a href="#sec-4-4">4.4 Code generation</a></li>
+<li><a href="#sec-4-5">4.5 <i>Generating op-codes</i>:</a></li>
+<li><a href="#sec-4-6">4.6 <i>Calculating addresses</i>:</a></li>
+<li><a href="#sec-4-7">4.7 The interpreter</a></li>
+</ul>
+</li>
+<li><a href="#sec-5">5 The program</a></li>
+<li><a href="#sec-6">6 Exercises and reading</a>
+<ul>
+<li><a href="#sec-6-1">6.1 <i>Another grammar</i>:</a></li>
+<li><a href="#sec-6-2">6.2 <i>Manual</i>:</a></li>
+<li><a href="#sec-6-3">6.3 <i>Post Mortem</i>:</a></li>
+<li><a href="#sec-6-4">6.4 <i>Eliminating redundant instructions</i>:</a></li>
+<li><a href="#sec-6-5">6.5 <i>Cleaner code generation</i>:</a></li>
+<li><a href="#sec-6-6">6.6 <i>Multi-character words</i>:</a></li>
+<li><a href="#sec-6-7">6.7 <i>Status return</i>:</a></li>
+<li><a href="#sec-6-8">6.8 <i>Reading</i>:</a></li>
+<li><a href="#sec-6-9">6.9 <i>A Translating Machine</i>:</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div class="outline-text-2" id="text-1">
+
+
+<p>
+In previous chapters we have always designed top down, in this chapter we shall design at least in part bottom up.  We are given a machine with just three instructions, <i>call</i>, <i>return</i> and one other having to do with <i>match</i>\ing an input character with one of a set of allowed characters.  Our task is to design a high level front end for this machine.  The result is a fairly general parser which reads a grammar to be translated into machine code.  The machine then reads strings and determines whether they are in the language defined by the grammar.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> A very simple parsing machine</h2>
+<div class="outline-text-2" id="text-2">
+
+
+<p>
+One aim of this chapter is to make the notion of procedure call and return explicit.  We have used procedures in all our programs, and we have implemented languages in which recursion was possible.  But in almost all our implementations we have always relied on the recursion facility offered by our implementation language.  The one exception was the predictive parser used in the semantic tableaux program in Chapter~10.  In this chapter we shall see how recursion really works, by studying a system in which there is call and return and almost nothing else.  Of course there has to be something else, otherwise there would be no point at all to the calls and returns.  The third instruction will be for matching characters which are being read from a file.  If the currently visible character in the file is one of a set of allowed characters, then execution continues at one place, otherwise at another place.
+</p>
+<p>
+In detail, the instructions consist of up to four fields: an operation, two addresses and a set of characters.  Only the matching instruction uses all four fields.
+</p>
+
+
+
+<pre class="example">        field1          field2  field3  field4
+ 
+1.      call            ad1     ad2     -
+2.      return          -       -       -
+3.      match           ad1     ad2     char-set
+</pre>
+
+
+<p>
+The parsing machine interprets code consisting of an array of instructions.  It maintains a program counter which always points to the instruction currently being executed.  The machine also maintains a stack of return addresses.  The program counter is constantly updated by the instruction being executed, and in the case of the return instruction the exact value is popped from the stack where it has previously been pushed by a call instruction.  The machine reads characters from an input file.  Apart from the one character lookahead, there is no input buffer and hence no possibility to backtrack, to back up to a previous position in the input string.  Therefore only deterministic parsing is possible.  In detail, the machine operates as follows:
+</p>
+
+
+
+<pre class="example">Read the first character
+Set the program counter to the first code address
+REPEAT
+    WITH the code pointed at by the program counter DO
+        CASE the operation OF
+            call :
+                push ad1 onto the stack
+                set the program counter to ad2
+            return :
+                pop the saved address into the program counter
+            match :
+                IF the current character from the input file
+                   is a member of the set char-set
+                THEN
+                    read the next character from the input file
+                    set the program counter to ad1
+                ELSE
+                    set the program counter to ad2
+    UNTIL
+        the program counter does not point to a legal address
+</pre>
+
+
+<p>
+The input string from the file is accepted if the program counter has a special <i>accept</i> value at termination and the end of the input string has been reached.  So, unlike the parser of Chapter~11, acceptance requires the whole input string to be well-formed.
+</p>
+<p>
+Our task is to design a high-level BNF-like language and to write a compiler from this high level language to the machine language of three instructions.  The general parser of Chapter~11 was able to handle any context free grammar.  The one to be developed in this chapter is less general, it can only handle deterministic grammars in which there is no need to backtrack.  This restriction results from the inability of the parsing machine to go back to a previous position in the input file.  The machine has another potential shortcoming: there is no way for a call to return and to signal to the callee whether it was successful.  For the grammar this has the consequence that in a group of alternatives all but possibly the last has to start with a terminal.  In the version to be developed here, such terminals even have to be explicitly given at the point of choice.  (See one of the exercises for the design of a less restrictive version.)
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Sample runs</h2>
+<div class="outline-text-2" id="text-3">
+
+
+<p>
+What follows is a record of two runs of the program LL1GEN.  In the first run a grammar for logical expressions is given; for variety negation is not handled by recursion.  The first version of that grammar contains an intentional context sensitive error which is promptly reported.  The second version of the same grammar is acceptable.  It is followed by a listing of the internal code that has been generated.  Note that some match instructions have an empty characterset, and since no current input character can match, these instructions are effectively =GOTO=s.  Then follow some input strings to be parsed, first some acceptable input strings and then some unacceptable input strings.  For the first acceptable string and for the first unacceptable string the tracing facility is turned on.  The tracing shows the current character from the input file, the top of the stack indicating the depth of the calls, the value of the program counters and then the relevant fields of the current instruction: the operation field and the remaining three fields as required.
+</p>
+<p>
+In the second run a grammar for a simple imperative language is given.  Note that statements are optional, this allows semicolons to be followed by an empty statement &mdash; and hence semicolons can be used as statement terminators instead of separators.  Since the internal code for this grammar is quite large, it is not shown.  Then follow three programs, two with an error and one without.  Even though the programs are quite short, the trace of their parses would be quite long, so it is not shown.
+</p>
+
+
+
+<pre class="example">$ ! FIRST EXAMPLE - a grammar for logical expressions
+$ RUN 31LL1GEN.EXE
+
+FORMULA =
+    EXPRESSION { "&gt;=" FORMULA } ;
+EXPRESSION =
+    TERM [ "v" TERN ] ;
+TERM =
+    FACTOR [ "&amp;" FACTOR ] ;
+FACTOR =
+    [ "-" ]  ( "abcdefghijklmnopqrstuvwxyz01" | "(" FORMULA ")" ) .
+
+CONTEXT ERROR : undefined nonterminal TERN
+start again
+
+FORMULA =
+    EXPRESSION { "&gt;=" FORMULA } ;
+EXPRESSION =
+    TERM [ "v" TERM ] ;
+TERM =
+    FACTOR [ "&amp;" FACTOR ] ;
+FACTOR =
+    [ "-" ]  ( "abcdefghijklmnopqrstuvwxyz01" | "(" FORMULA ")" ) ?
+
+CODE FOR THIS GRAMMAR :
+adr      op ad1 ad2     c-set
+
+ 1.        FORMULA
+
+  1    CALL   2   2   (6)  EXPRESSION
+  2   MATCH   3   4   =&gt;
+  3    CALL   4   1   (1)  FORMULA
+  4   MATCH   5   5
+  5  RETURN
+
+ 2.        EXPRESSION
+
+  6    CALL   7   3   (11)  TERM
+  7   MATCH   8   9   v
+  8    CALL   7   3   (11)  TERM
+  9   MATCH  10  10
+ 10  RETURN
+
+ 3.        TERM
+
+ 11    CALL  12   4   (16)  FACTOR
+ 12   MATCH  13  14   &amp;
+ 13    CALL  12   4   (16)  FACTOR
+ 14   MATCH  15  15
+ 15  RETURN
+
+ 4.        FACTOR
+
+ 16   MATCH  16  17   -
+ 17   MATCH  18  18
+ 18   MATCH  22  19   01abcdefghijklmnopqrstuvwxyz
+ 19   MATCH  20   0   (
+ 20    CALL  21   1   (1)  FORMULA
+ 21   MATCH  22   0   )
+ 22  RETURN
+
+ready
+
+?   q &amp; r .
+PARSING ...
+ ch   top    pc      op ad1 ad2   charset or called non-terminal
+"q"     1     1    CALL   2   2   (6)  EXPRESSION
+"q"     2     6    CALL   7   3   (11)  TERM
+"q"     3    11    CALL  12   4   (16)  FACTOR
+"q"     4    16   MATCH  16  17   -
+"q"     4    17   MATCH  18  18
+"q"     4    18   MATCH  22  19   01abcdefghijklmnopqrstuvwxyz
+"&amp;"     4    22  RETURN
+"&amp;"     3    12   MATCH  13  14   &amp;
+"r"     3    13    CALL  12   4   (16)  FACTOR
+"r"     4    16   MATCH  16  17   -
+"r"     4    17   MATCH  18  18
+"r"     4    18   MATCH  22  19   01abcdefghijklmnopqrstuvwxyz
+"."     4    22  RETURN
+"."     3    12   MATCH  13  14   &amp;
+"."     3    14   MATCH  15  15
+"."     3    15  RETURN
+"."     2     7   MATCH   8   9   v
+"."     2     9   MATCH  10  10
+"."     2    10  RETURN
+"."     1     2   MATCH   3   4   =&gt;
+"."     1     4   MATCH   5   5
+"."     1     5  RETURN
+... OK
+ready
+    -(p v q) .
+... OK
+ready
+    p &amp; q  v  -r &amp; ---s .
+... OK
+ready
+    (p &amp; q  &gt;  -(s = t) v p)  v  1 &amp; p .
+... OK
+ready
+?   p = q ) .
+PARSING ...
+ ch   top    pc      op ad1 ad2   charset or called non-terminal
+"p"     1     1    CALL   2   2   (6)  EXPRESSION
+"p"     2     6    CALL   7   3   (11)  TERM
+"p"     3    11    CALL  12   4   (16)  FACTOR
+"p"     4    16   MATCH  16  17   -
+"p"     4    17   MATCH  18  18
+"p"     4    18   MATCH  22  19   01abcdefghijklmnopqrstuvwxyz
+"="     4    22  RETURN
+"="     3    12   MATCH  13  14   &amp;
+"="     3    14   MATCH  15  15
+"="     3    15  RETURN
+"="     2     7   MATCH   8   9   v
+"="     2     9   MATCH  10  10
+"="     2    10  RETURN
+"="     1     2   MATCH   3   4   =&gt;
+"q"     1     3    CALL   4   1   (1)  FORMULA
+"q"     2     1    CALL   2   2   (6)  EXPRESSION
+"q"     3     6    CALL   7   3   (11)  TERM
+"q"     4    11    CALL  12   4   (16)  FACTOR
+"q"     5    16   MATCH  16  17   -
+"q"     5    17   MATCH  18  18
+"q"     5    18   MATCH  22  19   01abcdefghijklmnopqrstuvwxyz
+")"     5    22  RETURN
+")"     4    12   MATCH  13  14   &amp;
+")"     4    14   MATCH  15  15
+")"     4    15  RETURN
+")"     3     7   MATCH   8   9   v
+")"     3     9   MATCH  10  10
+")"     3    10  RETURN
+")"     2     2   MATCH   3   4   =&gt;
+")"     2     4   MATCH   5   5
+")"     2     5  RETURN
+")"     1     4   MATCH   5   5
+")"     1     5  RETURN
+... NOT OK,  last character read = ")"
+ready
+    p &gt; &amp; q .
+... NOT OK,  last character read = "&amp;"
+ready
+    r v s s .
+... NOT OK,  last character read = "s"
+ready
+    ( p &amp; q ] .
+... NOT OK,  last character read = "]"
+ready
+    ----p- .
+... NOT OK,  last character read = "-"
+ready
+    (((p &amp; q) .
+... NOT OK,  last character read = "."
+.
+ready
+$
+$
+$ ! SECOND EXAMPLE - a grammar for a simple imperative language
+$ RUN 31LL1GEN.EXE
+
+BLOCK =
+    { "I" "N" "T" "E" "G" "E" "R" [ "abcdefghijklmnopqrstuvwxyz" ] }
+    { "L" "O" "G" "I" "C" "A" "L" [ "abcdefghijklmnopqrstuvwxyz" ] }
+    "B" "E" "G" "I" "N" STATEMENT [ ";" STATEMENT ] "E" "N" "D" ;
+
+STATEMENT =
+    {   "abcdefghijklmnopqrstuvwxyz" ":" "=" EXPRESSION
+      | "B" "E" "G" "I" "N" STATEMENT [ ";" STATEMENT ] "E" "N" "D"
+      | "I" "F" EXPRESSION "T" "H" "E" "N" STATEMENT
+      | "W" "H" "I" "L" "E" EXPRESSION "D" "O" STATEMENT
+      | "R" "E" "A" "D" "abcdefghijklmnopqrstuvwxyz"
+      | "P" "R" "I" "N" "T" EXPRESSION  } ;
+
+EXPRESSION =
+    SIMP_EXPRESSION { "=&lt;&gt;" SIMP_EXPRESSION } ;
+
+SIMP_EXPRESSION =
+    TERM  [ "+-" TERM ] ;
+
+TERM =
+    FACTOR [ "*/" FACTOR ] ;
+
+FACTOR =
+      "abcdefghijklmnopqrstuvwxyz"
+    | "0123456789" [ "0123456789" ]
+    | "(" EXPRESSION ")" ?
+
+CODE FOR THIS GRAMMAR :
+adr      op ad1 ad2     c-set
+
+ 1.        BLOCK
+
+  1   MATCH   2  10   I
+  2   MATCH   3   0   N
+  3   MATCH   4   0   T
+  4   MATCH   5   0   E
+  5   MATCH   6   0   G
+  6   MATCH   7   0   E
+  7   MATCH   8   0   R
+  8   MATCH   8   9   abcdefghijklmnopqrstuvwxyz
+  9   MATCH  10  10
+ 10   MATCH  11  11
+ 11   MATCH  12  20   L
+ 12   MATCH  13   0   O
+ 13   MATCH  14   0   G
+ 14   MATCH  15   0   I
+ 15   MATCH  16   0   C
+ 16   MATCH  17   0   A
+ 17   MATCH  18   0   L
+ 18   MATCH  18  19   abcdefghijklmnopqrstuvwxyz
+ 19   MATCH  20  20
+ 20   MATCH  21  21
+ 21   MATCH  22   0   B
+ 22   MATCH  23   0   E
+ 23   MATCH  24   0   G
+ 24   MATCH  25   0   I
+ 25   MATCH  26   0   N
+ 26    CALL  27   2   (34)  STATEMENT
+ 27   MATCH  28  29   ;
+ 28    CALL  27   2   (34)  STATEMENT
+ 29   MATCH  30  30
+ 30   MATCH  31   0   E
+ 31   MATCH  32   0   N
+ 32   MATCH  33   0   D
+ 33  RETURN
+
+ 2.        STATEMENT
+
+ 34   MATCH  35  38   abcdefghijklmnopqrstuvwxyz
+ 35   MATCH  36   0   :
+ 36   MATCH  37   0   =
+ 37    CALL  78   3   (80)  EXPRESSION
+ 38   MATCH  39  50   B
+ 39   MATCH  40   0   E
+ 40   MATCH  41   0   G
+ 41   MATCH  42   0   I
+ 42   MATCH  43   0   N
+ 43    CALL  44   2   (34)  STATEMENT
+ 44   MATCH  45  46   ;
+ 45    CALL  44   2   (34)  STATEMENT
+ 46   MATCH  47  47
+ 47   MATCH  48   0   E
+ 48   MATCH  49   0   N
+ 49   MATCH  78   0   D
+ 50   MATCH  51  58   I
+ 51   MATCH  52   0   F
+ 52    CALL  53   3   (80)  EXPRESSION
+ 53   MATCH  54   0   T
+ 54   MATCH  55   0   H
+ 55   MATCH  56   0   E
+ 56   MATCH  57   0   N
+ 57    CALL  78   2   (34)  STATEMENT
+ 58   MATCH  59  67   W
+ 59   MATCH  60   0   H
+ 60   MATCH  61   0   I
+ 61   MATCH  62   0   L
+ 62   MATCH  63   0   E
+ 63    CALL  64   3   (80)  EXPRESSION
+ 64   MATCH  65   0   D
+ 65   MATCH  66   0   O
+ 66    CALL  78   2   (34)  STATEMENT
+ 67   MATCH  68  72   R
+ 68   MATCH  69   0   E
+ 69   MATCH  70   0   A
+ 70   MATCH  71   0   D
+ 71   MATCH  78   0   abcdefghijklmnopqrstuvwxyz
+ 72   MATCH  73  78   P
+ 73   MATCH  74   0   R
+ 74   MATCH  75   0   I
+ 75   MATCH  76   0   N
+ 76   MATCH  77   0   T
+ 77    CALL  78   3   (80)  EXPRESSION
+ 78   MATCH  79  79
+ 79  RETURN
+
+ 3.        EXPRESSION
+
+ 80    CALL  81   4   (85)  SIMP_EXPRESSION
+ 81   MATCH  82  83   &lt;=&gt;
+ 82    CALL  83   4   (85)  SIMP_EXPRESSION
+ 83   MATCH  84  84
+ 84  RETURN
+
+ 4.        SIMP_EXPRESSION
+
+ 85    CALL  86   5   (90)  TERM
+ 86   MATCH  87  88   +-
+ 87    CALL  86   5   (90)  TERM
+ 88   MATCH  89  89
+ 89  RETURN
+
+ 5.        TERM
+
+ 90    CALL  91   6   (95)  FACTOR
+ 91   MATCH  92  93   */
+ 92    CALL  91   6   (95)  FACTOR
+ 93   MATCH  94  94
+ 94  RETURN
+
+ 6.        FACTOR
+
+ 95   MATCH 102  96   abcdefghijklmnopqrstuvwxyz
+ 96   MATCH  97  99   0123456789
+ 97   MATCH  97  98   0123456789
+ 98   MATCH 102 102
+ 99   MATCH 100   0   (
+100    CALL 101   3   (80)  EXPRESSION
+101   MATCH 102   0   )
+102  RETURN
+
+ready
+
+INTEGER i
+BEGIN
+i := 10;
+WHILE i &gt; 0 DO
+    BEGIN PRINT i * i * i; i := i - I END;
+... NOT OK,  last character read = "I"
+EMD .
+ready
+
+INTEGER i
+BEGIN
+i := 10;
+WHILE i &gt; 0 DO
+    BEGIN PRINT i * i * i; i := i - 1 END;
+EMD .
+... NOT OK,  last character read = "M"
+ready
+
+INTEGER i
+BEGIN
+i := 10;
+WHILE i &gt; 0 DO
+    BEGIN PRINT i * i * i; i := i - 1 END;
+END .
+... OK
+ready
+
+.
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> Designing the implementation</h2>
+<div class="outline-text-2" id="text-4">
+
+
+<p>
+The implementation owes a great deal to Wirth's (1976) general parser (pp 304 - 307) and to a later variant (Wirth 1977).  The parser presented here differs from Wirth's in the following respects: As seen by the user, Wirth's has single letters as non-terminals for the grammars, whereas the one here has multi-letter terminals.  Both are for languages in which the symbols are single characters, but Wirth's uses single letter terminals in the grammar, whereas the one here allows sets of single letter terminals in the grammar.  Internally, not seen by the user, Wirth's parsing machine is recursive, the one here is not.  This one can also write the internal representation of the grammar because it uses an array rather than pointers, and it can trace execution.
+</p>
+
+</div>
+
+<div id="outline-container-4-1" class="outline-3">
+<h3 id="sec-4-1"><span class="section-number-3">4.1</span> The parsing procedures</h3>
+<div class="outline-text-3" id="text-4-1">
+
+
+<p>
+The program consists of a number of procedures for reading the grammar and generating the internal code, and one procedure which implements the parsing machine described at the beginning.  The main program is very simple: it calls a procedure to read a grammar, and then it repeatedly prompts for input strings to be parsed by the machine.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-4-2" class="outline-3">
+<h3 id="sec-4-2"><span class="section-number-3">4.2</span> <i>The scanner</i>:</h3>
+<div class="outline-text-3" id="text-4-2">
+
+<p>The individual symbols to be recognised by the scanner are almost the same as the ones that were required for the general parser for context-free languages in Chapter~11.  They are identifiers for the non-terminals of the grammar, together with a few single character symbols.  Note again that the non-terminal identifiers are looked up and, if they are new, entered into the symbol table.  In addition this scanner has to recognise sets of terminal characters listed within double quotes.  So, when the opening double quote is seen, any following characters are collected into a global variable of type <code>SET OF char</code>, up to the closing double quote.  That global variable needs to be available to procedure <code>factor</code> for the case when the current symbol is a set of terminals.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-4-3" class="outline-3">
+<h3 id="sec-4-3"><span class="section-number-3">4.3</span> <i>Reading the Grammar</i>:</h3>
+<div class="outline-text-3" id="text-4-3">
+
+<p>The syntax of the input grammar is so similar to that in Chapter~11 that only a brief description of the parsing procedures is necessary.  The productions for the non-terminals factor, term and expression are recursive, so they have to be handled by procedures of the same name.  It would be possible to handle productions and the grammar entirely in the main program, as it was done in Chapter~11.  However, several special purpose variables are required which are best left hidden inside procedures which handle productions and the grammar.  Visibility requirements are satisfied by the following nesting pattern:
+</p>
+
+
+
+<pre class="example">PROCEDURE grammar
+    PROCEDURE production
+        PROCEDURE expression
+            PROCEDURE term
+                PROCEDURE factor
+</pre>
+
+
+<p>
+The gross structure of these five procedures is familiar by now; it is best to write them first without code generation in mind.
+</p>
+<p>
+Procedure <code>grammar</code> has to initialise the symbol table and then read one or more productions.  Following that it has to check that all non-terminals are indeed defined.  Procedure <code>production</code> expects a leading identifier, it is a good idea to let it check that the identifier has not been declared before &mdash; even if it might have been used before.  One way to do the check is to see that in the symbol table no code for it has been recorded.  Following the identifier, an equal sign === is expected and then an expression.  Procedures <code>expression</code>, <code>term</code> and <code>factor</code> present no difficulties.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-4-4" class="outline-3">
+<h3 id="sec-4-4"><span class="section-number-3">4.4</span> Code generation</h3>
+<div class="outline-text-3" id="text-4-4">
+
+
+<p>
+In all our previous programs code generation was a relatively simple matter because the conceptual distance between the external source language and the internal target language was so small.  This is no longer true here, because so many constructions of the source language have no counterpart in the target language.  In particular, the two binary operations of alternation and concatenation, and the two unary operations of repetition and option have no counterparts.  Instead they will have to be implemented by explicit =GOTO=s in the instruction for matching sets of terminals.
+</p>
+<p>
+The situation is similar for translating high level imperative languages containing <code>IF</code> and <code>WHILE</code> statements into low level machine languages that only have <code>GOTO=s.  The =IF</code> statement requires a <code>GOTO</code> which will cause execution to skip over some code in case the condition is false, and the <code>WHILE</code> statement requires an additional backwards <code>GOTO</code> to create a loop.  This is not particularly difficult, since there is a fairly simple correspondence between the =GOTO=s and the required target addresses.  We shall encounter an example in Chapter~14.
+</p>
+<p>
+In the present case, however, the calculation of the target addresses is not so simple.  It is best to conceive of code generation to consist of two steps:
+</p>
+<ol>
+<li>generating the op-codes and
+</li>
+<li>calculating the addresses.
+</li>
+</ol>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-4-5" class="outline-3">
+<h3 id="sec-4-5"><span class="section-number-3">4.5</span> <i>Generating op-codes</i>:</h3>
+<div class="outline-text-3" id="text-4-5">
+
+<p>If addresses are ignored for the time being, generating op-codes is the easiest part.  At the end of every production a return instruction has to be generated, and since this does not need an address, it need not be changed or fixed up later.  The other three instructions are generated inside procedure factor.  The case for an identifier, representing a non-terminal, requires a call instruction to be generated, together with the position of the identifier in the symbol table.  The case of a set of terminal symbols requires a match instruction to be generated, with the two address fields left unspecified.  For the repetition and option cases, enclosed in brackets or braces, an odd match instruction is generated &mdash; one in which the set of characters is empty, and which hence will never match.  Hence such instructions are in effect unconditional jump instructions.  The purpose of this strange instruction is to become the target address of some of the implicit =GOTO=s that will be generated by the expression enclosed in the brackets or braces.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-4-6" class="outline-3">
+<h3 id="sec-4-6"><span class="section-number-3">4.6</span> <i>Calculating addresses</i>:</h3>
+<div class="outline-text-3" id="text-4-6">
+
+<p>The method employed here borrows heavily from Wirth (1976, pp 302 - 307) and a later version in Wirth (1977).  When the entire grammar has been read and the internal code has been generated, a single pass through the entire code is made.  Its purpose is to change the second address of the strange match instructions to the first address which by now contains the next success address to be continued with.  (Note that Wirth's general parser manages without this oddity.)
+</p>
+<p>
+Remember, when a call instruction is initially generated, the non-terminal being called may not yet have been defined; so at most the address in the symbol table can be recorded in the instruction.  In the general parsing program of Chapter~11 the fix-up pass replaces the address in the symbol table recorded in the instruction by the start address of the code for the non-terminal which is now known.  We could do the same here, to make the interpreter slightly more efficient.  But to do so would interfere with one of the exercises.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-4-7" class="outline-3">
+<h3 id="sec-4-7"><span class="section-number-3">4.7</span> The interpreter</h3>
+<div class="outline-text-3" id="text-4-7">
+
+
+<p>
+The interpreter is not recursive, so it could easily be made part of the main program.  However, it contains a few variables only used here, so for modularity it is better to have it as a separate procedure.
+</p>
+<p>
+The necessary variables are an array of integers serving as the stack of return addresses, and two integers for the top of stack and for the program counter.  It is also useful to have a procedure which reads characters and skips non-printing characters.  For tracing, if the first character of the input string is a <code>?</code> then the header line has to be written out.
+</p>
+<p>
+The machine is then initialised by setting the program counter to 1 and by pushing a dummy return address -1 onto an otherwise empty stack.  The purpose of this dummy is to signal successful termination, provided the end of the input string has been reached.  Otherwise failure is reported, together with the last character seen.
+</p>
+<p>
+The principal <code>REPEAT</code> loop of the machine (in the middle of procedure <code>parse</code>) has already been described at the beginning.  When tracing is on, every step through the <code>REPEAT</code> loop has to write out the current input character, the top of the stack, the program counter and the relevant fields of the current instruction.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> The program</h2>
+<div class="outline-text-2" id="text-5">
+
+
+<p>
+The following is the standard Pascal source program for LL1GEN:
+</p>
+
+
+
+<pre class="example">PROGRAM ll1gen(input,output);
+(* LL1 GENeral parser, explicit stack *)
+
+LABEL 1, 99;
+
+CONST
+    maxsymtab = 20;
+    maxcode = 200;
+    maxstack = 100;
+    alfalength = 16;  emptyalfa = '                ';
+
+TYPE
+    alfa     = PACKED ARRAY [1..alfalength] OF char;
+    string20 = PACKED ARRAY [1..20] OF char;
+    symbol = (ident, chrset, equals, alternation,
+              lpar, rpar, lbrack, rbrack, lbrace, rbrace,
+              semicol, period, queery);
+    operator = (match, call, return);
+    charset = SET OF char;
+    instruction =
+        RECORD op : operator; ad1, ad2 : integer; cs : charset END;
+
+VAR
+    ch : char; sym : symbol; chset : charset;
+    symtab : ARRAY [0..maxsymtab] OF
+                RECORD alf:alfa; ad:integer END;
+    position, top : integer;
+    code : ARRAY [1..maxcode] OF instruction;
+    cx : integer;
+    tracing : boolean;
+
+(* - - - - -   U T I L I T I E S   - - - - - *)
+
+PROCEDURE error(message : string20);
+BEGIN (* error *)
+writeln('error : "',ch,'" when ',message);
+readln; GOTO 1
+END; (* error *)
+
+PROCEDURE getsym;
+VAR  i : integer; al : alfa;
+BEGIN (* getsym *)
+WHILE ch &lt;= ' ' DO read(ch);
+IF ch IN ['A'..'Z','a'..'z'] THEN
+    BEGIN
+    sym := ident; al := emptyalfa; i := 0;
+    REPEAT
+        IF i &lt; alfalength THEN
+            BEGIN i := i + 1; al[i] := ch END;
+        read(ch)
+        UNTIL NOT (ch IN ['A'..'Z','a'..'z','0'..'9','_']);
+    symtab[0].alf := al; (* sentinel *)
+    position := top;
+    WHILE symtab[position].alf &lt;&gt; al DO position := position - 1;
+    IF position = 0 THEN
+        BEGIN (* new entry *)
+        top := top + 1; symtab[top].alf := al;
+        symtab[top+1].ad := 0; position := top
+        END
+    END
+  ELSE
+    BEGIN
+    CASE ch OF
+        '"' :
+            BEGIN
+            read(ch); sym := chrset; chset := [];
+            WHILE ch &lt;&gt; '"' DO
+                BEGIN chset := chset + [ch]; read(ch) END
+            END;
+        '=' : sym := equals;
+        '|' : sym := alternation;
+        '(' : sym := lpar;
+        ')' : sym := rpar;
+        '[' : sym := lbrack;
+        ']' : sym := rbrack;
+        '{' : sym := lbrace;
+        '}' : sym := rbrace;
+        ';' : sym := semicol;
+        '.' : sym := period;
+        '?' : sym := queery
+        OTHERWISE
+            BEGIN
+            writeln('illegal character "',ch,'"');
+            read(ch);
+            GOTO 1
+            END
+        END; (* CASE *)
+    read(ch)
+    END (* ELSE *)
+END; (* getsym *)
+
+PROCEDURE writecode(n:integer);
+VAR c : char;
+BEGIN (* writecode *)
+WITH code[n] DO
+    BEGIN
+    write(n:3,op:8);
+    CASE op OF
+        match :
+            BEGIN
+            write(ad1:4,ad2:4,'   ');
+            FOR c := ' ' TO '~' DO IF c IN cs THEN write(c);
+            END;
+        call : write(ad1:4,ad2:4,
+                  '   (',symtab[ad2].ad:0,')  ',symtab[ad2].alf);
+        return : ;
+        END; (* CASE *)
+    writeln
+    END (* WITH *)
+END; (* writecode *)
+
+(* - - - - -   T R A N S L A T O R   - - - - - *)
+
+PROCEDURE grammar;
+VAR c : char; i,j : integer;
+
+    PROCEDURE production;
+    VAR p,q,r,s : integer;
+
+        PROCEDURE gen(o:operator; a1,a2 : integer; c : charset);
+        BEGIN (* gen *)
+        cx := cx + 1;
+        WITH code[cx] DO
+           BEGIN op := o; ad1 := a1; ad2 := a2; cs := c END;
+        END; (* gen *)
+
+        PROCEDURE link(p,q : integer);
+        VAR t : integer;
+        BEGIN (* link - in chain p insert q *)
+        WHILE p &lt;&gt; 0 DO
+            BEGIN t := p; p := code[t].ad1; code[t].ad1 := q END
+        END; (* link *)
+
+        PROCEDURE expression(VAR p,q,r,s : integer);
+        VAR next,q1,s1  : integer;
+
+            PROCEDURE term(VAR p,q,r,s : integer);
+            VAR p1,q1,r1,s1 : integer;
+
+                PROCEDURE factor(VAR p,q,r,s : integer);
+                BEGIN (* factor *)
+                CASE sym OF
+                    ident :
+                        BEGIN
+                        gen(call,0,position,[]);
+                        p := cx; q := cx; r := cx; s := cx; getsym
+                        END;
+                    chrset :
+                        BEGIN
+                        gen(match,0,0,chset);
+                        p := cx; q := cx; r := cx; s := cx; getsym
+                        END;
+                    lbrack :
+                        BEGIN (* zero or more *)
+                        getsym; expression(p,q,r,s);
+                        gen(match,0,0,[]); link(r,p);
+                        code[q].ad2 := cx; q := cx; r := cx; s := cx;
+                        IF sym &lt;&gt; rbrack THEN
+                            error('"]" expected        ');
+                        getsym;
+                        END;
+                    lbrace :
+                        BEGIN (* zero or one *)
+                        getsym; expression(p,q,r,s);
+                        gen(match,0,0,[]); link(r,cx);
+                        code[q].ad2 := cx; q := cx; r := cx; s := cx;
+                        IF sym &lt;&gt; rbrace THEN
+                            error('"}" expected        ');
+                        getsym;
+                        END;
+                    lpar :
+                        BEGIN
+                        getsym; expression(p,q,r,s);
+                        IF sym &lt;&gt; rpar THEN
+                            error('")" expected        ');
+                        getsym;
+                        END;
+                    OTHERWISE error('illegal in factor   ');
+                    END (* CASE *)
+                END; (* factor *)
+
+            BEGIN (* term *)
+            factor(p,q,r,s);
+            WHILE sym IN [ident,chrset,lpar,lbrack,lbrace] DO
+                BEGIN
+                factor(p1,q1,r1,s1);
+                link(r,p1); r := r1; s := s1
+                END
+            END; (* term *)
+
+        BEGIN (* expression *)
+        next := cx + 1; term(p,q,r,s);
+        WHILE sym = alternation DO
+            BEGIN
+            WITH code[next] DO
+                BEGIN
+                IF op &lt;&gt; match
+                    THEN error('LL1 condition fails ');
+                next := cx + 1;
+                END;
+            getsym; term(code[q].ad2,q1,code[s].ad1,s1);
+            q := q1; s := s1
+            END (* WHILE *)
+        END; (* expression *)
+
+    BEGIN (* production *)
+    IF sym &lt;&gt; ident THEN error('identifier expected ');
+    WITH symtab[position] DO
+        BEGIN
+        IF ad &lt;&gt; 0 THEN error('already declared ');
+        ad := cx + 1
+        END;
+    getsym;
+    IF sym &lt;&gt; equals THEN error('"=" expected        ');
+    getsym; expression(p,q,r,s);
+    gen(return,0,0,[]); link(r,cx)
+    END; (* production *)
+
+BEGIN (* grammar *)
+ch := ' '; top := 0; symtab[1].ad := 0; cx := 0;
+getsym; production;
+WHILE sym = semicol DO BEGIN getsym; production END;
+IF NOT (sym IN [queery,period]) THEN error('"." or "?" expected ');
+tracing := sym = queery;
+FOR i := 1 TO cx DO
+    WITH code[i] DO
+        IF (op = match) AND (cs = []) THEN ad2 := ad1;
+IF tracing THEN
+    BEGIN
+    writeln; writeln('CODE FOR THIS GRAMMAR :');
+    writeln('adr':3,'op':8,'ad1':4,'ad2':4,'c-set':10);
+    writeln
+    END;
+FOR i := 1 TO top DO
+    WITH symtab[i] DO
+        IF ad &lt; 1 THEN
+            BEGIN
+            writeln;
+            writeln('CONTEXT ERROR : undefined nonterminal ',alf);
+            writeln('start again'); writeln;
+            FOR j := 1 TO cx DO (* clean old code *)
+                WITH code[j] DO BEGIN ad1 := 0; ad2 := 0 END;
+            GOTO 1
+            END
+          ELSE
+            IF tracing THEN
+                BEGIN
+                writeln(i:2,'.        ',alf); writeln;
+                j := ad;
+                WHILE code[j].op &lt;&gt; return DO
+                    BEGIN writecode(j); j := j + 1 END;
+                writecode(j); writeln
+                END;
+writeln;
+END; (* grammar *)
+
+(* - - - - -   I N T E R P R E T E R   - - - - - *)
+
+PROCEDURE parse;
+VAR
+    s : ARRAY [1..maxstack] OF integer;
+    t, pc : integer;
+
+    PROCEDURE getchar;
+    BEGIN (* getchar *)
+    REPEAT
+        IF eof THEN GOTO 99;
+        read(ch)
+        UNTIL ch &gt; ' '
+    END; (* getchar *)
+
+BEGIN (* parse *)
+getchar; IF ch = '.' THEN GOTO 99;
+IF ch &lt;&gt; '?' THEN tracing := false ELSE
+    BEGIN
+    tracing := true; getchar;
+    writeln('PARSING ...');
+    writeln('ch':3,' ':3, 'top':3,' ':3,
+        ' pc':3,'op':8,'ad1':4,'ad2':4,
+        '   charset or called non-terminal')
+    END;
+s[1] := -1; t := 1; pc := 1;
+REPEAT
+    IF tracing THEN
+        BEGIN write('"',ch,'"',' ':3,t:3,' ':3); writecode(pc) END;
+    WITH code[pc] DO
+        CASE op OF
+            call :
+                BEGIN t := t+1; s[t] := ad1; pc := symtab[ad2].ad END;
+            return :
+                BEGIN pc := s[t]; t := t-1 END;
+            match :
+                IF ch IN cs THEN BEGIN getchar; pc := ad1 END
+                            ELSE pc := ad2;
+            END (* CASE *)
+    UNTIL pc &lt; 1;
+IF (pc = -1) AND (ch = '.') THEN writeln('... OK') ELSE
+    BEGIN
+    writeln('... NOT OK,  last character read = "',ch,'"');
+    REPEAT getchar UNTIL ch = '.'
+    END;
+readln
+END; (* parse *)
+
+BEGIN (* main *)
+1:
+grammar;
+REPEAT
+    writeln('ready');
+    parse
+    UNTIL false;
+99:
+END. (* main *)
+</pre>
+
+
+</div>
+
+</div>
+
+<div id="outline-container-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> Exercises and reading</h2>
+<div class="outline-text-2" id="text-6">
+
+
+
+</div>
+
+<div id="outline-container-6-1" class="outline-3">
+<h3 id="sec-6-1"><span class="section-number-3">6.1</span> <i>Another grammar</i>:</h3>
+<div class="outline-text-3" id="text-6-1">
+
+
+<p>
+The grammar in the second example used <code>LOGICAL</code> instead of <code>BOOLEAN</code> because the <code>B</code> of <code>BOOLEAN</code> would interfere with the <code>B</code> of <code>BEGIN</code>.  Also, it used <code>PRINT</code> instead of <code>WRITE</code> because the <code>W</code> of <code>WRITE</code> would interfere with the <code>W</code> of <code>WHILE</code>.  Can you rewrite the grammar using <code>BOOLEAN</code> and <code>WRITE</code>?
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-2" class="outline-3">
+<h3 id="sec-6-2"><span class="section-number-3">6.2</span> <i>Manual</i>:</h3>
+<div class="outline-text-3" id="text-6-2">
+
+<p>Write a user manual.  You need not mention anything strictly internal to the program, and you need not mention the tracing facility either.
+</p>
+<p>
+<i>More generality</i>:
+The scanner cannot handle the double quote character
+as a terminal because it uses it as a delimiter.
+Can you find a way of allowing double quotes
+as terminals, preferably as a member of a set of terminals?
+Similarly for <code>.</code> which terminates the input string,
+and the <code>?</code> which switches on tracing if it precedes the input string.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-3" class="outline-3">
+<h3 id="sec-6-3"><span class="section-number-3">6.3</span> <i>Post Mortem</i>:</h3>
+<div class="outline-text-3" id="text-6-3">
+
+
+<p>
+Some programming language implementations give a dump of the run-time stack when an error has occurred.  The dump lists the procedure and function calls that were accumulated on the stack.  A similar facility would be useful for our parsing machine.  To implement this, the call instruction should push onto the stack not the address of the next instruction to be executed, but its own address.  This is the reason why the call instruction has been given as its second address field not the code address as fixed up after the entire grammar has been read but the original symbol table address.  Then, for the post mortem the stack will contain a sequence of addresses into the code left there by executing call instructions.  &gt;From each address one can determine the code record to which it points, and the second address field of that record is an address into the symbol table where the name of the non-terminal is to be found.  Clearly the return instruction will have to be changed so that it sets the program counter not to the code address popped from the stack but to the first address field in the code at the address popped.  See also Setzer (1979) for some ideas.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-4" class="outline-3">
+<h3 id="sec-6-4"><span class="section-number-3">6.4</span> <i>Eliminating redundant instructions</i>:</h3>
+<div class="outline-text-3" id="text-6-4">
+
+<p>The match instructions with an empty character set were really just unconditional jumps.  It is possible to make a further pass through the code, and if any address in a proper match instruction points to such a dummy match instruction, it could be made to point to what that dummy points to.  The replacement should be done with a loop to catch those cases in which a dummy points to a dummy and so on.  Note that a fix up of this kind will save execution time, but it will not shorten the code because it does not eliminate the instructions.  An optimisation which also shortens the code is much more difficult (optimising compilers do it routinely).
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-5" class="outline-3">
+<h3 id="sec-6-5"><span class="section-number-3">6.5</span> <i>Cleaner code generation</i>:</h3>
+<div class="outline-text-3" id="text-6-5">
+
+<p>There is something quite unsatisfactory about the way the code is generated and then fixed up.  It may well be that it is better to generate tree code first and then produce an optimised linear code from that.
+</p>
+<p>
+<i>Reducing the number of instructions</i>:
+(A machine with just three kinds of instructions is rather minimal,
+but there are machines with less.
+The extreme is a machine with only one instruction
+which always consists of two addresses,
+but some special addresses are used for gaining diversity.)
+Delete the return instruction:
+if next <code>pc = 0</code> then get it from the stack,
+but if that is empty then exit.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-6" class="outline-3">
+<h3 id="sec-6-6"><span class="section-number-3">6.6</span> <i>Multi-character words</i>:</h3>
+<div class="outline-text-3" id="text-6-6">
+
+<p>Modify the translator and the interpreter so that the program can handle symbols consisting of several characters.  Then the second grammar could use ="BEGIN"= instead of ="B"= ="E"= ="G"= ="I"= ="N"=, ="IF"= instead of ="I"= ="F"=, and so forth.  But this redesign should not interfere with the facility for sets of single characters, such as ="abc"<code>.  So you will need another matching operation.  Note also that it will then be possible to have =WRITE</code> rather than <code>PRINT</code>, because the <code>W</code> will not interfere with <code>WHILE</code>.  But you will need a buffer in the parsing machine.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-7" class="outline-3">
+<h3 id="sec-6-7"><span class="section-number-3">6.7</span> <i>Status return</i>:</h3>
+<div class="outline-text-3" id="text-6-7">
+
+<p>The parsing machine has no way for a call to return and to signal to the callee whether the call was successful.  Consequently in the second example given, the set of lower case letters (as names of potential variables) had to be specified literally in four different places in the grammar.  It would have been neater to be able to use a defined non-terminal here, but since variables are only one way of beginning statements or factors, the calls to that non-terminal have to return a status signal to the callee.  Implement such an addition to the parsing machine.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-8" class="outline-3">
+<h3 id="sec-6-8"><span class="section-number-3">6.8</span> <i>Reading</i>:</h3>
+<div class="outline-text-3" id="text-6-8">
+
+<p>Wirth's general parser is described in (1976, pp 295 - 307), and a later version is in his (1977, in German).  It is implemented recursively and uses a VAR parameter for a status return.  Setzer (1979) discusses a quite different method of using the original internal code from Wirth's parser to drive a non-recursive parsing machine.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-6-9" class="outline-3">
+<h3 id="sec-6-9"><span class="section-number-3">6.9</span> <i>A Translating Machine</i>:</h3>
+<div class="outline-text-3" id="text-6-9">
+
+<p>This is an exercise in the design of a specialised pseudo machine language and a software interpreter that can be used for simple translations from and to single character languages.  To keep it as simple as possible, restrict yourself to translation from prefix to fully parenthesised infix, or from fully parenthesised infix to postfix.
+</p>
+<p>
+One way to do this is to follow the prefix to infix translator of Chapter~2 by implementing instructions for each of the basic steps which that translator needed.  About 10 or 12 instructions are needed:
+</p>
+<ol>
+<li>write instructions for literal characters, for a local variable and for messages,
+</li>
+<li>read instructions for a local variable and for skipping the remainder of the input line on error,
+</li>
+<li>flow of control instructions such as an unconditional <code>GOTO</code>, a call and a return instruction which also have to take care of a local variable, and a conditional <code>GOTO</code> which tests whether the local variable is in a given set,
+</li>
+<li>an instruction to clear the stack initially and on errors, and
+</li>
+<li>an instruction to do character translations.
+</li>
+</ol>
+
+
+<p>
+The same instruction set should be adequate for translating from fully parenthesised infix to postfix.  However, for translation from minimally parenthesised infix a few different instructions will be needed.
+</p>
+<p>
+There are at least three ways in which the required program can be placed into the code array before it is executed.  One way is to write the assembly program by hand and to use an (undoubtedly ugly) initialisation section to fill the required fields of the code.  Another way is to write an assembler which takes a readable assembly language program from a file and places it into an array for execution.  A third way is to elaborate the grammar translator written in this chapter by getting procedure factor to recognise special action symbols which are needed for the translations.  Of course all of the above can also be done just for parsing without any translation.
+</p></div>
+</div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-01-11 07:37:59 CST</p>
+<p class="author">Author: michal</p>
+<p class="creator">Org version 7.8.11 with Emacs version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>
