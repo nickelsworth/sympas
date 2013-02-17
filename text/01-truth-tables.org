@@ -1,4 +1,4 @@
-#+title: Chapter 1 : Getting started: a truth table program
+#+title: Chapter 1 : Getting started: a truth table pogram
 * <<intro>>
 
 In this introductory chapter we write one very small program which will produce the truth table for one particular formula.  The method is easily adapted to writing similar programs for other, even much larger formulas.  Readers familiar with Pascal will want to skip this chapter entirely.

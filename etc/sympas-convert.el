@@ -24,4 +24,3 @@
   (replace "</body>\n</HTML>" "")
   (replace "\n\n\n" "\n\n"))
 
-

@@ -21,7 +21,7 @@ A minus symbol =-= indicates that what follows is a series of questions.
 
 Responses by the system start with a dieresis = ...= and what comes then is an answer =yes= or =no=, possibly preceded by a sequence of numbered variable bindings.
 
-#+begin_src
+#+begin_src prolog
 
 /* entering */
  +
@@ -318,7 +318,7 @@ In order to obtain a short implementation, we shall spend some effort in designi
 
 In previous chapters we have generally started by giving a ready made grammar and possibly a complete manual. Then it became possible to base the implementation on the grammar. In this chapter we shall develop the grammar in several stages.
 
-#+begin_src
+#+begin_src ebnf
 input  ::=
         [   '+'
           | '-'
@@ -341,14 +341,14 @@ Note that formulas and parameterlists are very similar in structure, and that bo
 
 To remove the recursion in the definitions of formulas and parameterlists we can replace the option braces by repetition brackets:
 
-#+begin_src
+#+begin_src ebnf
 formula  ::=  atom [ ',' atom ]
 parameterlist  ::=  parameter  [ ',' parameter ]
 #+end_src
 
 If in the production for formula we now replace the two occurrences of atom by its definition we end up with:
 
-#+begin_src
+#+begin_src ebnf
 formula  ::=  predicate { '(' parameterlist ') }
               [ ',' predicate { '(' parameterlist ')' } ]
 #+end_src
@@ -359,7 +359,7 @@ The dieresis =...= is to mean: the previous item. Inside repetition brackets it 
 
 The two productions can now be written like this:
 
-#+begin_src
+#+begin_src ebnf
 formula  ::=  atom [',' ...]
 parameterlist  ::=  parameter  [',' ...]
 #+end_src
@@ -368,7 +368,7 @@ The device has the welcome effect that diereses are not non-terminals and hence 
 
 We can now expand:
 
-#+begin_src
+#+begin_src ebnf
 parameterlist  ::=  (name | variable) [',' ...]
 atom  ::=  predicate { '(' (name | variable) [',' ...] ')' }
 formula  ::=  ( predicate { '(' (name | variable) [',' ...] ')' } )
@@ -377,7 +377,7 @@ formula  ::=  ( predicate { '(' (name | variable) [',' ...] ')' } )
 
 The entire grammar can now be written as:
 
-#+begin_src
+#+begin_src ebnf
 input  ::=
   [   '+'
     | '-'
@@ -446,9 +446,9 @@ If two variables directly or indirectly point to a third which directly or indir
 
 Now consider a query with several variables:
 
-#+begin_src
+#+begin_example datalog
 p(X,Y), q(Y,Z).
-#+end_src
+#+end_example
 
 The three variables =X=, =Y= and =Z= have to become variables at the bottom of the stack, so that their values may be printed out later.
 
