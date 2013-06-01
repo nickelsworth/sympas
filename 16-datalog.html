@@ -1,66 +1,38 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Chapter 16 : Datalog - a precursor to Prolog</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Chapter 16 : Datalog - a precursor to Prolog"/>
+<!-- 2013-05-31 Fri 19:02 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-01-11 07:37:53 CST"/>
 <meta name="author" content="michal"/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
-<style type="text/css">
- <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
-  .title  { text-align: center; }
-  .todo   { color: red; }
-  .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
-  .timestamp { color: #bebebe; }
-  .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
-  pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
-  }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
-  dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
-    background: #ffffcc;
-  }
-  textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
-  /*]]>*/-->
-</style>
+<link rel="stylesheet" type="text/css" href="/etc/style.css">
 <script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012  Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
 <!--/*--><![CDATA[/*><!--*/
  function CodeHighlightOn(elem, id)
  {
@@ -82,440 +54,426 @@
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
-
-</div>
-
 <div id="content">
 <h1 class="title">Chapter 16 : Datalog - a precursor to Prolog</h1>
-
-
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 intro</a></li>
-<li><a href="#sec-2">2 The Datalog language</a></li>
-<li><a href="#sec-3">3 Designing the implementation</a>
+<li><a href="#sec-1">1. </a></li>
+<li><a href="#sec-2">2. The Datalog language</a></li>
+<li><a href="#sec-3">3. Designing the implementation</a>
 <ul>
-<li><a href="#sec-3-1">3.1 A regular grammar for Datalog</a></li>
-<li><a href="#sec-3-2">3.2 Parsing</a></li>
-<li><a href="#sec-3-3">3.3 The symbol tables</a></li>
-<li><a href="#sec-3-4">3.4 Outline of the interpreter:</a></li>
-<li><a href="#sec-3-5">3.5 Code generation: opcodes</a>
+<li><a href="#sec-3-1">3.1. A regular grammar for Datalog</a></li>
+<li><a href="#sec-3-2">3.2. Parsing</a></li>
+<li><a href="#sec-3-3">3.3. The symbol tables</a></li>
+<li><a href="#sec-3-4">3.4. Outline of the interpreter:</a></li>
+<li><a href="#sec-3-5">3.5. Code generation: opcodes</a>
 <ul>
-<li><a href="#sec-3-5-1">3.5.1 Formal Parameters:</a></li>
-<li><a href="#sec-3-5-2">3.5.2 Actual parameters:</a></li>
-<li><a href="#sec-3-5-3">3.5.3 Code for a predicate:</a></li>
-<li><a href="#sec-3-5-4">3.5.4 The interpreter</a>
+<li><a href="#sec-3-5-1">3.5.1. Formal Parameters:</a></li>
+<li><a href="#sec-3-5-2">3.5.2. Actual parameters:</a></li>
+<li><a href="#sec-3-5-3">3.5.3. Code for a predicate:</a></li>
+<li><a href="#sec-3-5-4">3.5.4. The interpreter</a>
 <ul>
-<li><a href="#sec-3-5-4-1">3.5.4.1 1. call</a></li>
-<li><a href="#sec-3-5-4-2">3.5.4.2 2. return</a></li>
-<li><a href="#sec-3-5-4-3">3.5.4.3 3. push</a></li>
-<li><a href="#sec-3-5-4-4">3.5.4.4 4. match-name</a></li>
-<li><a href="#sec-3-5-4-5">3.5.4.5 5. match-var&gt;</a></li>
-</ul></li>
+<li><a href="#sec-3-5-4-1">3.5.4.1. 1. </a></li>
+<li><a href="#sec-3-5-4-2">3.5.4.2. 2. </a></li>
+<li><a href="#sec-3-5-4-3">3.5.4.3. 3. </a></li>
+<li><a href="#sec-3-5-4-4">3.5.4.4. 4. </a></li>
+<li><a href="#sec-3-5-4-5">3.5.4.5. 5. &lt;&lt;match-var&gt;</a></li>
 </ul>
 </li>
-<li><a href="#sec-3-6">3.6 Code generation: addresses</a></li>
 </ul>
 </li>
-<li><a href="#sec-4">4 The Program</a>
-<ul>
-<li><a href="#sec-4-1">4.1 datalog</a></li>
-<li><a href="#sec-4-2">4.2 utilities</a></li>
-<li><a href="#sec-4-3">4.3 interpreter</a>
-<ul>
-<li><a href="#sec-4-3-1">4.3.1 show</a></li>
-<li><a href="#sec-4-3-2">4.3.2 solve</a></li>
+<li><a href="#sec-3-6">3.6. Code generation: addresses</a></li>
 </ul>
 </li>
-<li><a href="#sec-4-4">4.4 main</a></li>
+<li><a href="#sec-4">4. The Program</a>
+<ul>
+<li><a href="#sec-4-1">4.1. </a></li>
+<li><a href="#sec-4-2">4.2. </a></li>
+<li><a href="#sec-4-3">4.3. </a>
+<ul>
+<li><a href="#sec-4-3-1">4.3.1. </a></li>
+<li><a href="#sec-4-3-2">4.3.2. </a></li>
 </ul>
 </li>
-<li><a href="#sec-5">5 Exercises and reading</a>
+<li><a href="#sec-4-4">4.4. </a></li>
+</ul>
+</li>
+<li><a href="#sec-5">5. Exercises and reading</a>
 <ul>
-<li><a href="#sec-5-1">5.1 Manual:</a></li>
-<li><a href="#sec-5-2">5.2 Tutorial:</a></li>
-<li><a href="#sec-5-3">5.3 Recapitulation:</a></li>
-<li><a href="#sec-5-4">5.4 Explicit disjunctions:</a></li>
-<li><a href="#sec-5-5">5.5 Control of solutions:</a></li>
-<li><a href="#sec-5-6">5.6 Non-identity:</a></li>
-<li><a href="#sec-5-7">5.7 Sets of solutions:</a></li>
-<li><a href="#sec-5-8">5.8 Negation:</a></li>
-<li><a href="#sec-5-9">5.9 Cut:</a></li>
-<li><a href="#sec-5-10">5.10 Informal input language:</a></li>
-<li><a href="#sec-5-11">5.11 Reading:</a></li>
+<li><a href="#sec-5-1">5.1. Manual:</a></li>
+<li><a href="#sec-5-2">5.2. Tutorial:</a></li>
+<li><a href="#sec-5-3">5.3. Recapitulation:</a></li>
+<li><a href="#sec-5-4">5.4. Explicit disjunctions:</a></li>
+<li><a href="#sec-5-5">5.5. Control of solutions:</a></li>
+<li><a href="#sec-5-6">5.6. Non-identity:</a></li>
+<li><a href="#sec-5-7">5.7. Sets of solutions:</a></li>
+<li><a href="#sec-5-8">5.8. Negation:</a></li>
+<li><a href="#sec-5-9">5.9. Cut:</a></li>
+<li><a href="#sec-5-10">5.10. Informal input language:</a></li>
+<li><a href="#sec-5-11">5.11. Reading:</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <a id="intro" name="intro"></a></h2>
 <div class="outline-text-2" id="text-1">
-
-
 <p>
 In Chapter 11 we considered very special kinds of grammars which generate one of two exceptional languages: the empty language containing no strings at all, or the language containing just one string, the null-string. Given a logical interpretation, this was Proplog, essentially the propositional part of Prolog. In this chapter the propositions of Proplog become predicates, they now take parameters which are either individual constants or individual variables. The resulting language is called Datalog, it is suitable for certain database applications.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2"><span class="section-number-2">2</span> The Datalog language</h2>
 <div class="outline-text-2" id="text-2">
-
-
 <p>
 Except for the parameters, Datalog is just Proplog. One can enter facts and rules into the database, and one can put <i>questions</i>.
 </p>
+
 <p>
-Facts are just atomic formulas, rules are atomic formulas followed by a condition &mdash; one or more atomic formulas conjoined. Explicit disjunctions are not needed. A question consists of one or more atomic formulas conjoined.
+Facts are just atomic formulas, rules are atomic formulas followed by a condition &#x2014; one or more atomic formulas conjoined. Explicit disjunctions are not needed. A question consists of one or more atomic formulas conjoined.
 </p>
+
 <p>
 Atomic formulas consist of a <i>predicate</i>, optionally followed by a parenthesised list of one or more parameters separated by commas.
 </p>
+
 <p>
-Parameters are individual constants &mdash; now called <i>names</i>, starting with a lowercase letter, or they are individual variables &mdash; or just <i>variables</i>, starting with an uppercase letter. Names have their obvious meaning, whereas variables are either quantified &mdash; in facts and rules, or they are to be bound in queries. In facts and rules a variable first occurring in the <i>head</i>, the first atomic formula, is implicitly universally quantified. In rules a variable first occurring in the <i>body</i>, the condition, is implicitly existentially quantified. In queries any variable is intended to be replaced by whatever names will make the formula provable from the facts and rules of the database.
+Parameters are individual constants &#x2014; now called <i>names</i>, starting with a lowercase letter, or they are individual variables &#x2014; or just <i>variables</i>, starting with an uppercase letter. Names have their obvious meaning, whereas variables are either quantified &#x2014; in facts and rules, or they are to be bound in queries. In facts and rules a variable first occurring in the <i>head</i>, the first atomic formula, is implicitly universally quantified. In rules a variable first occurring in the <i>body</i>, the condition, is implicitly existentially quantified. In queries any variable is intended to be replaced by whatever names will make the formula provable from the facts and rules of the database.
 </p>
+
 <p>
 The following is a single run of the program Datalog. Comments are enclosed in <code>/*</code> and <code>*/</code>.
 </p>
+
 <p>
 A plus symbol <code>+</code> indicates that what follows is to be entered into the database, as facts or rules.
 A minus symbol <code>-</code> indicates that what follows is a series of questions.
 </p>
+
 <p>
-Responses by the system start with a dieresis = &hellip;= and what comes then is an answer <code>yes</code> or <code>no</code>, possibly preceded by a sequence of numbered variable bindings.
+Responses by the system start with a dieresis = &#x2026;= and what comes then is an answer <code>yes</code> or <code>no</code>, possibly preceded by a sequence of numbered variable bindings.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">
-/* entering */
+<pre class="src src-prolog"><span style="color: #66f;">/* </span><span style="color: #66f;">entering */</span>
  +
-/* some facts: */
-male(grandpaSmith).  male(mrSmith).  male(peterSmith).
-male(johnJones).  male(babyJones).
-female(mrsSmith).  female(maryJones).  female(sallyWilkinson).
-father(grandpaSmith,mrSmith).
-husband_wife(mrSmith,mrsSmith).
-father(mrSmith,peterSmith).  mother(mrsSmith,peterSmith).
-father(mrSmith,maryJones).  mother(mrsSmith,maryJones).
-husband_wife(johnJones,maryJones).
-father(johnJones,babyJones).  mother(maryJones,babyJones).
-loves(peterSmith,sallyWilkinson).
+<span style="color: #66f;">/* </span><span style="color: #66f;">some facts: */</span>
+<span style="color: #ffffff; font-weight: bold;">male</span>(grandpaSmith).  <span style="color: #ffffff; font-weight: bold;">male</span>(mrSmith).  <span style="color: #ffffff; font-weight: bold;">male</span>(peterSmith).
+<span style="color: #ffffff; font-weight: bold;">male</span>(johnJones).  <span style="color: #ffffff; font-weight: bold;">male</span>(babyJones).
+<span style="color: #ffffff; font-weight: bold;">female</span>(mrsSmith).  <span style="color: #ffffff; font-weight: bold;">female</span>(maryJones).  <span style="color: #ffffff; font-weight: bold;">female</span>(sallyWilkinson).
+<span style="color: #ffffff; font-weight: bold;">father</span>(grandpaSmith,mrSmith).
+<span style="color: #ffffff; font-weight: bold;">husband_wife</span>(mrSmith,mrsSmith).
+<span style="color: #ffffff; font-weight: bold;">father</span>(mrSmith,peterSmith).  <span style="color: #ffffff; font-weight: bold;">mother</span>(mrsSmith,peterSmith).
+<span style="color: #ffffff; font-weight: bold;">father</span>(mrSmith,maryJones).  <span style="color: #ffffff; font-weight: bold;">mother</span>(mrsSmith,maryJones).
+<span style="color: #ffffff; font-weight: bold;">husband_wife</span>(johnJones,maryJones).
+<span style="color: #ffffff; font-weight: bold;">father</span>(johnJones,babyJones).  <span style="color: #ffffff; font-weight: bold;">mother</span>(maryJones,babyJones).
+<span style="color: #ffffff; font-weight: bold;">loves</span>(peterSmith,sallyWilkinson).
 
-/* some rules: */
-married(H,W) :- husband_wife(H,W).  married(W,H) :- husband_wife(H,W).
-loves(X,Y) :- married(X,Y).
-parent(X,Y) :- father(X,Y).  parent(X,Y) :- mother(X,Y).
+<span style="color: #66f;">/* </span><span style="color: #66f;">some rules: */</span>
+<span style="color: #ffffff; font-weight: bold;">married</span>(<span style="color: #eedd82;">H</span>,<span style="color: #eedd82;">W</span>) :- husband_wife(<span style="color: #eedd82;">H</span>,<span style="color: #eedd82;">W</span>).  <span style="color: #ffffff; font-weight: bold;">married</span>(<span style="color: #eedd82;">W</span>,<span style="color: #eedd82;">H</span>) :- husband_wife(<span style="color: #eedd82;">H</span>,<span style="color: #eedd82;">W</span>).
+<span style="color: #ffffff; font-weight: bold;">loves</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>) :- married(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>).
+<span style="color: #ffffff; font-weight: bold;">parent</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>) :- father(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>).  <span style="color: #ffffff; font-weight: bold;">parent</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>) :- mother(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>).
 
-/* some questions: */
+<span style="color: #66f;">/* </span><span style="color: #66f;">some questions: */</span>
  -
-male(mrSmith).
-... yes
+<span style="color: #ffffff; font-weight: bold;">male</span>(mrSmith).
+... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-male(mrsSmith).
-... no
+<span style="color: #ffffff; font-weight: bold;">male</span>(mrsSmith).
+... <span style="color: #ffffff; font-weight: bold;">no</span>
 
-female(X).
+<span style="color: #ffffff; font-weight: bold;">female</span>(<span style="color: #eedd82;">X</span>).
 1:
-X  =  mrsSmith
+<span style="color: #eedd82;">X</span>  =  mrsSmith
 2:
-X  =  maryJones
+<span style="color: #eedd82;">X</span>  =  maryJones
 3:
-X  =  sallyWilkinson
-... yes
+<span style="color: #eedd82;">X</span>  =  sallyWilkinson
+... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-loves(X,johnJones).
+<span style="color: #ffffff; font-weight: bold;">loves</span>(<span style="color: #eedd82;">X</span>,johnJones).
 1:
-X  =  maryJones
-... yes
+<span style="color: #eedd82;">X</span>  =  maryJones
+... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-loves(X,Y).
+<span style="color: #ffffff; font-weight: bold;">loves</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>).
 1:
-X  =  peterSmith
-Y  =  sallyWilkinson
+<span style="color: #eedd82;">X</span>  =  peterSmith
+<span style="color: #eedd82;">Y</span>  =  sallyWilkinson
 2:
-X  =  mrSmith
-Y  =  mrsSmith
+<span style="color: #eedd82;">X</span>  =  mrSmith
+<span style="color: #eedd82;">Y</span>  =  mrsSmith
 3:
-X  =  johnJones
-Y  =  maryJones
+<span style="color: #eedd82;">X</span>  =  johnJones
+<span style="color: #eedd82;">Y</span>  =  maryJones
 4:
-X  =  mrsSmith
-Y  =  mrSmith
+<span style="color: #eedd82;">X</span>  =  mrsSmith
+<span style="color: #eedd82;">Y</span>  =  mrSmith
 5:
-X  =  maryJones
-Y  =  johnJones
-... yes
+<span style="color: #eedd82;">X</span>  =  maryJones
+<span style="color: #eedd82;">Y</span>  =  johnJones
+... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-parent(PARENT,babyJones).
+<span style="color: #ffffff; font-weight: bold;">parent</span>(<span style="color: #eedd82;">PARENT</span>,babyJones).
 1:
-PARENT  =  johnJones
+<span style="color: #eedd82;">PARENT</span>  =  johnJones
 2:
-PARENT  =  maryJones
-... yes
+<span style="color: #eedd82;">PARENT</span>  =  maryJones
+... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-/* some consistency checks: */
-father(F,C), female(F).
-... no
-mother(M,C), male(M).
-... no
-husband_wife(H,W), female(H).
-... no
-husband_wife(H,W), male(W).
-... no
+<span style="color: #66f;">/* </span><span style="color: #66f;">some consistency checks: */</span>
+<span style="color: #ffffff; font-weight: bold;">father</span>(<span style="color: #eedd82;">F</span>,<span style="color: #eedd82;">C</span>), female(<span style="color: #eedd82;">F</span>).
+... <span style="color: #ffffff; font-weight: bold;">no</span>
+<span style="color: #ffffff; font-weight: bold;">mother</span>(<span style="color: #eedd82;">M</span>,<span style="color: #eedd82;">C</span>), male(<span style="color: #eedd82;">M</span>).
+... <span style="color: #ffffff; font-weight: bold;">no</span>
+<span style="color: #ffffff; font-weight: bold;">husband_wife</span>(<span style="color: #eedd82;">H</span>,<span style="color: #eedd82;">W</span>), female(<span style="color: #eedd82;">H</span>).
+... <span style="color: #ffffff; font-weight: bold;">no</span>
+<span style="color: #ffffff; font-weight: bold;">husband_wife</span>(<span style="color: #eedd82;">H</span>,<span style="color: #eedd82;">W</span>), male(<span style="color: #eedd82;">W</span>).
+... <span style="color: #ffffff; font-weight: bold;">no</span>
 
-/* more rules: */
+<span style="color: #66f;">/* </span><span style="color: #66f;">more rules: */</span>
  +
-ancestor(X,Y) :- parent(X,Y).
-ancestor(X,Z) :- parent(X,Y), ancestor(Y,Z).
+<span style="color: #ffffff; font-weight: bold;">ancestor</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>) :- parent(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>).
+<span style="color: #ffffff; font-weight: bold;">ancestor</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Z</span>) :- parent(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>), ancestor(<span style="color: #eedd82;">Y</span>,<span style="color: #eedd82;">Z</span>).
 
-/* more questions: */
+<span style="color: #66f;">/* </span><span style="color: #66f;">more questions: */</span>
  -
-ancestor(grandpaSmith,DESCENDENT).
+<span style="color: #ffffff; font-weight: bold;">ancestor</span>(grandpaSmith,<span style="color: #eedd82;">DESCENDENT</span>).
 1:
-DESCENDENT  =  mrSmith
+<span style="color: #eedd82;">DESCENDENT</span>  =  mrSmith
 2:
-DESCENDENT  =  peterSmith
+<span style="color: #eedd82;">DESCENDENT</span>  =  peterSmith
 3:
-DESCENDENT  =  maryJones
+<span style="color: #eedd82;">DESCENDENT</span>  =  maryJones
 4:
-DESCENDENT  =  babyJones
-... yes
+<span style="color: #eedd82;">DESCENDENT</span>  =  babyJones
+... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-ancestor(ANCESTOR,DESCENDANT).
+<span style="color: #ffffff; font-weight: bold;">ancestor</span>(<span style="color: #eedd82;">ANCESTOR</span>,<span style="color: #eedd82;">DESCENDANT</span>).
 1:
-ANCESTOR  =  grandpaSmith
-DESCENDANT  =  mrSmith
+<span style="color: #eedd82;">ANCESTOR</span>  =  grandpaSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  mrSmith
 2:
-ANCESTOR  =  mrSmith
-DESCENDANT  =  peterSmith
+<span style="color: #eedd82;">ANCESTOR</span>  =  mrSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  peterSmith
 3:
-ANCESTOR  =  mrSmith
-DESCENDANT  =  maryJones
+<span style="color: #eedd82;">ANCESTOR</span>  =  mrSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  maryJones
 4:
-ANCESTOR  =  johnJones
-DESCENDANT  =  babyJones
+<span style="color: #eedd82;">ANCESTOR</span>  =  johnJones
+<span style="color: #eedd82;">DESCENDANT</span>  =  babyJones
 5:
-ANCESTOR  =  mrsSmith
-DESCENDANT  =  peterSmith
+<span style="color: #eedd82;">ANCESTOR</span>  =  mrsSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  peterSmith
 6:
-ANCESTOR  =  mrsSmith
-DESCENDANT  =  maryJones
+<span style="color: #eedd82;">ANCESTOR</span>  =  mrsSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  maryJones
 7:
-ANCESTOR  =  maryJones
-DESCENDANT  =  babyJones
+<span style="color: #eedd82;">ANCESTOR</span>  =  maryJones
+<span style="color: #eedd82;">DESCENDANT</span>  =  babyJones
 8:
-ANCESTOR  =  grandpaSmith
-DESCENDANT  =  peterSmith
+<span style="color: #eedd82;">ANCESTOR</span>  =  grandpaSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  peterSmith
 9:
-ANCESTOR  =  grandpaSmith
-DESCENDANT  =  maryJones
+<span style="color: #eedd82;">ANCESTOR</span>  =  grandpaSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  maryJones
 10:
-ANCESTOR  =  grandpaSmith
-DESCENDANT  =  babyJones
+<span style="color: #eedd82;">ANCESTOR</span>  =  grandpaSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  babyJones
 11:
-ANCESTOR  =  mrSmith
-DESCENDANT  =  babyJones
+<span style="color: #eedd82;">ANCESTOR</span>  =  mrSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  babyJones
 12:
-ANCESTOR  =  mrsSmith
-DESCENDANT  =  babyJones
-... yes
+<span style="color: #eedd82;">ANCESTOR</span>  =  mrsSmith
+<span style="color: #eedd82;">DESCENDANT</span>  =  babyJones
+... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-/* a compound question: */
-male(X), ancestor(X,babyJones).
+<span style="color: #66f;">/* </span><span style="color: #66f;">a compound question: */</span>
+<span style="color: #ffffff; font-weight: bold;">male</span>(<span style="color: #eedd82;">X</span>), ancestor(<span style="color: #eedd82;">X</span>,babyJones).
 1:
-X  =  grandpaSmith
+<span style="color: #eedd82;">X</span>  =  grandpaSmith
 2:
-X  =  mrSmith
+<span style="color: #eedd82;">X</span>  =  mrSmith
 3:
-X  =  johnJones
-... yes
+<span style="color: #eedd82;">X</span>  =  johnJones
+... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-/* testing repeated formals */
+<span style="color: #66f;">/* </span><span style="color: #66f;">testing repeated formals */</span>
  +
-likes(X,X) :- male(X).
+<span style="color: #ffffff; font-weight: bold;">likes</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">X</span>) :- male(<span style="color: #eedd82;">X</span>).
 
  -
-likes(X,Y).
+<span style="color: #ffffff; font-weight: bold;">likes</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>).
 1:
-X  =  grandpaSmith
-Y  =  grandpaSmith
+<span style="color: #eedd82;">X</span>  =  grandpaSmith
+<span style="color: #eedd82;">Y</span>  =  grandpaSmith
 2:
-X  =  mrSmith
-Y  =  mrSmith
+<span style="color: #eedd82;">X</span>  =  mrSmith
+<span style="color: #eedd82;">Y</span>  =  mrSmith
 3:
-X  =  peterSmith
-Y  =  peterSmith
+<span style="color: #eedd82;">X</span>  =  peterSmith
+<span style="color: #eedd82;">Y</span>  =  peterSmith
 4:
-X  =  johnJones
-Y  =  johnJones
+<span style="color: #eedd82;">X</span>  =  johnJones
+<span style="color: #eedd82;">Y</span>  =  johnJones
 5:
-X  =  babyJones
-Y  =  babyJones
-... yes
+<span style="color: #eedd82;">X</span>  =  babyJones
+<span style="color: #eedd82;">Y</span>  =  babyJones
+... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
 
-/* ZOOLOGICAL DATABASE */
+<span style="color: #66f;">/* </span><span style="color: #66f;">ZOOLOGICAL DATABASE */</span>
 
-/* Note that this database treats species of animals and also
-their sizes, colours and so on as individuals. This ploy is
-philosophically suspect, but computationally convenient.
-*/
+<span style="color: #66f;">/* </span><span style="color: #66f;">Note that this database treats species of animals and also</span>
+<span style="color: #66f;">their sizes, colours and so on as individuals. This ploy is</span>
+<span style="color: #66f;">philosophically suspect, but computationally convenient.</span>
+<span style="color: #66f;">*/</span>
 
  +
-size(mouse,tiny). size(frog,tiny).
-size(rabbit,small). size(fox,small).
-size(wolf,medium). size(goat,medium). size(pig,medium).
-size(bear,big). size(horse,big). size(cow,big).
-size(elephant,huge). size(giraffe,huge).
-size(X,small) :- size(X,tiny).  size(X,big) :- size(X,huge).
+<span style="color: #ffffff; font-weight: bold;">size</span>(mouse,tiny). <span style="color: #ffffff; font-weight: bold;">size</span>(frog,tiny).
+<span style="color: #ffffff; font-weight: bold;">size</span>(rabbit,small). <span style="color: #ffffff; font-weight: bold;">size</span>(fox,small).
+<span style="color: #ffffff; font-weight: bold;">size</span>(wolf,medium). <span style="color: #ffffff; font-weight: bold;">size</span>(goat,medium). <span style="color: #ffffff; font-weight: bold;">size</span>(pig,medium).
+<span style="color: #ffffff; font-weight: bold;">size</span>(bear,big). <span style="color: #ffffff; font-weight: bold;">size</span>(horse,big). <span style="color: #ffffff; font-weight: bold;">size</span>(cow,big).
+<span style="color: #ffffff; font-weight: bold;">size</span>(elephant,huge). <span style="color: #ffffff; font-weight: bold;">size</span>(giraffe,huge).
+<span style="color: #ffffff; font-weight: bold;">size</span>(<span style="color: #eedd82;">X</span>,small) :- size(<span style="color: #eedd82;">X</span>,tiny).  <span style="color: #ffffff; font-weight: bold;">size</span>(<span style="color: #eedd82;">X</span>,big) :- size(<span style="color: #eedd82;">X</span>,huge).
 
-colour(mouse,grey). colour(mouse,black). colour(mouse,white).
-colour(frog,green). colour(rabbit,brown). colour(rabbit,white).
-colour(fox,red). colour(wolf,brown). colour(elephant,grey).
+<span style="color: #ffffff; font-weight: bold;">colour</span>(mouse,grey). <span style="color: #ffffff; font-weight: bold;">colour</span>(mouse,black). <span style="color: #ffffff; font-weight: bold;">colour</span>(mouse,white).
+<span style="color: #ffffff; font-weight: bold;">colour</span>(frog,green). <span style="color: #ffffff; font-weight: bold;">colour</span>(rabbit,brown). <span style="color: #ffffff; font-weight: bold;">colour</span>(rabbit,white).
+<span style="color: #ffffff; font-weight: bold;">colour</span>(fox,red). <span style="color: #ffffff; font-weight: bold;">colour</span>(wolf,brown). <span style="color: #ffffff; font-weight: bold;">colour</span>(elephant,grey).
 
-feet(horse,hooves). feet(cow,hooves). feet(goat,hooves).
-feet(rabbit,paws). feet(fox,paws). feet(bear,paws).
+<span style="color: #ffffff; font-weight: bold;">feet</span>(horse,hooves). <span style="color: #ffffff; font-weight: bold;">feet</span>(cow,hooves). <span style="color: #ffffff; font-weight: bold;">feet</span>(goat,hooves).
+<span style="color: #ffffff; font-weight: bold;">feet</span>(rabbit,paws). <span style="color: #ffffff; font-weight: bold;">feet</span>(fox,paws). <span style="color: #ffffff; font-weight: bold;">feet</span>(bear,paws).
 
-herbivore(rabbit). herbivore(elephant). herbivore(giraffe).
-herbivore(X) :- feet(X,hooves).
+<span style="color: #ffffff; font-weight: bold;">herbivore</span>(rabbit). <span style="color: #ffffff; font-weight: bold;">herbivore</span>(elephant). <span style="color: #ffffff; font-weight: bold;">herbivore</span>(giraffe).
+<span style="color: #ffffff; font-weight: bold;">herbivore</span>(<span style="color: #eedd82;">X</span>) :- feet(<span style="color: #eedd82;">X</span>,hooves).
 
-carnivore(fox). carnivore(wolf). carnivore(bear).
+<span style="color: #ffffff; font-weight: bold;">carnivore</span>(fox). <span style="color: #ffffff; font-weight: bold;">carnivore</span>(wolf). <span style="color: #ffffff; font-weight: bold;">carnivore</span>(bear).
 
-bigger(X,Y) :- size(X,small), size(Y,tiny).
-bigger(X,Y) :- size(X,medium), size(Y,small).
-bigger(X,Y) :- size(X,big), size(Y,medium).
-bigger(X,Y) :- size(X,huge), size(Y,big).
+<span style="color: #ffffff; font-weight: bold;">bigger</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>) :- size(<span style="color: #eedd82;">X</span>,small), size(<span style="color: #eedd82;">Y</span>,tiny).
+<span style="color: #ffffff; font-weight: bold;">bigger</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>) :- size(<span style="color: #eedd82;">X</span>,medium), size(<span style="color: #eedd82;">Y</span>,small).
+<span style="color: #ffffff; font-weight: bold;">bigger</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>) :- size(<span style="color: #eedd82;">X</span>,big), size(<span style="color: #eedd82;">Y</span>,medium).
+<span style="color: #ffffff; font-weight: bold;">bigger</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>) :- size(<span style="color: #eedd82;">X</span>,huge), size(<span style="color: #eedd82;">Y</span>,big).
 
-eats(X,grass) :- herbivore(X).  eats(X,leaves) :- herbivore(X).
-eats(X,Y) :- carnivore(X), bigger(X,Y).
+<span style="color: #ffffff; font-weight: bold;">eats</span>(<span style="color: #eedd82;">X</span>,grass) :- herbivore(<span style="color: #eedd82;">X</span>).  <span style="color: #ffffff; font-weight: bold;">eats</span>(<span style="color: #eedd82;">X</span>,leaves) :- herbivore(<span style="color: #eedd82;">X</span>).
+<span style="color: #ffffff; font-weight: bold;">eats</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>) :- carnivore(<span style="color: #eedd82;">X</span>), bigger(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>).
 
-eaten(X) :- eats(Y,X).
+<span style="color: #ffffff; font-weight: bold;">eaten</span>(<span style="color: #eedd82;">X</span>) :- eats(<span style="color: #eedd82;">Y</span>,<span style="color: #eedd82;">X</span>).
 
  -
-/* which animal eats another animal of the same colour? */
-eats(EATER,EATEN), colour(EATER,COLOUR), colour(EATEN,COLOUR).
+<span style="color: #66f;">/* </span><span style="color: #66f;">which animal eats another animal of the same colour? */</span>
+<span style="color: #ffffff; font-weight: bold;">eats</span>(<span style="color: #eedd82;">EATER</span>,<span style="color: #eedd82;">EATEN</span>), colour(<span style="color: #eedd82;">EATER</span>,<span style="color: #eedd82;">COLOUR</span>), colour(<span style="color: #eedd82;">EATEN</span>,<span style="color: #eedd82;">COLOUR</span>).
 1:
-    EATER  =  wolf
-    EATEN  =  rabbit
-    COLOUR  =  brown
- ... yes
+    <span style="color: #eedd82;">EATER</span>  =  wolf
+    <span style="color: #eedd82;">EATEN</span>  =  rabbit
+    <span style="color: #eedd82;">COLOUR</span>  =  brown
+ ... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-/* which tiny animals are eaten? */
-eaten(X), size(X,tiny).
+<span style="color: #66f;">/* </span><span style="color: #66f;">which tiny animals are eaten? */</span>
+<span style="color: #ffffff; font-weight: bold;">eaten</span>(<span style="color: #eedd82;">X</span>), size(<span style="color: #eedd82;">X</span>,tiny).
 1:
-    X  =  mouse
+    <span style="color: #eedd82;">X</span>  =  mouse
 2:
-    X  =  frog
+    <span style="color: #eedd82;">X</span>  =  frog
 3:
-    X  =  mouse
+    <span style="color: #eedd82;">X</span>  =  mouse
 4:
-    X  =  frog
- ... yes
+    <span style="color: #eedd82;">X</span>  =  frog
+ ... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-herbivore(ANIMAL), size(ANIMAL,big), colour(ANIMAL, grey).
+<span style="color: #ffffff; font-weight: bold;">herbivore</span>(<span style="color: #eedd82;">ANIMAL</span>), size(<span style="color: #eedd82;">ANIMAL</span>,big), colour(<span style="color: #eedd82;">ANIMAL</span>, grey).
 1:
-    ANIMAL  =  elephant
- ... yes
+    <span style="color: #eedd82;">ANIMAL</span>  =  elephant
+ ... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
 
-/* A MINIATURE AIRLINE - THEY ONLY HAVE TWO FLIGHTS */
+<span style="color: #66f;">/* </span><span style="color: #66f;">A MINIATURE AIRLINE - THEY ONLY HAVE TWO FLIGHTS */</span>
 
-/* illustrating the reduction of n-ary to binary predicates */
+<span style="color: #66f;">/* </span><span style="color: #66f;">illustrating the reduction of n-ary to binary predicates */</span>
 
  +
-dep_place(f1,melbourne).        arr_place(f1,honolulu).
-dep_day(f1,monday).             arr_day(f1,tuesday).
-dep_time(f1,h20).               arr_time(f1,h08).
+<span style="color: #ffffff; font-weight: bold;">dep_place</span>(f1,melbourne).        <span style="color: #ffffff; font-weight: bold;">arr_place</span>(f1,honolulu).
+<span style="color: #ffffff; font-weight: bold;">dep_day</span>(f1,monday).             <span style="color: #ffffff; font-weight: bold;">arr_day</span>(f1,tuesday).
+<span style="color: #ffffff; font-weight: bold;">dep_time</span>(f1,h20).               <span style="color: #ffffff; font-weight: bold;">arr_time</span>(f1,h08).
 
-dep_place(f2,honolulu).         arr_place(f2,melbourne).
-dep_day(f2,thursday).           arr_day(f2,friday).
-dep_time(f2,h22).               arr_time(f2,h10).
+<span style="color: #ffffff; font-weight: bold;">dep_place</span>(f2,honolulu).         <span style="color: #ffffff; font-weight: bold;">arr_place</span>(f2,melbourne).
+<span style="color: #ffffff; font-weight: bold;">dep_day</span>(f2,thursday).           <span style="color: #ffffff; font-weight: bold;">arr_day</span>(f2,friday).
+<span style="color: #ffffff; font-weight: bold;">dep_time</span>(f2,h22).               <span style="color: #ffffff; font-weight: bold;">arr_time</span>(f2,h10).
 
-flight(N,D_PLACE,D_DAY,D_TIME,A_PLACE,A_DAY,A_TIME) :-
-        dep_place(N,D_PLACE),           arr_place(N,A_PLACE),
-        dep_day(N,D_DAY),               arr_day(N,A_DAY),
-        dep_time(N,D_TIME),             arr_time(N,A_TIME).
+<span style="color: #ffffff; font-weight: bold;">flight</span>(<span style="color: #eedd82;">N</span>,<span style="color: #eedd82;">D_PLACE</span>,<span style="color: #eedd82;">D_DAY</span>,<span style="color: #eedd82;">D_TIME</span>,<span style="color: #eedd82;">A_PLACE</span>,<span style="color: #eedd82;">A_DAY</span>,<span style="color: #eedd82;">A_TIME</span>) :-
+        dep_place(<span style="color: #eedd82;">N</span>,<span style="color: #eedd82;">D_PLACE</span>),           arr_place(<span style="color: #eedd82;">N</span>,<span style="color: #eedd82;">A_PLACE</span>),
+        dep_day(<span style="color: #eedd82;">N</span>,<span style="color: #eedd82;">D_DAY</span>),               arr_day(<span style="color: #eedd82;">N</span>,<span style="color: #eedd82;">A_DAY</span>),
+        dep_time(<span style="color: #eedd82;">N</span>,<span style="color: #eedd82;">D_TIME</span>),             arr_time(<span style="color: #eedd82;">N</span>,<span style="color: #eedd82;">A_TIME</span>).
 
  -
-/* what is the flight departing Honolulu and arriving in Melbourne? */
+<span style="color: #66f;">/* </span><span style="color: #66f;">what is the flight departing Honolulu and arriving in Melbourne? */</span>
 
-flight(FLIGHT_NUMBER,honolulu,DEPARTURE_DAY,DEPARTURE_TIME,
-                     melbourne,ARRIVAL_DAY,ARRIVAL_TIME).
+<span style="color: #ffffff; font-weight: bold;">flight</span>(<span style="color: #eedd82;">FLIGHT_NUMBER</span>,honolulu,<span style="color: #eedd82;">DEPARTURE_DAY</span>,<span style="color: #eedd82;">DEPARTURE_TIME</span>,
+                     melbourne,<span style="color: #eedd82;">ARRIVAL_DAY</span>,<span style="color: #eedd82;">ARRIVAL_TIME</span>).
 1:
-    FLIGHT_NUMBER  =  f2
-    DEPARTURE_DAY  =  thursday
-    DEPARTURE_TIME  =  h22
-    ARRIVAL_DAY  =  friday
-    ARRIVAL_TIME  =  h10
- ... yes
+    <span style="color: #eedd82;">FLIGHT_NUMBER</span>  =  f2
+    <span style="color: #eedd82;">DEPARTURE_DAY</span>  =  thursday
+    <span style="color: #eedd82;">DEPARTURE_TIME</span>  =  h22
+    <span style="color: #eedd82;">ARRIVAL_DAY</span>  =  friday
+    <span style="color: #eedd82;">ARRIVAL_TIME</span>  =  h10
+ ... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-/* which flight arrives on a tuesday ? */
+<span style="color: #66f;">/* </span><span style="color: #66f;">which flight arrives on a tuesday ? */</span>
 
-flight(FLIGHT_NUMBER,DEPARTURE_PLACE,DEPARTURE_DAY,DEPARTURE_TIME,
-                     ARRIVAL_PLACE,tuesday,ARRIVAL_TIME).
+<span style="color: #ffffff; font-weight: bold;">flight</span>(<span style="color: #eedd82;">FLIGHT_NUMBER</span>,<span style="color: #eedd82;">DEPARTURE_PLACE</span>,<span style="color: #eedd82;">DEPARTURE_DAY</span>,<span style="color: #eedd82;">DEPARTURE_TIME</span>,
+                     <span style="color: #eedd82;">ARRIVAL_PLACE</span>,tuesday,<span style="color: #eedd82;">ARRIVAL_TIME</span>).
 1:
-    FLIGHT_NUMBER  =  f1
-    DEPARTURE_PLACE  =  melbourne
-    DEPARTURE_DAY  =  monday
-    DEPARTURE_TIME  =  h20
-    ARRIVAL_PLACE  =  honolulu
-    ARRIVAL_TIME  =  h08
- ... yes
+    <span style="color: #eedd82;">FLIGHT_NUMBER</span>  =  f1
+    <span style="color: #eedd82;">DEPARTURE_PLACE</span>  =  melbourne
+    <span style="color: #eedd82;">DEPARTURE_DAY</span>  =  monday
+    <span style="color: #eedd82;">DEPARTURE_TIME</span>  =  h20
+    <span style="color: #eedd82;">ARRIVAL_PLACE</span>  =  honolulu
+    <span style="color: #eedd82;">ARRIVAL_TIME</span>  =  h08
+ ... <span style="color: #ffffff; font-weight: bold;">yes</span>
 
-/* which flight arrives on a thursday ? */
+<span style="color: #66f;">/* </span><span style="color: #66f;">which flight arrives on a thursday ? */</span>
 
-flight(FLIGHT_NUMBER,DEPARTURE_PLACE,DEPARTURE_DAY,DEPARTURE_TIME,
-                     ARRIVAL_PLACE,thursday,ARRIVAL_TIME).
- ... no
-CPU time for this session: 150 milliseconds
+<span style="color: #ffffff; font-weight: bold;">flight</span>(<span style="color: #eedd82;">FLIGHT_NUMBER</span>,<span style="color: #eedd82;">DEPARTURE_PLACE</span>,<span style="color: #eedd82;">DEPARTURE_DAY</span>,<span style="color: #eedd82;">DEPARTURE_TIME</span>,
+                     <span style="color: #eedd82;">ARRIVAL_PLACE</span>,thursday,<span style="color: #eedd82;">ARRIVAL_TIME</span>).
+ ... <span style="color: #ffffff; font-weight: bold;">no</span>
+<span style="color: #eedd82;">CPU</span> time for this session: 150 milliseconds
 </pre>
-
+</div>
 
 <p>
 The above sample run did not illustrate error treatment and did not show the generated code or any tracing during a run.
 </p>
+
 <p>
 If you are familiar with Prolog, then you will notice that Datalog is pure Prolog but with terms restricted to being either simple variables or simple constants; there are no function symbols from which to build compound terms.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3" class="outline-2">
+<div id="outline-container-sec-3" class="outline-2">
 <h2 id="sec-3"><span class="section-number-2">3</span> Designing the implementation</h2>
 <div class="outline-text-2" id="text-3">
-
-
 <p>
 In order to obtain a short implementation, we shall spend some effort in designing the most suitable <i>grammar</i> for Datalog. As in previous projects, the next design steps are the parser and then, in several steps, the translator and the interpreter.
 </p>
-
 </div>
 
-<div id="outline-container-3-1" class="outline-3">
+<div id="outline-container-sec-3-1" class="outline-3">
 <h3 id="sec-3-1"><span class="section-number-3">3.1</span> A regular grammar for Datalog</h3>
 <div class="outline-text-3" id="text-3-1">
-
-
 <p>
 In previous chapters we have generally started by giving a ready made grammar and possibly a complete manual. Then it became possible to base the implementation on the grammar. In this chapter we shall develop the grammar in several stages.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">input  ::=
+<pre class="src src-ebnf">input  ::=
         [   '+'
           | '-'
           | atom { ':-' formula } '.'
@@ -532,73 +490,77 @@ l-identifier  ::=  lowercase letter,
 u-identifier  ::=  uppercase letter,
                    followed by further letters, digits and underscores
 </pre>
-
+</div>
 
 <p>
 Note that formulas and parameterlists are very similar in structure, and that both are recursively defined in terms of themselves. There is no other recursion at all. If these two recursive definitions could be replaced by non-recursive ones, then the entire grammar would be free of recursion. Then any occurrences of non-terminals could be replaced by their definition, and the entire language would be defined by just the first production as expanded.
 </p>
+
 <p>
 To remove the recursion in the definitions of formulas and parameterlists we can replace the option braces by repetition brackets:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">formula  ::=  atom [ ',' atom ]
+<pre class="src src-ebnf">formula  ::=  atom [ ',' atom ]
 parameterlist  ::=  parameter  [ ',' parameter ]
 </pre>
-
+</div>
 
 <p>
 If in the production for formula we now replace the two occurrences of atom by its definition we end up with:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">formula  ::=  predicate { '(' parameterlist ') }
+<pre class="src src-ebnf">formula  ::=  predicate { '(' parameterlist ') }
               [ ',' predicate { '(' parameterlist ')' } ]
 </pre>
-
+</div>
 
 <p>
 If we replace the two occurrences of parameterlist by its definition, then we end up with something even longer. Clearly what is needed is a way of defining formulas as consisting of one or more atomic formulas separated by commas. A construct that does this is what is used by Digital Equipment Corporation in their help files.
 </p>
+
 <p>
-The dieresis <code>...</code> is to mean: the previous item. Inside repetition brackets it means: while there is a comma, repeat the previous item. Note that the dieresis can always be eliminated by replacing it textually with the previous item. Hence no new expressive power is introduced by the device.
+The dieresis <code>&#x2026;</code> is to mean: the previous item. Inside repetition brackets it means: while there is a comma, repeat the previous item. Note that the dieresis can always be eliminated by replacing it textually with the previous item. Hence no new expressive power is introduced by the device.
 </p>
+
 <p>
 The two productions can now be written like this:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">formula  ::=  atom [',' ...]
+<pre class="src src-ebnf">formula  ::=  atom [',' ...]
 parameterlist  ::=  parameter  [',' ...]
 </pre>
-
+</div>
 
 <p>
 The device has the welcome effect that diereses are not non-terminals and hence are not to be expanded.
 </p>
+
 <p>
 We can now expand:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">parameterlist  ::=  (name | variable) [',' ...]
+<pre class="src src-ebnf">parameterlist  ::=  (name | variable) [',' ...]
 atom  ::=  predicate { '(' (name | variable) [',' ...] ')' }
 formula  ::=  ( predicate { '(' (name | variable) [',' ...] ')' } )
               [',' ...]
 </pre>
-
+</div>
 
 <p>
 The entire grammar can now be written as:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">input  ::=
+<pre class="src src-ebnf">input  ::=
   [   '+'
     | '-'
     | { l-identifier { '(' (l-identifier | u-identifier) [',' ...] ')' } }
@@ -607,84 +569,93 @@ The entire grammar can now be written as:
         [',' ...] }
       '.' ]
 </pre>
-
+</div>
 
 <p>
 The first long line handles the <i>formal</i> parameters, the second long line handles the <i>actual</i> parameters. Having the lists of parameters defined twice seems wasteful, but it is a small price to pay for the elimination of other non-terminals. More importantly, having them defined twice is in fact helpful for the compiler, because code generation is very different for the formal and actual parameters.
 </p>
+
 <p>
-The entire grammar is non-recursive &mdash; in the right hand side of the production the only symbols are the terminals <code>+</code>, <code>-</code>, <code>(</code>, <code>)</code>, =,=, <code>:-</code>, <code>.</code> and the two non-terminals l-identifier and u-identifier. Even these two non-terminals could be eliminated in favour of terminals.
+The entire grammar is non-recursive &#x2014; in the right hand side of the production the only symbols are the terminals <code>+</code>, <code>-</code>, <code>(</code>, <code>)</code>, =,=, <code>:-</code>, <code>.</code> and the two non-terminals l-identifier and u-identifier. Even these two non-terminals could be eliminated in favour of terminals.
 </p>
+
 <p>
 However, the terminals and these two non-terminals will of course be handled by the scanner, so there is no point in doing this elimination. There are no other non-terminals, apart from the start symbol, so the entire language is defined by the regular expression which is the right hand side of one production. Hence it will be possible to write a parser which does not use any parsing procedures apart from the main program.
 </p>
+
 <p>
 This is the first time that we have had a non-trivial language which could be defined by a regular expression. We shall use the opportunity to write the entire parser in the main program. You should judge yourself whether you like this monolithic style or whether you prefer to have the parser broken up into several procedures.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-2" class="outline-3">
+<div id="outline-container-sec-3-2" class="outline-3">
 <h3 id="sec-3-2"><span class="section-number-3">3.2</span> Parsing</h3>
 <div class="outline-text-3" id="text-3-2">
-
-
 <p>
 The scanner has to recognise several single character symbols, the two character symbol turnstyle <code>:-</code>, and user introduced identifiers.  The latter may be predicates or names, both starting with a lowercase letter, or they may be variables, starting with an uppercase letter.  It is best if the scanner distinguishes identifiers beginning with a lowercase letter and those beginning with an uppercase letter.  It does not look up or enter into a symbol table.
 </p>
+
 <p>
 The scanner also has to recognise Prolog- or C-style comments enclosed in <code>/*</code> and <code>*/</code>.  These are similar to the Pascal-style comments enclosed in <code>(*</code> and <code>*)</code> that were first used in Mondef.  The difference is that <code>(</code>, the first character of a Pascal-style comment, when not followed by a <code>*</code>, was also a legal character in Mondef, and, incidentally, in Pascal.  By contrast, the slash <code>/</code>, the first character of a Prolog- or C-style comment, when not followed by a <code>*</code>, is not a legal symbol in Datalog, though it is in Prolog and in C.
 </p>
+
 <p>
 Since no parsing procedures are needed, the entire parser is contained in the body of the main program. It consists of a big <code>REPEAT</code> loop which examines the current input symbol. If it is one of the mode switches <code>+</code> or <code>-</code>, then the mode is set accordingly, for entering or for questioning. Otherwise, depending on the mode, either a fact or rule is to be entered, or a question is to be put.
 </p>
+
 <p>
 In entering mode, a clause is expected. The first symbol has to be a lowercase identifier, a predicate, and this may be followed by a parenthesised list of parameters separated by commas. If a left parenthesis is seen, then the list of parameters is handled by a <code>REPEAT</code> loop which exits when the next symbol is not a comma. Each parameter has to be a lowercase identifier, a constant, or an uppercase identifier, a variable. The next symbol should then be a right parenthesis. After the predicate and perhaps the parameters, a turnstyle may occur; if not, a period is expected.
 </p>
+
 <p>
 Whatever the mode, if the next symbol is not a period, a formula is expected, consisting of one or more atomic formulas separated by the <i>and</i>-commas. This is again handled by a <code>REPEAT</code> loop which on each pass handles one atomic formula, the loop exits when the next symbol is not an identifier. Each atomic formula is handled like the head of a clause described in the previous paragraph: it has to consist of a lowercase identifier possibly followed by a list of parameters handled by a further <code>REPEAT</code> loop.
 </p>
+
 <p>
 Whatever the mode, the next symbol must be the terminating period.
 </p>
+
 <p>
 This completes the parser. Note that the comma-separated lists of formal and actual parameters are treated slightly differently from the comma-separated lists of atomic formulas. Following the method of stepwise refinement used in previous chapters, we now expand on this basic skeleton. If you are writing the program yourself, you are strongly urged to write the parser up to this point.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-3" class="outline-3">
+<div id="outline-container-sec-3-3" class="outline-3">
 <h3 id="sec-3-3"><span class="section-number-3">3.3</span> The symbol tables</h3>
 <div class="outline-text-3" id="text-3-3">
-
-
 <p>
 During parsing two kinds of identifiers will be encountered by the scanner: those beginning with a lowercase letter and those beginning with an uppercase letter.
 </p>
+
 <p>
 The parser accepts lowercase identifiers in predicate position to the left of the turnstyle and to the right of the turnstyle. Such predicates have to be recognised later, so they are entered into a table of predicates. That table will also contain pointers to the code of each defined predicate.
 </p>
+
 <p>
 The parser accepts lowercase identifiers and uppercase identifiers in parameter positions, either as formal parameters to the left of the turnstyle, or as actual parameters to the right of the turnstyle.
 </p>
+
 <p>
 Variables play a vital role for identification of values inside a clause or a query, but their meaning is local to that clause or query. Therefore they can be entered into a shortlived and quite small table as they are encountered; the same space can be used for all clauses and queries. On the other hand, lowercase identifiers in parameter positions are names, they retain their meaning outside any clause in which they occur, so they have to be entered into a permanent table.
 </p>
+
 <p>
 It follows that there are three separate tables: for predicates, for variables and for names. They are not managed by the scanner but each by an independent function which handles lookup and, if necessary, new entries. All three tables will be consulted for code generation to determine various addresses.
 </p>
+
 <p>
 There is one more major <code>ARRAY</code>, the code that is generated by the now familiar procedure generate.
 </p>
+
 <p>
 If an error occurs, then all three tables should be restored to what they were at the start of the clause or query in which the error happened. In particular, any recent entries to any of the tables should be removed, by resetting the indices to what they were at the start of the clause or query containing the error. The resetting is done by the error procedure, but it has to know what to reset the indices to. So, the main program must set several save-variables
 to the values of the variables to be saved. Setting these save-variables has to occur just before a clause or query is being read. Actually only the indices of the table of predicates and the table of names have to be reset by the error procedure, since the table of variables will be reset automatically for the reading of the next clause or query. And while on the topic of resetting, in order not to waste space in the code that has been generated, the index to the last code should be reset after any error or after reading and processing a query.
 </p>
+
 <p>
 The utility routines then are:
-</p><ul>
+</p>
+<ul class="org-ul">
 <li>a procedure <code>getch</code>,
 </li>
 <li>a procedure <code>getsym</code>,
@@ -697,926 +668,813 @@ The utility routines then are:
 </li>
 </ul>
 
-
 <p>
 The only other procedure is the interpreter, the theorem prover itself.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-4" class="outline-3">
+<div id="outline-container-sec-3-4" class="outline-3">
 <h3 id="sec-3-4"><span class="section-number-3">3.4</span> Outline of the interpreter:</h3>
 <div class="outline-text-3" id="text-3-4">
-
-
 <p>
 Several of our previous programs have used backtracking; they had a global variable to which changes were made and later undone. For Datalog the global variable will have to be a stack containing values of parameters of predicates being called. These parameters are either constants or variables. The latter may at any one moment be undefined or defined. When they become defined, they do not become constants, but they become pointers to constants or pointers to pointers to constants, or pointers to pointers to pointers to constants, and so on.
 </p>
+
 <p>
 If two variables directly or indirectly point to a third which directly or indirectly points to a fourth, then if one of the first two becomes defined then so does the other and the third and the fourth. This is the way logical variables have to behave. In the stack any value that is a pointer value always points down into the lower part of the stack.
 </p>
+
 <p>
 Now consider a query with several variables:
 </p>
 
-
-
-<pre class="example">p(X,Y), q(Y,Z).
+<pre class="example">
+p(X,Y), q(Y,Z).
 </pre>
-
 
 <p>
 The three variables <code>X</code>, <code>Y</code> and <code>Z</code> have to become variables at the bottom of the stack, so that their values may be printed out later.
 </p>
+
 <p>
-For the call to <code>p</code>, <code>X</code> and <code>Y</code> have to be pushed as parameters &mdash; the stack now contains five elements. Then <code>p</code> can be called, possibly repeatedly. Any one of these calls may give values to the parameters <code>X</code> and Y by giving values to the <code>X</code> and <code>Y</code> at the bottom of the stack.
+For the call to <code>p</code>, <code>X</code> and <code>Y</code> have to be pushed as parameters &#x2014; the stack now contains five elements. Then <code>p</code> can be called, possibly repeatedly. Any one of these calls may give values to the parameters <code>X</code> and Y by giving values to the <code>X</code> and <code>Y</code> at the bottom of the stack.
 </p>
+
 <p>
-Each of the calls that succeeds is followed by pushing <code>Y</code> and <code>Z</code> as parameters for <code>q</code> &mdash; the stack now contains seven elements &mdash; and possibly repeated calls to <code>q</code>. Each successful call to <code>q</code> is followed by the three bottom values <code>X</code>, <code>Y</code> and <code>Z</code> being printed. With this much by way of preview of the interpreter, we now take a first look at code generation.
+Each of the calls that succeeds is followed by pushing <code>Y</code> and <code>Z</code> as parameters for <code>q</code> &#x2014; the stack now contains seven elements &#x2014; and possibly repeated calls to <code>q</code>. Each successful call to <code>q</code> is followed by the three bottom values <code>X</code>, <code>Y</code> and <code>Z</code> being printed. With this much by way of preview of the interpreter, we now take a first look at code generation.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-5" class="outline-3">
+<div id="outline-container-sec-3-5" class="outline-3">
 <h3 id="sec-3-5"><span class="section-number-3">3.5</span> Code generation: opcodes</h3>
 <div class="outline-text-3" id="text-3-5">
-
-
 <p>
 It will be best if we begin with the code generation for the formal and the actual parameters.
 </p>
-
 </div>
 
-<div id="outline-container-3-5-1" class="outline-4">
+<div id="outline-container-sec-3-5-1" class="outline-4">
 <h4 id="sec-3-5-1"><span class="section-number-4">3.5.1</span> Formal Parameters:</h4>
 <div class="outline-text-4" id="text-3-5-1">
-
-
 <p>
 Formal parameters occur in facts and in heads of rules. First, consider formal parameters that are names. At runtime a check has to be made that the corresponding actual parameters either matches or can be made to match this same name. The actual parameter can be a name or a variable pointing either directly or indirectly to something further down which is either defined or undefined. If the actual parameter is the same name as the formal parameters, or if the actual parameter is a direct or indirect pointer to the same name as the formal parameter, then the actual and the formal parameter already match. If the actual parameter is a different name or a pointer to a different name, then the parameters do not match and cannot be made to match. If the actual parameter is an undefined variable or a pointer to an undefined variable, then the actual and the formal parameter can be made to match by setting that undefined variable to the name which is the formal parameter. At compile time it will not be known in general which of these cases will occur at run time. But at compile time it is only necessary to generate a match instruction specifying which name is to be matched to which actual parameter. The name to be matched is passed as an address to the table of names. The actual parameter to be matched will be an address in the stack, but we leave the computation of that address to a further refinement step. So, when a formal parameter is a name, the compiler has to generate an instruction to match a name, and one field of the instruction, say the a-field, is the address of the name to be matched.
 </p>
+
 <p>
 Second, consider formal parameters that are variables. The corresponding actual parameters can be a name or a variable. But if the formal parameter is a variable, this means that no restrictions are placed on the actual parameter. Hence no matching need be done, and no code has to be generated. There is one exception to this, when a formal parameter is a variable that has already occurred as an earlier formal parameter in the same fact or the same head of a rule. In that case the actual parameters corresponding to the first and later occurrences have to match or be made to match. This has two consequences for the compiler:
 </p>
-<ol>
-<li>the first time that a variable occurs as a formal parameter no code is generated but it is recorded in the table of variables that it has already occurred.
 
+<ol class="org-ol">
+<li>the first time that a variable occurs as a formal parameter no code is generated but it is recorded in the table of variables that it has already occurred.
 </li>
+
 <li>any second or further time that variable occurs as a formal parameter an instruction has to be generated to match the later occurrences with the first occurrence. The computation of the two addresses to be matched is left to a further refinement step. So, when a formal parameter is a repeated variable, the compiler has to generate an instruction to match two actual parameters.
 </li>
 </ol>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-3-5-2" class="outline-4">
+<div id="outline-container-sec-3-5-2" class="outline-4">
 <h4 id="sec-3-5-2"><span class="section-number-4">3.5.2</span> Actual parameters:</h4>
 <div class="outline-text-4" id="text-3-5-2">
-
-
 <p>
 Actual parameters occur in bodies of rules and in queries. First, consider actual parameters that are names. At run time they may have to be matched with their corresponding formal parameters. For this to be possible, the actual parameters have to be on the stack at a position that will be known when the match is to be made. It is easiest to just push the actual parameter onto the stack, and to let the match instruction know where that will be. So when an actual parameter is a name, the compiler has to generate an instruction to push an address in the table of names onto the stack.
 </p>
+
 <p>
 Second, consider actual parameters that are variables. Two cases need to be distinguished, depending whether we are in a query or in the body of a rule. In both cases a variable has to be pushed onto the stack. But the details will be different in queries and in bodies. In queries the address has to be an absolute address somewhere at the bottom of the stack, because this is where any real changes are to be made and where the values are located for printout. In bodies two subcases need to be distinguished: the actual parameter variable is a formal parameter of the head of the rule, or it is a variable which first occurred in the body. In the first subcase what has to be pushed at run time is a pointer to that formal parameter, so the compiler has to generate an instruction which will push an address to that formal parameter. But since the absolute address of that formal parameter cannot be known at compile time, it has to be a relative address, an offset from the current top of the stack. In the second subcase, when the actual parameter is a variable which first occurred in the body, this variable is to be understood as existentially quantified. There may be several occurrences of that same variable in the body. For the first occurrence a new location on the stack has to be claimed and set to undefined in the same way as the undefined values at the bottom of the stack in a query. Any later occurrences of the same variables have to become pointers to that first occurrence. So, for the first occurrence the compiler has to generate an instruction to push an undefined value. For the later occurrences it has to push the address of that value; this address will be relative to the top of the stack. Just as for repeated formal parameters, a record has to be kept in the table of variables when the instruction for the first occurrence was generated.
 </p>
+
 <p>
 This completes the first step of the code generation for parameters; details of computing addresses are left as a further refinement step.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-5-3" class="outline-4">
+<div id="outline-container-sec-3-5-3" class="outline-4">
 <h4 id="sec-3-5-3"><span class="section-number-4">3.5.3</span> Code for a predicate:</h4>
 <div class="outline-text-4" id="text-3-5-3">
-
-
 <p>
 If a predicate is first used to the right of the turnstyle and never defined by a clause, then the table for predicates has to record this, so that the interpreter will fail and not continue with the solution set. If a predicate is being defined just once, then a pointer to the code for the clause has to be recorded in the table of predicates, to be found there by the interpreter. If a predicate is being defined a second time, then the table already contains a pointer to some code. Then this old code has to be disjoined with the new code, and the table has to be made to point to this new disjunction. If a predicate is being defined a third or further time, then the table already contains a pointer to a disjunction which has to be further disjoined with the new code so that the table can now point to the new disjunction. If this is done naively, then possibly inefficient code will result: the code for that predicate becomes a left linear tree and to access the code for the first clause the interpreter has to call itself recursively once for each clause that is does not yet want to execute. A right linear tree is preferable, it can be produced by remembering in the table the last disjunct and updating that for each new clause.
 </p>
+
 <p>
 At first sight it looks as though for formulas much of the code generation and its later interpretation can be similar to the AND-OR trees we have seen before. In particular, conjunctions would become <i>and</i>-nodes, the implicit disjunctions of several clauses for the same predicate would become or-nodes, predicates in call-positions become <i>call</i>-nodes.
 </p>
+
 <p>
 In addition, there will be various kinds of nodes for both formal and actual parameters. At first sight lists of formal or of actual parameters would be conjoined with <i>and</i>-nodes.
 </p>
+
 <p>
 If parameters were to be linked by <i>and</i>-nodes, then for each parameter the interpreter has to execute two instructions, one for the parameter and one for the AND. There is a more efficient method which produces only half the code and hence is also faster to execute: It depends on the fact that each push or match is encoded in just one instruction. Parameters are pushed or matched in the order in which they occur in the source, and the execution can follow this order sequentially rather than relying on linkage. This implies when a push or a match has been done, the interpreter calls itself recursively with the textually next instruction.
 </p>
+
 <p>
 The idea can be extended to the conjunctions arising from the comma separating atomic formulas. Again it is possible to let the interpreter handle each atomic formula and then the textually next atomic formula. A small price has to be paid for the elimination of <i>and</i>-nodes: now it becomes necessary to terminate the code for every formula by a special instruction whose execution causes the interpreter to continue with whatever caused the execution of the current formula.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-5-4" class="outline-4">
+<div id="outline-container-sec-3-5-4" class="outline-4">
 <h4 id="sec-3-5-4"><span class="section-number-4">3.5.4</span> The interpreter</h4>
 <div class="outline-text-4" id="text-3-5-4">
-
-
 <p>
 The principal component of the interpreter is a recursive procedure <i>solve</i> which takes two parameters: a (pointer to a) tree node and a continuation procedure. The nodes consist of an opcode and two integers which are addresses of other nodes, or of names in the table of names, or of predicates in the table of predicates, or of items in the run time stack. The main global data structure used by the interpreter is a stack whose items are either undefined, or the addresses of names, or of other items in the stack. To distinguish the two kinds of addresses, the former are stored as positive integers, the latter as negative integers; a zero value is undefined. In the main program, when a query has been read, the interpreter has to be initialised. For each of the variables that occurred in the query, the corresponding position in the runtime stack has to be initialised to undefined. Then the top of the stack has to be set to the number of such variables.
 </p>
+
 <p>
 The interpreting procedure <code>solve</code> is called with two parameters: the first is the address of the first node of the query, and the second is a continuation procedure, the global procedure to display the contents of the stack corresponding to the variables of the query. When the call to procedure <code>solve</code> finally returns, either a yes or a no answer has to be given, depending on whether <code>solve</code> ever succeeded in calling its global continuation. Finally, to enable the space for the code of the query to be re-used, the index to the code should be reset to what it was before the query was read.
 </p>
+
 <p>
 We now look in some detail at the five different instructions that have to be executed by the recursive interpreting procedure <code>solve</code>.
 </p>
-
 </div>
 
-<div id="outline-container-3-5-4-1" class="outline-5">
-<h5 id="sec-3-5-4-1"><span class="section-number-5">3.5.4.1</span> 1. <span class="target">call</span></h5>
+<div id="outline-container-sec-3-5-4-1" class="outline-5">
+<h5 id="sec-3-5-4-1"><span class="section-number-5">3.5.4.1</span> 1. <a id="call" name="call"></a></h5>
 <div class="outline-text-5" id="text-3-5-4-1">
-
-<p>The <i>call</i> instruction was generated by an atomic formula in either a query or in the body of a definition. The instruction contains an address into the table of predicates. At the time the instruction was generated, there may or may not have been any code associated with the predicate, and if not, some code may have become associated with it later. But at interpretation time whatever code is there has to be executed. So, if there is no code associated with the predicate, then nothing happens, the Datalog call to this predicate fails and the Pascal call to procedure <code>solve</code> merely returns. On the other hand, if there is some code associated with the predicate, then it will be in the form of a right linear tree of or-nodes, and the right-most or-node will not contain anything. It would be possible to interpret each or-node, but this would require two nodes to be interpreted for each clause of a predicate. However, the or-nodes are only generated for the disjunctions of formulas for each predicate. Hence it is possible to sidestep their execution entirely: the right linear tree of or-nodes is executed by a loop which simply executes each of the left parts of a tree.
+<p>
+The <i>call</i> instruction was generated by an atomic formula in either a query or in the body of a definition. The instruction contains an address into the table of predicates. At the time the instruction was generated, there may or may not have been any code associated with the predicate, and if not, some code may have become associated with it later. But at interpretation time whatever code is there has to be executed. So, if there is no code associated with the predicate, then nothing happens, the Datalog call to this predicate fails and the Pascal call to procedure <code>solve</code> merely returns. On the other hand, if there is some code associated with the predicate, then it will be in the form of a right linear tree of or-nodes, and the right-most or-node will not contain anything. It would be possible to interpret each or-node, but this would require two nodes to be interpreted for each clause of a predicate. However, the or-nodes are only generated for the disjunctions of formulas for each predicate. Hence it is possible to sidestep their execution entirely: the right linear tree of or-nodes is executed by a loop which simply executes each of the left parts of a tree.
 </p>
+
 <p>
 This is done by initialising a local variable to the topmost or-node, and then using a <code>REPEAT</code> loop which calls the interpreter using the node address of the left part and then resets the local variable to the right. The loop terminates when the tree has been traversed and the variable points to nothing.
 </p>
+
 <p>
 It is important that each of the later calls for the tree finds the interpreter in the same state as the first did. In particular, this means that the stack and the top of stack have to be the same for each of the calls. The stack itself will be changed and, on backtracking, restored by the other instructions; but the top of stack is best restored for each cycle of the loop. For each of the disjuncts of the left part of the tree, procedure <code>solve</code> calls itself recursively. The first parameter is of course the left part of the or-node currently in the loop, and the second parameter has to be a continuation procedure. As always, the continuation procedure will not be called directly, but only when the code for the current formula has been executed and its terminating return instruction is being executed. Now, executing the code for the current formula involves pushing and popping the stack and, importantly, assigning addresses of names to undefined values down in the stack. These assignments have to remain when the current call continues. But the top of the stack has to be restored before the next conjunct can be executed. Therefore the required continuation must be a local procedure which restores the top of stack to what it was when the current cycle of the loop was entered. So, before entering the <code>REPEAT</code> loop the top of stack can be saved in a local variable to be reset by the local procedure which then calls the continuation which is the parameter. Of course it is possible that this local procedure is not called at all, so the top of stack has to be reset to the local variable independently for each cycle of the <code>REPEAT</code> loop.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-5-4-2" class="outline-5">
-<h5 id="sec-3-5-4-2"><span class="section-number-5">3.5.4.2</span> 2. <span class="target">return</span></h5>
+<div id="outline-container-sec-3-5-4-2" class="outline-5">
+<h5 id="sec-3-5-4-2"><span class="section-number-5">3.5.4.2</span> 2. <a id="return" name="return"></a></h5>
 <div class="outline-text-5" id="text-3-5-4-2">
-
-
 <p>
-The code for each formula is terminated by a <i>return</i> instruction. Even the code for a clause without a body, i.e. a fact, is terminated by such an instruction. When the interpreter reaches the return instruction, it has to continue with the next conjunct of a formula, or with the next return or &mdash; eventually &mdash; with the global procedure to display the values in the lower parts of the stack. Whichever it is will have accumulated in the chain of continuation procedures. So, for the return instruction the interpreter just has to call the continuation parameter. (Note that this is the second place where the continuation parameters may be called &mdash; the other was in the local continuation procedure which restores the stack after the call instruction.)
+The code for each formula is terminated by a <i>return</i> instruction. Even the code for a clause without a body, i.e. a fact, is terminated by such an instruction. When the interpreter reaches the return instruction, it has to continue with the next conjunct of a formula, or with the next return or &#x2014; eventually &#x2014; with the global procedure to display the values in the lower parts of the stack. Whichever it is will have accumulated in the chain of continuation procedures. So, for the return instruction the interpreter just has to call the continuation parameter. (Note that this is the second place where the continuation parameters may be called &#x2014; the other was in the local continuation procedure which restores the stack after the call instruction.)
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-5-4-3" class="outline-5">
-<h5 id="sec-3-5-4-3"><span class="section-number-5">3.5.4.3</span> 3. <span class="target">push</span></h5>
+<div id="outline-container-sec-3-5-4-3" class="outline-5">
+<h5 id="sec-3-5-4-3"><span class="section-number-5">3.5.4.3</span> 3. <a id="push" name="push"></a></h5>
 <div class="outline-text-5" id="text-3-5-4-3">
-
-
 <p>
 The various <code>push</code> instructions arise from actual parameters in queries and in bodies of rules: items to be pushed are names, absolute addresses in the stack, new uninitialised values, and relative addresses in the stack. All four species can be handled by just one instruction. The top of the stack has to be incremented. Then a value has to be assigned to this new location on the stack. For the first three kinds of items it is the value of the a-field of the instruction that is assigned to the top of the stack. For the fourth kind a relative address is obtained by taking instead the difference between the a-field and the top of stack. Then procedure <code>solve</code> calls itself recursively, using as the first parameter the textually next instruction and as the second parameter its own continuation. When the call returns, the stack should be restored to what it was before the call. There are two aspects of this:
 </p>
-<ol>
-<li>The top of stack has been incremented and should be decremented again. This resetting is already done by the call instruction.
 
+<ol class="org-ol">
+<li>The top of stack has been incremented and should be decremented again. This resetting is already done by the call instruction.
 </li>
+
 <li>The stack itself has been overwritten by the value that was pushed. In normal pop operations there is no need to restore to a stack a value that was overwritten by a previous push operation. However, the situation is more complicated here. When a call to a predicate is completed and its return is executed, there may be further clauses waiting as alternatives. These have to find the stack in the same state as the one that was executed and has now returned. So, before procedure <code>solve</code> overwrites the stack and then calls itself, it must save the top of stack and what is contained there in two local variables. Then, when the recursive call returns, the top item of the stack is restored to what it was before the recursive call. It is not necessary to decrement the top of stack, because this is handled by the call instruction.
 </li>
 </ol>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-3-5-4-4" class="outline-5">
-<h5 id="sec-3-5-4-4"><span class="section-number-5">3.5.4.4</span> 4. <span class="target">match-name</span></h5>
+<div id="outline-container-sec-3-5-4-4" class="outline-5">
+<h5 id="sec-3-5-4-4"><span class="section-number-5">3.5.4.4</span> 4. <a id="match-name" name="match-name"></a></h5>
 <div class="outline-text-5" id="text-3-5-4-4">
-
-
 <p>
 The <code>match-name</code> instruction is generated for formal parameters that are names. The instruction contains an address in the name table and an offset from the current top of stack. The instruction should succeed and continue just in case the item in the stack pointed to directly or indirectly by the item at the offset either matches or can be made to match the name addressed in the instruction. To find the item in the stack that is supposed to match, a local variable is initialised to a location given by the top of stack and the offset in the b-field of the instruction. Then a loop is entered: if the item there is merely an address, a negative number, then the local variable is set to that address and so on, until what is found in the stack is not an address. So it must be either a positive number, which is now an address into the table of names, or it is zero. In the first case that address is compared with the address in the a-field of the instruction. If they are the same, then procedure <code>solve</code> calls itself recursively, using the textually next instruction as the first parameter and its own continuation parameter as the second. On the other hand, if what is found at the end of the chain is a zero value, then this counts as undefined. The situation is familiar from previous programs: The undefined value has to be set to the address in the a-field of the instruction, then <code>solve</code> calls itself recursively as before, then the value has to be set to undefined again. Finally, if what is found at the end of the chain is an address that is different from the a-field of the instruction, then the match fails: nothing is done, the call just returns. Note that the actual name, a string, is never manipulated as such.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-5-4-5" class="outline-5">
+<div id="outline-container-sec-3-5-4-5" class="outline-5">
 <h5 id="sec-3-5-4-5"><span class="section-number-5">3.5.4.5</span> 5. &lt;&lt;match-var&gt;</h5>
 <div class="outline-text-5" id="text-3-5-4-5">
-
-
 <p>
 The <i>match-var</i> instruction is generated when a formal parameter is repeated. The function of the instruction is similar to the match-name instruction. The difference is that the match-name instruction contains the address of the name to be matched, whereas the match-var instruction does not. Instead it contains two addresses to be matched, it should succeed and continue just in case the two items in the stack pointed to directly or indirectly by the two addresses either match or can be made to match. To find the two items, two local variables are initialised to the two locations given by the top of the stack and the two address fields of the instruction. Two loops are entered to chain along items in the stack until neither is an address in the stack. So both are now positive or zero. If one of them is zero, i.e. undefined, then it is set to the other, then <code>solve</code> calls itself recursively with the textually next instruction, then it is set back to undefined. If none of them is undefined, then <code>solve</code> calls itself recursively just in case the two are defined the same, otherwise the match fails and the call just returns.
 </p>
 </div>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-3-6" class="outline-3">
+<div id="outline-container-sec-3-6" class="outline-3">
 <h3 id="sec-3-6"><span class="section-number-3">3.6</span> Code generation: addresses</h3>
 <div class="outline-text-3" id="text-3-6">
-
-
 <p>
 We now look at the remaining details of the code generation, in particular the computation of those addresses that were left out in the discussion of the generation of opcodes for parameters. In the parser there are seven places where code for parameters is generated, two for formals and five for actuals.
 </p>
+
 <p>
 For formal parameters the instructions generated are either match-name or match-var instructions. When they are being executed by the interpreter, the corresponding actual parameters will already be on the stack, and hence the addresses used by the two match instructions will be relative to the top of the stack. During code generation for formal parameters, though, it will not be known how many formal parameters there are until the closing parenthesis is reached. By that time the code for the formals has been generated, except that for the match-name instruction the b-field has to be fixed and for the match-var instruction both the a-field and the b-field have to be fixed.
 </p>
+
 <p>
 A simple method of doing this is to keep a count of the actual parameters, by a variable which is initialised to zero when the predicate is seen and which is incremented for each formal parameter encountered.  Then, when the code is generated for the formals, this count is used in the b-field of both instructions.  For variables on their first occurrence the count is saved in the the table of variables, and for later occurrences the saved count is used for the a-field when code is generated for the repeated variable.  When the closing right parenthesis is reached, the addresses in the b-fields and for the match-var instructions also the addresses in the a-field are exactly the inverses of what they should be: for example for b-fields of the last of n parameters it will have the value n when it should be zero.  So, when the closing parenthesis is reached and hence the total number of formals is known, these addresses must be fixed up.  The instructions to be fixed are all those following the or-node that had been generated for the predicate.  The fix up consists of replacing the value in the field by the difference between the count of formals and the value in the field.  Of course for the match-name instruction the a-field is not changed because this contains the absolute address of the name in the table of names.
 </p>
+
 <p>
 For actual parameters all instructions generated will be push instructions. Again it will be necessary to keep a count of the actuals, initialised to zero and incremented for each actual parameter encountered in a formula which is the body of a rule. Syntactically formulas that are queries are treated just like formulas that are bodies, but it so happens that for queries the count of actuals is not needed.
 </p>
+
 <p>
 There are five different places where push instructions are generated for actual parameters. The first occurs when an actual parameter is a name. In that case the a-field is the address of the name in the table
 of names; that address is delivered by the function that looks up and possibly updates the table of names. In all other cases the actual parameter is a variable, the function for looking up and possibly updating the table of variables is called and the address returned is saved in a variable. What to do with that address depends on several factors.
 </p>
+
 <p>
 In questioning mode what has to be pushed is the absolute address
 of the variable, but being an address into the stack it has to be a negative value. So the a-field is the negative of the address, and since it is absolute and not relative to the top of stack, the b-field is set to zero.
 </p>
+
 <p>
 In entering mode, the address of the variable may be less than or equal to the number of formal parameters, or it may be greater. If the address is equal to or less than the number of formals, then the variable has already occurred as a formal parameter. The required address has to be relative to what at run time is the top of stack, and this is indicated by setting the b-field to one. The required absolute value of this relative address is increased by each of the actual parameters there are so far, because each of them increases the distance from the top of stack. The required value is also increased by each intervening formal parameter, and the number of these is given by the difference between the number of formals and the address of the variable. Adding the number of actuals and  this difference gives the required value for the a-field.
 </p>
+
 <p>
 If the address of the variable is greater than the number of formal parameters, then the variable is local and understood to be existentially quantified. The table of variables already records whether this is the first or a later occurrence. If it is the first occurrence, then the interpreter has to push a new undefined item, so the push instruction has a zero in the a-field. Since this value has to be pushed absolutely, the b-field is also set to zero. It is also necessary to record in the table of variables the ordinal number of this first occurrence.
 </p>
+
 <p>
 If there are further occurrences of this local variable, then the interpreter will have to be able to access this initially undefined item. What has to be pushed is a relative address, so the b-field is one. The required value of the relative address is the difference between the ordinal number of the first occurrence as recorded in the table and the current occurrence of this actual parameter.
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-4" class="outline-2">
+<div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4"><span class="section-number-2">4</span> The Program</h2>
 <div class="outline-text-2" id="text-4">
-
-
 <p>
 The following is the standard Pascal source program for Datalog:
 </p>
-
 </div>
 
-<div id="outline-container-4-1" class="outline-3">
-<h3 id="sec-4-1"><span class="section-number-3">4.1</span> <span class="target">datalog</span></h3>
+<div id="outline-container-sec-4-1" class="outline-3">
+<h3 id="sec-4-1"><span class="section-number-3">4.1</span> <a id="datalog" name="datalog"></a></h3>
 <div class="outline-text-3" id="text-4-1">
+<div class="org-src-container">
 
-
-
-
-<pre class="example">
-PROGRAM datalog(input,output);
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">datalog</span>(input,output);
 
 LABEL 1,99;
 
-CONST
+<span style="color: #ff00ff;">CONST</span>
     debugging = true; echo = true;
     alfalength = 16;
     maxpreds = 50; maxvars = 10; maxnames = 100; maxcode = 1000;
     maxstack = 30;
 
-TYPE
-    alfa = PACKED ARRAY [1..alfalength] OF char;
-    message = PACKED ARRAY [1..30] OF char;
+<span style="color: #ff00ff;">TYPE</span>
+    alfa = <span style="color: #ff00ff;">PACKED</span> <span style="color: #ff00ff;">ARRAY</span> [1..alfalength] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">char</span>;
+    <span style="color: #00ffff;">message</span> = <span style="color: #ff00ff;">PACKED</span> <span style="color: #ff00ff;">ARRAY</span> [1..30] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">char</span>;
     pointer = 0..maxcode;
     symbol = (badchar,plus,minus,l_ident,u_ident,
               turnstyle,lpar,rpar,comma,period,query);
     operator = (push,match_const,match_var,cal_,return_,or_);
-VAR
-    ch,lastch : char; sym : symbol; al,nullalfa : alfa;
+<span style="color: #ff00ff;">VAR</span>
+    ch,lastch : <span style="color: #ff00ff;">char</span>; sym : symbol; al,nullalfa : alfa;
 
-    predtab : ARRAY [0 .. maxpreds] OF
-        RECORD name : alfa; start,finish : integer END;
-    lastpredtab,save_lastpredtab,ploc : integer;
+    predtab : <span style="color: #ff00ff;">ARRAY</span> [0 .. maxpreds] <span style="color: #00ffff;">OF</span>
+        <span style="color: #ff00ff;">RECORD</span> <span style="color: #00ffff;">name</span> : alfa; start,finish : <span style="color: #ff00ff;">integer</span> <span style="color: #00ffff;">END</span>;
+    lastpredtab,save_lastpredtab,ploc : <span style="color: #ff00ff;">integer</span>;
 
-    vartab : ARRAY [0 ..maxvars] OF
-        RECORD name : alfa; adr : integer END;
-    lastvartab,vloc : integer;
+    vartab : <span style="color: #ff00ff;">ARRAY</span> [0 ..maxvars] <span style="color: #00ffff;">OF</span>
+        <span style="color: #ff00ff;">RECORD</span> <span style="color: #00ffff;">name</span> : alfa; adr : <span style="color: #ff00ff;">integer</span> <span style="color: #00ffff;">END</span>;
+    lastvartab,vloc : <span style="color: #ff00ff;">integer</span>;
 
-    nametab : ARRAY [0 ..maxnames] OF alfa;
-    lastnametab,save_lastnametab : integer;
+    nametab : <span style="color: #ff00ff;">ARRAY</span> [0 ..maxnames] <span style="color: #00ffff;">OF</span> alfa;
+    lastnametab,save_lastnametab : <span style="color: #ff00ff;">integer</span>;
 
-    code : ARRAY [1..maxcode] OF
-        RECORD op : operator; a,b : integer END;
+    code : <span style="color: #ff00ff;">ARRAY</span> [1..maxcode] <span style="color: #00ffff;">OF</span>
+        <span style="color: #ff00ff;">RECORD</span> op : operator; a,b : <span style="color: #ff00ff;">integer</span> <span style="color: #00ffff;">END</span>;
     lastcode,save_lastcode : pointer;
 
-    num_formals,num_actuals : integer;
-    tracing : boolean;
-    i : integer;
+    num_formals,num_actuals : <span style="color: #ff00ff;">integer</span>;
+    tracing : <span style="color: #ff00ff;">boolean</span>;
+    i : <span style="color: #ff00ff;">integer</span>;
     mode : (entering, questioning);
 
-    num_successes : integer;
-    runstack : ARRAY [1..maxstack] OF integer;
-    top : integer;
+    num_successes : <span style="color: #ff00ff;">integer</span>;
+    runstack : <span style="color: #ff00ff;">ARRAY</span> [1..maxstack] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">integer</span>;
+    top : <span style="color: #ff00ff;">integer</span>;
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-4-2" class="outline-3">
-<h3 id="sec-4-2"><span class="section-number-3">4.2</span> <span class="target">utilities</span></h3>
+</div>
+<div id="outline-container-sec-4-2" class="outline-3">
+<h3 id="sec-4-2"><span class="section-number-3">4.2</span> <a id="utilities" name="utilities"></a></h3>
 <div class="outline-text-3" id="text-4-2">
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #66f;">(* </span><span style="color: #66f;">- - - - -   U T I L I T I E S   - - - - - *)</span>
 
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">getch</span>;
+<span style="color: #00ffff;">BEGIN</span>
+<span style="color: #00ffff;">IF</span> eof <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">99</span>;
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">BEGIN</span> readln; <span style="color: #00ffff;">IF</span> echo <span style="color: #00ffff;">THEN</span> writeln; ch := <span style="color: #00ff00;">' '</span> <span style="color: #00ffff;">END</span>
+        <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">read</span>(ch); <span style="color: #00ffff;">IF</span> echo <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(ch) <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>;
 
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">point</span>(mes : <span style="color: #00ffff;">message</span>);
+<span style="color: #00ffff;">BEGIN</span>
+<span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'error: seen "'</span>);
+<span style="color: #00ffff;">IF</span> sym <span style="color: #00ffff;">IN</span> [l_ident,u_ident] <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(al) <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">write</span>(lastch);
+writeln(<span style="color: #00ff00;">'" when '</span>,mes);
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">point *)</span>
 
-<pre class="example">(* - - - - -   U T I L I T I E S   - - - - - *)
-
-PROCEDURE getch;
-BEGIN
-IF eof THEN GOTO 99;
-IF eoln THEN BEGIN readln; IF echo THEN writeln; ch := ' ' END
-        ELSE BEGIN read(ch); IF echo THEN write(ch) END
-END;
-
-PROCEDURE point(mes : message);
-BEGIN
-write('error: seen "');
-IF sym IN [l_ident,u_ident] THEN write(al) ELSE write(lastch);
-writeln('" when ',mes);
-END; (* point *)
-
-PROCEDURE error(mes : message);
-BEGIN
-WHILE not eoln DO getch; readln; IF echo THEN writeln;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">error</span>(mes : <span style="color: #00ffff;">message</span>);
+<span style="color: #00ffff;">BEGIN</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">not</span> eoln <span style="color: #00ffff;">DO</span> getch; readln; <span style="color: #00ffff;">IF</span> echo <span style="color: #00ffff;">THEN</span> writeln;
 point(mes);
 lastpredtab := save_lastpredtab; lastcode := save_lastcode;
 lastnametab := save_lastnametab;
-WHILE NOT eoln DO getch; readln; GOTO 1
-END (* error *);
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eoln <span style="color: #00ffff;">DO</span> getch; readln; <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">1</span>
+<span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">error *)</span>;
 
-PROCEDURE fatal(mes : message);
-BEGIN
-IF echo THEN writeln;
-write('fatal '); point(mes); GOTO 99
-END; (* fatal *)
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">fatal</span>(mes : <span style="color: #00ffff;">message</span>);
+<span style="color: #00ffff;">BEGIN</span>
+<span style="color: #00ffff;">IF</span> echo <span style="color: #00ffff;">THEN</span> writeln;
+<span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'fatal '</span>); point(mes); <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">99</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">fatal *)</span>
 
-PROCEDURE getsym;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">getsym</span>;
 LABEL 1;
-VAR k : integer;
-BEGIN
-1: WHILE ch &amp;lt;= ' ' DO getch;
-IF ch IN ['A'..'Z','a'..'z'] THEN
-    BEGIN (* identifier *)
-    IF ch IN ['a'..'z'] THEN sym := l_ident ELSE sym := u_ident;
+<span style="color: #ff00ff;">VAR</span> k : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #00ffff;">BEGIN</span>
+1: <span style="color: #00ffff;">WHILE</span> ch &amp;lt;= <span style="color: #00ff00;">' '</span> <span style="color: #00ffff;">DO</span> getch;
+<span style="color: #00ffff;">IF</span> ch <span style="color: #00ffff;">IN</span> [<span style="color: #00ff00;">'A'</span>..<span style="color: #00ff00;">'Z'</span>,<span style="color: #00ff00;">'a'</span>..<span style="color: #00ff00;">'z'</span>] <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">identifier *)</span>
+    <span style="color: #00ffff;">IF</span> ch <span style="color: #00ffff;">IN</span> [<span style="color: #00ff00;">'a'</span>..<span style="color: #00ff00;">'z'</span>] <span style="color: #00ffff;">THEN</span> sym := l_ident <span style="color: #00ffff;">ELSE</span> sym := u_ident;
     k := 0; al := nullalfa;
-    REPEAT
-        IF k &lt; alfalength THEN
-            BEGIN k := k + 1; al[k] := ch END;
+    <span style="color: #00ffff;">REPEAT</span>
+        <span style="color: #00ffff;">IF</span> k &lt; alfalength <span style="color: #00ffff;">THEN</span>
+            <span style="color: #00ffff;">BEGIN</span> k := k + 1; al[k] := ch <span style="color: #00ffff;">END</span>;
         getch
-        UNTIL NOT (ch IN ['A'..'Z','a'..'z','0'..'9','_'])
-    END (* identifier *)
-ELSE
-    BEGIN
-    lastch := ch; getch; sym := badchar; (* for errors *)
-    CASE lastch OF
-        '+' : sym := plus;
-        '-' : sym := minus;
-        '(' : sym := lpar;
-        ')' : sym := rpar;
-        ',' : sym := comma;
-        '.' : sym := period;
-        '?' : sym := query;
-        ':' :
-            BEGIN
-            IF ch = '-' THEN getch ELSE
-                error('":-" intended ?               ');
+        <span style="color: #00ffff;">UNTIL</span> <span style="color: #00ffff;">NOT</span> (ch <span style="color: #00ffff;">IN</span> [<span style="color: #00ff00;">'A'</span>..<span style="color: #00ff00;">'Z'</span>,<span style="color: #00ff00;">'a'</span>..<span style="color: #00ff00;">'z'</span>,<span style="color: #00ff00;">'0'</span>..<span style="color: #00ff00;">'9'</span>,<span style="color: #00ff00;">'_'</span>])
+    <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">identifier *)</span>
+<span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    lastch := ch; getch; sym := badchar; <span style="color: #66f;">(* </span><span style="color: #66f;">for errors *)</span>
+    <span style="color: #00ffff;">CASE</span> lastch <span style="color: #00ffff;">OF</span>
+        <span style="color: #00ff00;">'+'</span> : sym := plus;
+        <span style="color: #00ff00;">'-'</span> : sym := minus;
+        <span style="color: #00ff00;">'('</span> : sym := lpar;
+        <span style="color: #00ff00;">')'</span> : sym := rpar;
+        <span style="color: #00ff00;">','</span> : sym := comma;
+        <span style="color: #00ff00;">'.'</span> : sym := period;
+        <span style="color: #00ff00;">'?'</span> : sym := query;
+        <span style="color: #00ff00;">':'</span> :
+            <span style="color: #00ffff;">BEGIN</span>
+            <span style="color: #00ffff;">IF</span> ch = <span style="color: #00ff00;">'-'</span> <span style="color: #00ffff;">THEN</span> getch <span style="color: #00ffff;">ELSE</span>
+                error(<span style="color: #00ff00;">'":-" intended ?               '</span>);
             sym := turnstyle
-            END;
-        '/' :
-            BEGIN
-            IF ch = '*' THEN getch ELSE
-                error('"/*" intended ?               ');
-            REPEAT
-                WHILE ch &amp;lt;&gt; '*' DO getch;
+            <span style="color: #00ffff;">END</span>;
+        <span style="color: #00ff00;">'/'</span> :
+            <span style="color: #00ffff;">BEGIN</span>
+            <span style="color: #00ffff;">IF</span> ch = <span style="color: #00ff00;">'*'</span> <span style="color: #00ffff;">THEN</span> getch <span style="color: #00ffff;">ELSE</span>
+                error(<span style="color: #00ff00;">'"/*" intended ?               '</span>);
+            <span style="color: #00ffff;">REPEAT</span>
+                <span style="color: #00ffff;">WHILE</span> ch &amp;lt;&gt; <span style="color: #00ff00;">'*'</span> <span style="color: #00ffff;">DO</span> getch;
                 getch
-                UNTIL ch = '/';
-            getch; GOTO 1
-            END;
+                <span style="color: #00ffff;">UNTIL</span> ch = <span style="color: #00ff00;">'/'</span>;
+            getch; <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">1</span>
+            <span style="color: #00ffff;">END</span>;
         OTHERWISE
-            error('this character is illegal     ');
-        END (* CASE *)
-    END (* ELSE *)
-END;  (* getsym *)
+            error(<span style="color: #00ff00;">'this character is illegal     '</span>);
+        <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">CASE *)</span>
+    <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">ELSE *)</span>
+<span style="color: #00ffff;">END</span>;  <span style="color: #66f;">(* </span><span style="color: #66f;">getsym *)</span>
 
-FUNCTION predloc : integer;
-VAR loc : integer;
-BEGIN (* predloc *)
-predtab[0].name := al; loc := lastpredtab;
-WHILE predtab[loc].name &amp;lt;&gt; al DO loc := loc - 1;
-IF loc = 0 THEN
-    BEGIN
-    IF lastpredtab = maxpreds THEN
-        fatal('too many predicates in program');
+<span style="color: #00ffff;">FUNCTION</span> <span style="color: #ffffff; font-weight: bold;">predloc</span> : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #ff00ff;">VAR</span> loc : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">predloc *)</span>
+predtab[0].<span style="color: #00ffff;">name</span> := al; loc := lastpredtab;
+<span style="color: #00ffff;">WHILE</span> predtab[loc].<span style="color: #00ffff;">name</span> &amp;lt;&gt; al <span style="color: #00ffff;">DO</span> loc := loc - 1;
+<span style="color: #00ffff;">IF</span> loc = 0 <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">IF</span> lastpredtab = maxpreds <span style="color: #00ffff;">THEN</span>
+        fatal(<span style="color: #00ff00;">'too many predicates in program'</span>);
     lastpredtab := lastpredtab + 1;
-    WITH predtab[lastpredtab] DO
-        BEGIN name := al; start := 0 END;
+    <span style="color: #00ffff;">WITH</span> predtab[lastpredtab] <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">name</span> := al; start := 0 <span style="color: #00ffff;">END</span>;
     loc := lastpredtab
-    END;
+    <span style="color: #00ffff;">END</span>;
 predloc := loc
-END; (* predloc *)
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">predloc *)</span>
 
-FUNCTION varloc : integer;
-VAR loc : integer;
-BEGIN (* varloc *)
-vartab[0].name := al; loc := lastvartab;
-WHILE vartab[loc].name &amp;lt;&gt; al DO loc := loc - 1;
-IF loc = 0 THEN
-    BEGIN
-    IF lastvartab = maxvars THEN
-        fatal('too many variables in program ');
+<span style="color: #00ffff;">FUNCTION</span> <span style="color: #ffffff; font-weight: bold;">varloc</span> : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #ff00ff;">VAR</span> loc : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">varloc *)</span>
+vartab[0].<span style="color: #00ffff;">name</span> := al; loc := lastvartab;
+<span style="color: #00ffff;">WHILE</span> vartab[loc].<span style="color: #00ffff;">name</span> &amp;lt;&gt; al <span style="color: #00ffff;">DO</span> loc := loc - 1;
+<span style="color: #00ffff;">IF</span> loc = 0 <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">IF</span> lastvartab = maxvars <span style="color: #00ffff;">THEN</span>
+        fatal(<span style="color: #00ff00;">'too many variables in program '</span>);
     lastvartab := lastvartab + 1;
-    WITH vartab[lastvartab]DO
-        BEGIN name := al; adr := 0 END;
+    <span style="color: #00ffff;">WITH</span> vartab[lastvartab]<span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">name</span> := al; adr := 0 <span style="color: #00ffff;">END</span>;
     loc := lastvartab
-    END;
+    <span style="color: #00ffff;">END</span>;
 varloc := loc
-END; (* varloc *)
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">varloc *)</span>
 
-FUNCTION nameloc : integer;
-VAR loc : integer;
-BEGIN (* nameloc *)
+<span style="color: #00ffff;">FUNCTION</span> <span style="color: #ffffff; font-weight: bold;">nameloc</span> : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #ff00ff;">VAR</span> loc : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">nameloc *)</span>
 nametab[0] := al; loc := lastnametab;
-WHILE nametab[loc] &amp;lt;&gt; al DO loc := loc - 1;
-IF loc = 0 THEN
-    BEGIN
-    IF lastnametab = maxnames THEN
-        fatal('too many names in program     ');
+<span style="color: #00ffff;">WHILE</span> nametab[loc] &amp;lt;&gt; al <span style="color: #00ffff;">DO</span> loc := loc - 1;
+<span style="color: #00ffff;">IF</span> loc = 0 <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">IF</span> lastnametab = maxnames <span style="color: #00ffff;">THEN</span>
+        fatal(<span style="color: #00ff00;">'too many names in program     '</span>);
     lastnametab := lastnametab + 1;
     nametab[lastnametab] := al;
     loc := lastnametab
-    END;
+    <span style="color: #00ffff;">END</span>;
 nameloc := loc
-END; (* nameloc *)
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">nameloc *)</span>
 
-PROCEDURE generate(o : operator; x,y : integer);
-BEGIN (* generate *)
-IF lastcode = maxcode THEN
-        fatal('program is too big            ');
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">generate</span>(o : operator; x,y : <span style="color: #ff00ff;">integer</span>);
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">generate *)</span>
+<span style="color: #00ffff;">IF</span> lastcode = maxcode <span style="color: #00ffff;">THEN</span>
+        fatal(<span style="color: #00ff00;">'program is too big            '</span>);
 lastcode := lastcode + 1;
-WITH code[lastcode] DO
-    BEGIN op := o; a := x; b := y END
-END; (* generate *)
+<span style="color: #00ffff;">WITH</span> code[lastcode] <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> op := o; a := x; b := y <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">generate *)</span>
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-4-3" class="outline-3">
-<h3 id="sec-4-3"><span class="section-number-3">4.3</span> <span class="target">interpreter</span></h3>
+</div>
+<div id="outline-container-sec-4-3" class="outline-3">
+<h3 id="sec-4-3"><span class="section-number-3">4.3</span> <a id="interpreter" name="interpreter"></a></h3>
 <div class="outline-text-3" id="text-4-3">
-
-
-</div>
-
-<div id="outline-container-4-3-1" class="outline-4">
-<h4 id="sec-4-3-1"><span class="section-number-4">4.3.1</span> <span class="target">show</span></h4>
+</div><div id="outline-container-sec-4-3-1" class="outline-4">
+<h4 id="sec-4-3-1"><span class="section-number-4">4.3.1</span> <a id="show" name="show"></a></h4>
 <div class="outline-text-4" id="text-4-3-1">
+<div class="org-src-container">
 
-
-
-
-<pre class="example">(* - - - - -   I N T E R P R E T E R    - - - - - *)
-PROCEDURE show;
-VAR i,j : integer;
-BEGIN (* show *)
+<pre class="src src-pascal"><span style="color: #66f;">(* </span><span style="color: #66f;">- - - - -   I N T E R P R E T E R    - - - - - *)</span>
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">show</span>;
+<span style="color: #ff00ff;">VAR</span> i,j : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">show *)</span>
 num_successes := num_successes + 1;
-IF lastvartab &gt; 0 THEN
-    BEGIN
-    writeln(num_successes:0,':');
-    FOR i := 1 TO lastvartab DO
-        BEGIN
-        write('    ',vartab[i].name,'  =  ');
+<span style="color: #00ffff;">IF</span> lastvartab &gt; 0 <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    writeln(num_successes:0,<span style="color: #00ff00;">':'</span>);
+    <span style="color: #00ffff;">FOR</span> i := 1 <span style="color: #00ffff;">TO</span> lastvartab <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">BEGIN</span>
+        <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'    '</span>,vartab[i].<span style="color: #00ffff;">name</span>,<span style="color: #00ff00;">'  =  '</span>);
         j := runstack[i];
-        IF debugging THEN IF tracing THEN
-            write('[',j:0,']  ');
-        WHILE j &lt; 0 DO j := runstack[-j];
-        IF j &gt; 0 THEN write(nametab[j]);
+        <span style="color: #00ffff;">IF</span> debugging <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">IF</span> tracing <span style="color: #00ffff;">THEN</span>
+            <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'['</span>,j:0,<span style="color: #00ff00;">']  '</span>);
+        <span style="color: #00ffff;">WHILE</span> j &lt; 0 <span style="color: #00ffff;">DO</span> j := runstack[-j];
+        <span style="color: #00ffff;">IF</span> j &gt; 0 <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(nametab[j]);
         writeln
-        END
-    END
-END; (* show *)
+        <span style="color: #00ffff;">END</span>
+    <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">show *)</span>
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-4-3-2" class="outline-4">
-<h4 id="sec-4-3-2"><span class="section-number-4">4.3.2</span> <span class="target">solve</span></h4>
+</div>
+<div id="outline-container-sec-4-3-2" class="outline-4">
+<h4 id="sec-4-3-2"><span class="section-number-4">4.3.2</span> <a id="solve" name="solve"></a></h4>
 <div class="outline-text-4" id="text-4-3-2">
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">solve</span>(t : <span style="color: #ff00ff;">integer</span>; PROCEDURE cp);
+<span style="color: #ff00ff;">VAR</span> i,j : <span style="color: #ff00ff;">integer</span>;
 
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">solvenext</span>;
+    <span style="color: #00ffff;">BEGIN</span> top := i; solve(t+1,cp) <span style="color: #00ffff;">END</span>;
 
-
-<pre class="example">PROCEDURE solve(t : integer; PROCEDURE cp);
-VAR i,j : integer;
-
-    PROCEDURE solvenext;
-    BEGIN top := i; solve(t+1,cp) END;
-
-BEGIN (* solve *)
-WITH code[t] DO
-    BEGIN
-    IF tracing THEN
-        BEGIN
-        write('[',top:3,' : ');
-        IF top &gt; 0 THEN write(runstack[top]:5)
-                   ELSE write(' ':5);
-        writeln(']      ',t,op,a,b)
-        END;
-    CASE op OF
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">solve *)</span>
+<span style="color: #00ffff;">WITH</span> code[t] <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">IF</span> tracing <span style="color: #00ffff;">THEN</span>
+        <span style="color: #00ffff;">BEGIN</span>
+        <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'['</span>,top:3,<span style="color: #00ff00;">' : '</span>);
+        <span style="color: #00ffff;">IF</span> top &gt; 0 <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(runstack[top]:5)
+                   <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">' '</span>:5);
+        writeln(<span style="color: #00ff00;">']      '</span>,t,op,a,b)
+        <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ffff;">CASE</span> op <span style="color: #00ffff;">OF</span>
         cal_ :
-            WITH predtab[a] DO
-                IF start &gt; 0 THEN
-                    BEGIN
+            <span style="color: #00ffff;">WITH</span> predtab[a] <span style="color: #00ffff;">DO</span>
+                <span style="color: #00ffff;">IF</span> start &gt; 0 <span style="color: #00ffff;">THEN</span>
+                    <span style="color: #00ffff;">BEGIN</span>
                     j := start; i := top;
-                    REPEAT
-                        IF debugging THEN IF tracing THEN
-                            writeln('from node ',t:0,' call to "',
-                                name,'" top = ',top:0);
+                    <span style="color: #00ffff;">REPEAT</span>
+                        <span style="color: #00ffff;">IF</span> debugging <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">IF</span> tracing <span style="color: #00ffff;">THEN</span>
+                            writeln(<span style="color: #00ff00;">'from node '</span>,t:0,<span style="color: #00ff00;">' call to "'</span>,
+                                <span style="color: #00ffff;">name</span>,<span style="color: #00ff00;">'" top = '</span>,top:0);
                         solve(code[j].a,solvenext);
                         top := i; j := code[j].b;
-                        UNTIL j = 0
-                    END;
+                        <span style="color: #00ffff;">UNTIL</span> j = 0
+                    <span style="color: #00ffff;">END</span>;
         return_ :
             cp;
         push :
-            BEGIN
-            IF top = maxstack THEN
-                BEGIN writeln('stack overflow'); GOTO 99 END;
+            <span style="color: #00ffff;">BEGIN</span>
+            <span style="color: #00ffff;">IF</span> top = maxstack <span style="color: #00ffff;">THEN</span>
+                <span style="color: #00ffff;">BEGIN</span> writeln(<span style="color: #00ff00;">'stack overflow'</span>); <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">99</span> <span style="color: #00ffff;">END</span>;
             top := top + 1;
-            i := top; j := runstack[top]; (* save these *)
+            i := top; j := runstack[top]; <span style="color: #66f;">(* </span><span style="color: #66f;">save these *)</span>
             runstack[top] := a - b * top;
             solve(t+1,cp);
-            IF debugging THEN IF tracing THEN
-                writeln('restoring stack[',i:0,'] to ',j:0);
-            runstack[i] := j (* restore *)
-            END;
+            <span style="color: #00ffff;">IF</span> debugging <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">IF</span> tracing <span style="color: #00ffff;">THEN</span>
+                writeln(<span style="color: #00ff00;">'restoring stack['</span>,i:0,<span style="color: #00ff00;">'] to '</span>,j:0);
+            runstack[i] := j <span style="color: #66f;">(* </span><span style="color: #66f;">restore *)</span>
+            <span style="color: #00ffff;">END</span>;
         match_const :
-            BEGIN
+            <span style="color: #00ffff;">BEGIN</span>
             i := top - b;
-            WHILE runstack[i] &lt; 0 DO i := -  runstack[i];
-            IF debugging THEN IF tracing THEN
-                 writeln('matching at i = ',i:0,
-                         ' where = ',runstack[i]:0);
-            IF runstack[i] = a THEN solve(t+1,cp)
-            ELSE IF runstack[i] = 0 THEN
-                BEGIN
+            <span style="color: #00ffff;">WHILE</span> runstack[i] &lt; 0 <span style="color: #00ffff;">DO</span> i := -  runstack[i];
+            <span style="color: #00ffff;">IF</span> debugging <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">IF</span> tracing <span style="color: #00ffff;">THEN</span>
+                 writeln(<span style="color: #00ff00;">'matching at i = '</span>,i:0,
+                         <span style="color: #00ff00;">' where = '</span>,runstack[i]:0);
+            <span style="color: #00ffff;">IF</span> runstack[i] = a <span style="color: #00ffff;">THEN</span> solve(t+1,cp)
+            <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">IF</span> runstack[i] = 0 <span style="color: #00ffff;">THEN</span>
+                <span style="color: #00ffff;">BEGIN</span>
                 runstack[i] := a;
                 solve(t+1,cp);
-                IF debugging THEN IF tracing THEN
-                    writeln('setting stack[',i:0,'] from ',
-                        runstack[i]:0,' to undefined');
+                <span style="color: #00ffff;">IF</span> debugging <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">IF</span> tracing <span style="color: #00ffff;">THEN</span>
+                    writeln(<span style="color: #00ff00;">'setting stack['</span>,i:0,<span style="color: #00ff00;">'] from '</span>,
+                        runstack[i]:0,<span style="color: #00ff00;">' to undefined'</span>);
                 runstack[i] := 0
-                END
-            END;
+                <span style="color: #00ffff;">END</span>
+            <span style="color: #00ffff;">END</span>;
         match_var :
-            BEGIN
+            <span style="color: #00ffff;">BEGIN</span>
             i := top - a;
-            WHILE runstack[i] &lt; 0 DO i := - runstack[i];
+            <span style="color: #00ffff;">WHILE</span> runstack[i] &lt; 0 <span style="color: #00ffff;">DO</span> i := - runstack[i];
             j := top - b;
-            WHILE runstack[j] &lt; 0 DO j := - runstack[j];
-            IF runstack[i] = 0 THEN
-                BEGIN
+            <span style="color: #00ffff;">WHILE</span> runstack[j] &lt; 0 <span style="color: #00ffff;">DO</span> j := - runstack[j];
+            <span style="color: #00ffff;">IF</span> runstack[i] = 0 <span style="color: #00ffff;">THEN</span>
+                <span style="color: #00ffff;">BEGIN</span>
                 runstack[i] := -j; solve(t+1,cp); runstack[i] := 0
-                END
-              ELSE IF runstack[j] = 0 THEN
-                BEGIN
+                <span style="color: #00ffff;">END</span>
+              <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">IF</span> runstack[j] = 0 <span style="color: #00ffff;">THEN</span>
+                <span style="color: #00ffff;">BEGIN</span>
                 runstack[j] := -i; solve(t+1,cp); runstack[j] := 0
-                END
-              ELSE IF runstack[i] = runstack[j] THEN solve(t+1,cp)
-            END
-        END (* CASE *)
-    END (* WITH *)
-END; (* solve *)
+                <span style="color: #00ffff;">END</span>
+              <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">IF</span> runstack[i] = runstack[j] <span style="color: #00ffff;">THEN</span> solve(t+1,cp)
+            <span style="color: #00ffff;">END</span>
+        <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">CASE *)</span>
+    <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">WITH *)</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">solve *)</span>
 </pre>
-
+</div>
+</div>
 </div>
 </div>
 
-</div>
-
-<div id="outline-container-4-4" class="outline-3">
-<h3 id="sec-4-4"><span class="section-number-3">4.4</span> <span class="target">main</span></h3>
+<div id="outline-container-sec-4-4" class="outline-3">
+<h3 id="sec-4-4"><span class="section-number-3">4.4</span> <a id="main" name="main"></a></h3>
 <div class="outline-text-3" id="text-4-4">
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #66f;">(* </span><span style="color: #66f;">- - - - -   M A I N   - - - - - *)</span>
 
-
-
-<pre class="example">(* - - - - -   M A I N   - - - - - *)
-
-BEGIN (* main *)
-FOR i := 1 TO alfalength DO nullalfa[i] := chr(0);
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">FOR</span> i := 1 <span style="color: #00ffff;">TO</span> alfalength <span style="color: #00ffff;">DO</span> nullalfa[i] := chr(0);
 lastcode := 0; lastpredtab := 0;lastnametab := 0;
-ch := ' '; mode := entering;
-1: REPEAT
+ch := <span style="color: #00ff00;">' '</span>; mode := entering;
+1: <span style="color: #00ffff;">REPEAT</span>
     getsym;
-    IF sym = plus THEN mode := entering
-    ELSE IF sym = minus THEN mode := questioning
-    ELSE
-        BEGIN (* enter facts or rules, or question *)
-        IF sym &amp;lt;&gt; query THEN tracing := false ELSE
-            BEGIN tracing := true; getsym END;
+    <span style="color: #00ffff;">IF</span> sym = plus <span style="color: #00ffff;">THEN</span> mode := entering
+    <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">IF</span> sym = minus <span style="color: #00ffff;">THEN</span> mode := questioning
+    <span style="color: #00ffff;">ELSE</span>
+        <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">enter facts or rules, or question *)</span>
+        <span style="color: #00ffff;">IF</span> sym &amp;lt;&gt; query <span style="color: #00ffff;">THEN</span> tracing := false <span style="color: #00ffff;">ELSE</span>
+            <span style="color: #00ffff;">BEGIN</span> tracing := true; getsym <span style="color: #00ffff;">END</span>;
         save_lastpredtab := lastpredtab; save_lastcode := lastcode;
         save_lastnametab := lastnametab;
         lastvartab := 0;
 
-        IF mode = entering THEN
-            BEGIN (* fact or head of rule *)
-            IF sym &amp;lt;&gt; l_ident THEN
-                error('predicate expected            ');
-            WITH predtab[predloc] DO
-                BEGIN
+        <span style="color: #00ffff;">IF</span> mode = entering <span style="color: #00ffff;">THEN</span>
+            <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">fact or head of rule *)</span>
+            <span style="color: #00ffff;">IF</span> sym &amp;lt;&gt; l_ident <span style="color: #00ffff;">THEN</span>
+                error(<span style="color: #00ff00;">'predicate expected            '</span>);
+            <span style="color: #00ffff;">WITH</span> predtab[predloc] <span style="color: #00ffff;">DO</span>
+                <span style="color: #00ffff;">BEGIN</span>
                 generate(or_,lastcode+2,0);
-                IF start = 0
-                    THEN start := lastcode
-                    ELSE code[finish].b := lastcode;
+                <span style="color: #00ffff;">IF</span> start = 0
+                    <span style="color: #00ffff;">THEN</span> start := lastcode
+                    <span style="color: #00ffff;">ELSE</span> code[finish].b := lastcode;
                 finish := lastcode
-                END;
+                <span style="color: #00ffff;">END</span>;
             getsym; num_formals := 0;
-            IF sym = lpar THEN
-                BEGIN (* formal parameters *)
-                REPEAT
+            <span style="color: #00ffff;">IF</span> sym = lpar <span style="color: #00ffff;">THEN</span>
+                <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">formal parameters *)</span>
+                <span style="color: #00ffff;">REPEAT</span>
                     num_formals := num_formals + 1; getsym;
-                    IF sym = l_ident THEN (* name *)
+                    <span style="color: #00ffff;">IF</span> sym = l_ident <span style="color: #00ffff;">THEN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">name *)</span>
                         generate(match_const,nameloc,num_formals)
-                    ELSE IF sym = u_ident THEN
-                        BEGIN (* variable *)
+                    <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">IF</span> sym = u_ident <span style="color: #00ffff;">THEN</span>
+                        <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">variable *)</span>
                         vloc := varloc;
-                        WITH vartab[vloc] DO
-                            IF adr = 0 THEN adr := num_formals ELSE
+                        <span style="color: #00ffff;">WITH</span> vartab[vloc] <span style="color: #00ffff;">DO</span>
+                            <span style="color: #00ffff;">IF</span> adr = 0 <span style="color: #00ffff;">THEN</span> adr := num_formals <span style="color: #00ffff;">ELSE</span>
                                 generate(match_var,adr,num_formals)
-                        END (* variable *)
-                    ELSE
-                        error('name or variable expected     ');
+                        <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">variable *)</span>
+                    <span style="color: #00ffff;">ELSE</span>
+                        error(<span style="color: #00ff00;">'name or variable expected     '</span>);
                     getsym
-                    UNTIL sym &amp;lt;&gt; comma;
-                IF sym = rpar THEN getsym ELSE
-                    error('"," or ")" expected           ');
-                FOR i  := save_lastcode + 2 TO lastcode DO
-                    WITH code[i] DO
-                        BEGIN
+                    <span style="color: #00ffff;">UNTIL</span> sym &amp;lt;&gt; comma;
+                <span style="color: #00ffff;">IF</span> sym = rpar <span style="color: #00ffff;">THEN</span> getsym <span style="color: #00ffff;">ELSE</span>
+                    error(<span style="color: #00ff00;">'"," or ")" expected           '</span>);
+                <span style="color: #00ffff;">FOR</span> i  := save_lastcode + 2 <span style="color: #00ffff;">TO</span> lastcode <span style="color: #00ffff;">DO</span>
+                    <span style="color: #00ffff;">WITH</span> code[i] <span style="color: #00ffff;">DO</span>
+                        <span style="color: #00ffff;">BEGIN</span>
                         b := num_formals - b;
-                        IF op = match_var THEN a := num_formals - a
-                        END
-                END; (* formal parameters *)
-            IF sym &amp;lt;&gt; period THEN (* rule *)
-                IF sym = turnstyle THEN getsym ELSE
-                    error('":-" or "." expected          ')
-            END; (* fact or head of rule *)
+                        <span style="color: #00ffff;">IF</span> op = match_var <span style="color: #00ffff;">THEN</span> a := num_formals - a
+                        <span style="color: #00ffff;">END</span>
+                <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">formal parameters *)</span>
+            <span style="color: #00ffff;">IF</span> sym &amp;lt;&gt; period <span style="color: #00ffff;">THEN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">rule *)</span>
+                <span style="color: #00ffff;">IF</span> sym = turnstyle <span style="color: #00ffff;">THEN</span> getsym <span style="color: #00ffff;">ELSE</span>
+                    error(<span style="color: #00ff00;">'":-" or "." expected          '</span>)
+            <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">fact or head of rule *)</span>
 
-        IF sym &amp;lt;&gt; period THEN
-            BEGIN (* formula, for body or query *)
+        <span style="color: #00ffff;">IF</span> sym &amp;lt;&gt; period <span style="color: #00ffff;">THEN</span>
+            <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">formula, for body or query *)</span>
             num_actuals := 0;
-            REPEAT
-                IF sym &amp;lt;&gt; l_ident THEN
-                    error('predicate expected            ');
+            <span style="color: #00ffff;">REPEAT</span>
+                <span style="color: #00ffff;">IF</span> sym &amp;lt;&gt; l_ident <span style="color: #00ffff;">THEN</span>
+                    error(<span style="color: #00ff00;">'predicate expected            '</span>);
                 ploc := predloc; getsym;
-                IF sym = lpar THEN
-                    BEGIN (* actual parameters *)
-                    REPEAT
+                <span style="color: #00ffff;">IF</span> sym = lpar <span style="color: #00ffff;">THEN</span>
+                    <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">actual parameters *)</span>
+                    <span style="color: #00ffff;">REPEAT</span>
                         num_actuals := num_actuals + 1; getsym;
-                        IF sym = l_ident THEN
+                        <span style="color: #00ffff;">IF</span> sym = l_ident <span style="color: #00ffff;">THEN</span>
                             generate(push,nameloc,0)
-                        ELSE IF sym = u_ident THEN
-                            BEGIN (* variable *)
+                        <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">IF</span> sym = u_ident <span style="color: #00ffff;">THEN</span>
+                            <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">variable *)</span>
                             vloc := varloc;
-                            IF mode = questioning THEN
+                            <span style="color: #00ffff;">IF</span> mode = questioning <span style="color: #00ffff;">THEN</span>
                                 generate(push,-vloc,0)
-                            ELSE IF vloc &amp;lt;= num_formals THEN
+                            <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">IF</span> vloc &amp;lt;= num_formals <span style="color: #00ffff;">THEN</span>
                                 generate(push,
                                  num_actuals + num_formals - vloc,1)
-                            ELSE WITH vartab[vloc] DO
-                                IF adr = 0 THEN
-                                    BEGIN
+                            <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">WITH</span> vartab[vloc] <span style="color: #00ffff;">DO</span>
+                                <span style="color: #00ffff;">IF</span> adr = 0 <span style="color: #00ffff;">THEN</span>
+                                    <span style="color: #00ffff;">BEGIN</span>
                                     generate(push,0,0);
                                     adr := num_actuals
-                                    END
-                                  ELSE
+                                    <span style="color: #00ffff;">END</span>
+                                  <span style="color: #00ffff;">ELSE</span>
                                     generate(push,
                                         num_actuals - adr,1)
-                            END (* variable *)
-                        ELSE error('name or variable expected     ');
+                            <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">variable *)</span>
+                        <span style="color: #00ffff;">ELSE</span> error(<span style="color: #00ff00;">'name or variable expected     '</span>);
                         getsym
-                        UNTIL sym &amp;lt;&gt; comma;
-                    IF sym = rpar THEN getsym ELSE
-                        error('"," or ")" expected           ')
-                    END; (* actual parameters *)
-                IF NOT (sym IN [comma,period]) THEN
-                    error('"," or "." expected           ');
+                        <span style="color: #00ffff;">UNTIL</span> sym &amp;lt;&gt; comma;
+                    <span style="color: #00ffff;">IF</span> sym = rpar <span style="color: #00ffff;">THEN</span> getsym <span style="color: #00ffff;">ELSE</span>
+                        error(<span style="color: #00ff00;">'"," or ")" expected           '</span>)
+                    <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">actual parameters *)</span>
+                <span style="color: #00ffff;">IF</span> <span style="color: #00ffff;">NOT</span> (sym <span style="color: #00ffff;">IN</span> [comma,period]) <span style="color: #00ffff;">THEN</span>
+                    error(<span style="color: #00ff00;">'"," or "." expected           '</span>);
                 generate(cal_,ploc,0);
-                IF sym = comma THEN getsym
-                UNTIL NOT (sym IN [l_ident,u_ident])
-            END; (* formula, for body or query *)
+                <span style="color: #00ffff;">IF</span> sym = comma <span style="color: #00ffff;">THEN</span> getsym
+                <span style="color: #00ffff;">UNTIL</span> <span style="color: #00ffff;">NOT</span> (sym <span style="color: #00ffff;">IN</span> [l_ident,u_ident])
+            <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">formula, for body or query *)</span>
 
-        IF sym &amp;lt;&gt; period THEN
-            error('"." expected                  ');
+        <span style="color: #00ffff;">IF</span> sym &amp;lt;&gt; period <span style="color: #00ffff;">THEN</span>
+            error(<span style="color: #00ff00;">'"." expected                  '</span>);
         generate(return_,0,0);
-        IF tracing THEN
-            FOR i := save_lastcode + 1 TO lastcode DO
-                WITH code[i] DO writeln(i:3,'  ',op,a,b);
+        <span style="color: #00ffff;">IF</span> tracing <span style="color: #00ffff;">THEN</span>
+            <span style="color: #00ffff;">FOR</span> i := save_lastcode + 1 <span style="color: #00ffff;">TO</span> lastcode <span style="color: #00ffff;">DO</span>
+                <span style="color: #00ffff;">WITH</span> code[i] <span style="color: #00ffff;">DO</span> writeln(i:3,<span style="color: #00ff00;">'  '</span>,op,a,b);
 
-        IF mode = questioning THEN
-            BEGIN
-            FOR i := 1 TO lastvartab DO runstack[i] := 0;
+        <span style="color: #00ffff;">IF</span> mode = questioning <span style="color: #00ffff;">THEN</span>
+            <span style="color: #00ffff;">BEGIN</span>
+            <span style="color: #00ffff;">FOR</span> i := 1 <span style="color: #00ffff;">TO</span> lastvartab <span style="color: #00ffff;">DO</span> runstack[i] := 0;
             top := lastvartab; num_successes := 0;
             solve(save_lastcode + 1,show);
-            IF num_successes &gt; 0
-                THEN writeln(' ... yes')
-                ELSE writeln(' ... no');
+            <span style="color: #00ffff;">IF</span> num_successes &gt; 0
+                <span style="color: #00ffff;">THEN</span> writeln(<span style="color: #00ff00;">' ... yes'</span>)
+                <span style="color: #00ffff;">ELSE</span> writeln(<span style="color: #00ff00;">' ... no'</span>);
             lastcode := save_lastcode
-            END
+            <span style="color: #00ffff;">END</span>
 
-        END (* ELSE, enter facts or rules, or question *)
-    UNTIL false;
-99: writeln('CPU time for this session: ',clock:0,' milliseconds')
-END.
+        <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">ELSE, enter facts or rules, or question *)</span>
+    <span style="color: #00ffff;">UNTIL</span> false;
+99: writeln(<span style="color: #00ff00;">'CPU time for this session: '</span>,clock:0,<span style="color: #00ff00;">' milliseconds'</span>)
+<span style="color: #00ffff;">END</span>.
 </pre>
-
-
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-5" class="outline-2">
+</div>
+<div id="outline-container-sec-5" class="outline-2">
 <h2 id="sec-5"><span class="section-number-2">5</span> Exercises and reading</h2>
 <div class="outline-text-2" id="text-5">
-
-
-</div>
-
-<div id="outline-container-5-1" class="outline-3">
+</div><div id="outline-container-sec-5-1" class="outline-3">
 <h3 id="sec-5-1"><span class="section-number-3">5.1</span> Manual:</h3>
 <div class="outline-text-3" id="text-5-1">
-
-
 <p>
 Write a manual for Datalog. You may assume that your reader is familiar with some version of Prolog or with some other form of logic programming language. But you should not make any too specific assumptions. You may also assume that your reader is familiar with the syntax of some form of predicate logic. However, you should be aware that understanding the semantics of predicate logic is of no help in understanding the semantics of Datalog (or of Prolog).
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-2" class="outline-3">
+<div id="outline-container-sec-5-2" class="outline-3">
 <h3 id="sec-5-2"><span class="section-number-3">5.2</span> Tutorial:</h3>
 <div class="outline-text-3" id="text-5-2">
-
-
 <p>
 Write a tutorial for Datalog. You should assume that your reader does not know about Prolog and does not know about predicate logic. Readers who have studied your tutorial should then be able to understand your manual.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-3" class="outline-3">
+<div id="outline-container-sec-5-3" class="outline-3">
 <h3 id="sec-5-3"><span class="section-number-3">5.3</span> Recapitulation:</h3>
 <div class="outline-text-3" id="text-5-3">
-
-
 <p>
 Why wasn't sequential execution used in the program for expanding regular expressions in Chapter~9, or in the program for semantic tableaux in Chapter~10, or the program for context free grammars in Chapter~11 or the program for monadic logic in Chapter~15?
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-4" class="outline-3">
+<div id="outline-container-sec-5-4" class="outline-3">
 <h3 id="sec-5-4"><span class="section-number-3">5.4</span> Explicit disjunctions:</h3>
 <div class="outline-text-3" id="text-5-4">
-
-
 <p>
 In Datalog all disjunctions are implicit, by way of multiple definitions of predicates. For any disjunctive query it is necessary to first give a multiple definition of some suitable and possibly contrived predicate, and this can be annoying. Implement explicit disjunctions for queries, and with no extra effort, for bodies of clauses. As usual, conjunctions should have greater precedence than disjunctions; so you should also allow parentheses for overriding precedences. Most of the parser will have to be rewritten completely, because the grammar will now be recursive.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-5" class="outline-3">
+<div id="outline-container-sec-5-5" class="outline-3">
 <h3 id="sec-5-5"><span class="section-number-3">5.5</span> Control of solutions:</h3>
 <div class="outline-text-3" id="text-5-5">
-
-
 <p>
 As implemented, Datalog will spew forth all solutions it can find. Implementations of Prolog stop after each group of solutions and then let the user indicate whether more are wanted. Implement such a feature in Datalog.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-6" class="outline-3">
+<div id="outline-container-sec-5-6" class="outline-3">
 <h3 id="sec-5-6"><span class="section-number-3">5.6</span> Non-identity:</h3>
 <div class="outline-text-3" id="text-5-6">
-
-
 <p>
 In Datalog and in Prolog there is no need for an identity relation. Different names always denote different individuals anyhow, so an identity statement using different names will always be false. Identity statements using a name and a variable are not needed because one can use the name instead of the variable throughout the clause or query. Identity statements using two different variables are not needed because one can use the same variable throughout the clause or query.
 </p>
+
 <p>
 On the other hand, it is sometimes useful to have negated identity statements, or non-identity statements, but only if one of the two terms used is a variable. For example, one might want to define <code>X</code> and <code>Y</code> to be full siblings if they have two parents <code>P1</code> and <code>P2</code> in common. It is essential that <code>P1</code> and <code>P2</code> are not identical. Using, say <code>#</code> as the symbol for non-identity, the new atomic formula <code>P1 # P2</code> would be part of the definition for full siblinghood:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">full_siblings(X,Y)  :-
-    parent(P1,X), parent(P1,Y), parent(P2,X), parent(P2,Y), P1 # P2.
+<pre class="src src-prolog"><span style="color: #ffffff; font-weight: bold;">full_siblings</span>(<span style="color: #eedd82;">X</span>,<span style="color: #eedd82;">Y</span>)  :-
+    parent(<span style="color: #eedd82;">P1</span>,<span style="color: #eedd82;">X</span>), parent(<span style="color: #eedd82;">P1</span>,<span style="color: #eedd82;">Y</span>), parent(<span style="color: #eedd82;">P2</span>,<span style="color: #eedd82;">X</span>), parent(<span style="color: #eedd82;">P2</span>,<span style="color: #eedd82;">Y</span>), <span style="color: #eedd82;">P1</span> # <span style="color: #eedd82;">P2</span>.
 </pre>
-
+</div>
 
 <p>
 (One might argue that another condition is needed: <code>X # Y</code>.) Implement non-identity in Datalog. Beware of some difficulties: how would you handle the case where the non-identity statement is not the last conjunct in the definition, but the third, or the second, or even the first?
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-7" class="outline-3">
+<div id="outline-container-sec-5-7" class="outline-3">
 <h3 id="sec-5-7"><span class="section-number-3">5.7</span> Sets of solutions:</h3>
 <div class="outline-text-3" id="text-5-7">
-
-
 <p>
-Prolog and Datalog will produce the same solution of variable bindings several times if there are several ways of proving them. For some applications this is exactly what is wanted, for some it is at least acceptable, but for others it is positively annoying. Modify the program so that each solution is printed only once. A similar exercise was already suggested for semantic tableaux in Chapter~10. When a solution is found, it will be necessary to check whether the same solution has been found before &mdash; if not it has to be added. The solutions can be printed as soon as they have been found and been seen to be new, or they can be printed at the end when the entire set of solutions has been completed. Duplicate solutions are eliminated in the Logical Data Language LDL described in Naqvi and Tsur (1989).
+Prolog and Datalog will produce the same solution of variable bindings several times if there are several ways of proving them. For some applications this is exactly what is wanted, for some it is at least acceptable, but for others it is positively annoying. Modify the program so that each solution is printed only once. A similar exercise was already suggested for semantic tableaux in Chapter~10. When a solution is found, it will be necessary to check whether the same solution has been found before &#x2014; if not it has to be added. The solutions can be printed as soon as they have been found and been seen to be new, or they can be printed at the end when the entire set of solutions has been completed. Duplicate solutions are eliminated in the Logical Data Language LDL described in Naqvi and Tsur (1989).
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-8" class="outline-3">
+<div id="outline-container-sec-5-8" class="outline-3">
 <h3 id="sec-5-8"><span class="section-number-3">5.8</span> Negation:</h3>
 <div class="outline-text-3" id="text-5-8">
-
-
 <p>
 Implement either a Prolog-like form of negation or a full classical negation. For the latter, a negated atom <code>not p(X)</code> with a variable as the actual parameter should return all those bindings of <code>X</code> for which the un-negated atom fails. The bindings are obtained by searching the table of names of individuals, hence it is assumed that there are no individuals other than those mentioned in one way or another. Note that such a classical form of negation only makes sense in Datalog, though not in full Prolog.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-9" class="outline-3">
+<div id="outline-container-sec-5-9" class="outline-3">
 <h3 id="sec-5-9"><span class="section-number-3">5.9</span> Cut:</h3>
 <div class="outline-text-3" id="text-5-9">
-
-
 <p>
 Study the cut primitive of Prolog and implement it in Datalog.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-10" class="outline-3">
+<div id="outline-container-sec-5-10" class="outline-3">
 <h3 id="sec-5-10"><span class="section-number-3">5.10</span> Informal input language:</h3>
 <div class="outline-text-3" id="text-5-10">
-
-
 <p>
 Design a different syntax for Datalog, closer to natural language, somewhat along the lines of Mondef in Chapter~15. A new syntax for facts and rules and questions should be designed. Then rewrite Datalog for this new syntax.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-11" class="outline-3">
+<div id="outline-container-sec-5-11" class="outline-3">
 <h3 id="sec-5-11"><span class="section-number-3">5.11</span> Reading:</h3>
 <div class="outline-text-3" id="text-5-11">
-
-
-<ul>
+<ul class="org-ul">
 <li>Maier and Warren (1988) describe a sequence of implementations of Proplog, Datalog and Prolog.
-
 </li>
+
 <li>Kluzniak and Szpakiwics (1985) is said to contain a diskette with the Pascal source of a simple Prolog system.
-
 </li>
+
 <li>Campbell (1984) contains many articles on the implementation of full Prolog.
-
 </li>
+
 <li>Spivey (1996) contains an introduction to Prolog and the design and final source code for a Prolog implementation in Pascal.
 </li>
 </ul>
-
 </div>
 </div>
 </div>
-</div>
-
-<div id="postamble">
-<p class="date">Date: 2013-01-11 07:37:53 CST</p>
-<p class="author">Author: michal</p>
-<p class="creator">Org version 7.8.11 with Emacs version 24</p>
-<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
-
 </div>
 </body>
 </html>

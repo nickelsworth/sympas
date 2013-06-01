@@ -1,66 +1,38 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Chapter 8 : Second order recursion</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Chapter 8 : Second order recursion"/>
+<!-- 2013-05-31 Fri 19:02 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-01-11 07:38:05 CST"/>
 <meta name="author" content="michal"/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
-<style type="text/css">
- <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
-  .title  { text-align: center; }
-  .todo   { color: red; }
-  .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
-  .timestamp { color: #bebebe; }
-  .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
-  pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
-  }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
-  dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
-    background: #ffffcc;
-  }
-  textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
-  /*]]>*/-->
-</style>
+<link rel="stylesheet" type="text/css" href="/etc/style.css">
 <script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012  Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
 <!--/*--><![CDATA[/*><!--*/
  function CodeHighlightOn(elem, id)
  {
@@ -82,690 +54,660 @@
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
-
-</div>
-
 <div id="content">
 <h1 class="title">Chapter 8 : Second order recursion</h1>
-
-
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 intro</a></li>
-<li><a href="#sec-2">2 First order recursion</a>
+<li><a href="#sec-1">1. </a></li>
+<li><a href="#sec-2">2. First order recursion</a>
 <ul>
-<li><a href="#sec-2-1">2.1 An example of first order recursion</a></li>
-<li><a href="#sec-2-2">2.2 The even-odd partitioning problem</a></li>
+<li><a href="#sec-2-1">2.1. An example of first order recursion</a></li>
+<li><a href="#sec-2-2">2.2. The even-odd partitioning problem</a></li>
 </ul>
 </li>
-<li><a href="#sec-3">3 Second order recursion</a>
+<li><a href="#sec-3">3. Second order recursion</a>
 <ul>
-<li><a href="#sec-3-1">3.1 An example of second order recursion</a></li>
-<li><a href="#sec-3-2">3.2 Three other examples</a></li>
+<li><a href="#sec-3-1">3.1. An example of second order recursion</a></li>
+<li><a href="#sec-3-2">3.2. Three other examples</a></li>
 </ul>
 </li>
-<li><a href="#sec-4">4 A LET-expression evaluator</a>
+<li><a href="#sec-4">4. A LET-expression evaluator</a>
 <ul>
-<li><a href="#sec-4-1">4.1 The implementation</a>
+<li><a href="#sec-4-1">4.1. The implementation</a>
 <ul>
-<li><a href="#sec-4-1-1">4.1.1 Step 1: <i>Visibility requirements</i>.</a></li>
-<li><a href="#sec-4-1-2">4.1.2 Step 2: <i>Parsing</i>.</a></li>
-<li><a href="#sec-4-1-3">4.1.3 Step 3: <i>Evaluating</i>.</a></li>
-<li><a href="#sec-4-1-4">4.1.4 Step 4: <i>=LET= declarations</i>.</a></li>
+<li><a href="#sec-4-1-1">4.1.1. Step 1: <i>Visibility requirements</i>.</a></li>
+<li><a href="#sec-4-1-2">4.1.2. Step 2: <i>Parsing</i>.</a></li>
+<li><a href="#sec-4-1-3">4.1.3. Step 3: <i>Evaluating</i>.</a></li>
+<li><a href="#sec-4-1-4">4.1.4. Step 4: <i><code>LET</code> declarations</i>.</a></li>
 </ul>
 </li>
-<li><a href="#sec-4-2">4.2 The program</a>
+<li><a href="#sec-4-2">4.2. The program</a>
 <ul>
-<li><a href="#sec-4-2-1">4.2.1 <i>Exercise</i>:</a></li>
-</ul></li>
+<li><a href="#sec-4-2-1">4.2.1. <i>Exercise</i>:</a></li>
 </ul>
 </li>
-<li><a href="#sec-5">5 Backtracking implemented as second order recursion</a></li>
-<li><a href="#sec-6">6 <i>Reading</i>:</a></li>
+</ul>
+</li>
+<li><a href="#sec-5">5. Backtracking implemented as second order recursion</a></li>
+<li><a href="#sec-6">6. <i>Reading</i>:</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <a id="intro" name="intro"></a></h2>
 <div class="outline-text-2" id="text-1">
-
-
 <p>
 In this chapter we shall study a technique that will be used in several programs in the remainder of this book.  The technique uses procedures (nothing new about that), which are recursive (nothing new about that either), and which take parameters (nothing new so far), but the parameters are themselves procedures (so what ?), and in recursive calls the procedure passed as a parameter is either a local procedure or the parameter procedure.  More likely than not, this pattern of recursion will be new to most readers.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2"><span class="section-number-2">2</span> First order recursion</h2>
 <div class="outline-text-2" id="text-2">
-
-
 <p>
 This section describes the common first order recursion patterns, and a problem which cannot be solved by that pattern.
 </p>
-
 </div>
 
-<div id="outline-container-2-1" class="outline-3">
+<div id="outline-container-sec-2-1" class="outline-3">
 <h3 id="sec-2-1"><span class="section-number-3">2.1</span> An example of first order recursion</h3>
 <div class="outline-text-3" id="text-2-1">
-
-
 <p>
 The pattern of first order recursion is exemplified by the following very simple program.  It repeatedly reads lines of characters from the input file, and for each line that it has read it writes the characters of the line in their order and then the same characters in reverse order.  Between the two lots of characters there is a separation of four blank characters.
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">first_order_recursion</span>(input,output);
 
-<pre class="example">PROGRAM first_order_recursion(input,output);
-
-PROCEDURE recurse;
-VAR ch : char;
-BEGIN (* recurse *)
-IF eoln THEN write('    ') ELSE
-    BEGIN
-    read(ch);
-    write(ch);                  (*  forward *)
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">recurse</span>;
+<span style="color: #ff00ff;">VAR</span> ch : <span style="color: #ff00ff;">char</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'    '</span>) <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">read</span>(ch);
+    <span style="color: #00ffff;">write</span>(ch);                  <span style="color: #66f;">(*  </span><span style="color: #66f;">forward *)</span>
     recurse;
-    write(ch)                   (* backward *)
-    END
-END; (* recurse *)
+    <span style="color: #00ffff;">write</span>(ch)                   <span style="color: #66f;">(* </span><span style="color: #66f;">backward *)</span>
+    <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
 
-BEGIN (* main *)
-WHILE NOT eof DO
-    BEGIN recurse; writeln; readln END
-END. (* main *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> recurse; writeln; readln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
-
+</div>
 
 <p>
 The program has no intrinsic value, it is the sort of thing one might use to explain ordinary recursion to a beginner.  Later sections of this chapter and a later chapter contain similar higher order recursive programs, so it would be advantageous to dwell over this one first.
 </p>
+
 <p>
 Ordinary recursive programs have procedures (or functions) of the following form:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">PROCEDURE recurse;
-BEGIN
-IF recursiontermination THEN ...        (* no more recursion *)
-    ELSE ... recurse ...                (* call to itself *)
-END;
+<pre class="src src-pascal"><span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">recurse</span>;
+<span style="color: #00ffff;">BEGIN</span>
+<span style="color: #00ffff;">IF</span> recursiontermination <span style="color: #00ffff;">THEN</span> ...        <span style="color: #66f;">(* </span><span style="color: #66f;">no more recursion *)</span>
+    <span style="color: #00ffff;">ELSE</span> ... recurse ...                <span style="color: #66f;">(* </span><span style="color: #66f;">call to itself *)</span>
+<span style="color: #00ffff;">END</span>;
 </pre>
+</div>
 
-
-<p> 
+<p>
 Instead of the one recursive call there could be several; if there is only one such call, then a procedure is said to be linear recursive.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2-2" class="outline-3">
+<div id="outline-container-sec-2-2" class="outline-3">
 <h3 id="sec-2-2"><span class="section-number-3">2.2</span> The even-odd partitioning problem</h3>
 <div class="outline-text-3" id="text-2-2">
-
-
 <p>
 In this section we begin with a very simple problem to be solved in a particular way.  The solution uses a technique that will be unfamiliar to most readers, but it will be used repeatedly in this and in later chapters.
 </p>
+
 <p>
 Consider the following: You are to write a program which repeatedly reads a line of numbers and writes them out again.  To make it at all interesting, the numbers in each line are to be partitioned into two groups, the odd ones and the even ones, separated by a larger space.
 </p>
+
 <p>
 Your natural reaction is probably to read the numbers of each line into an array, and when the end of the line is reached, make two passes through the array: on the first pass write out the even ones, then write the separating space, and then on the second pass write out the odd ones.  Alternatively you could sift them into two arrays as they are being read, and then write out the two arrays.
 </p>
+
 <p>
 But now we make the problem more interesting: you are not to use any arrays at all (and no pointers either).  You could of course use a recursive solution, stacking up numbers in local variables.  Then all the local variables become visible again as the recursion unwinds.  Thus any even numbers are immediately written out when read, any odd numbers are only written out when the recursion returns.  The following is a Pascal source program which will solve the problem <i>as stated so far</i>:
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">oddevn</span>(input,output);
 
-<pre class="example">PROGRAM oddevn(input,output);
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">odev</span>;
+<span style="color: #ff00ff;">VAR</span> n : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">odev *)</span>
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'    '</span>) <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">read</span>(n);
+    <span style="color: #00ffff;">IF</span> n <span style="color: #00ffff;">MOD</span> 2 = 0
+        <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">BEGIN</span> odev; <span style="color: #00ffff;">write</span>(n:0,<span style="color: #00ff00;">' '</span>) <span style="color: #00ffff;">END</span>
+        <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">write</span>(n:0,<span style="color: #00ff00;">' '</span>); odev <span style="color: #00ffff;">END</span>
+    <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">odev *)</span>
 
-PROCEDURE odev;
-VAR n : integer;
-BEGIN (* odev *)
-IF eoln THEN write('    ') ELSE
-    BEGIN
-    read(n);
-    IF n MOD 2 = 0
-        THEN BEGIN odev; write(n:0,' ') END
-        ELSE BEGIN write(n:0,' '); odev END
-    END
-END; (* odev *)
-
-BEGIN (* main, oddevn *)
-WHILE NOT eof  DO
-    BEGIN odev; readln; writeln END
-END. (* main, oddevn *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main, oddevn *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof  <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> odev; readln; writeln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main, oddevn *)</span>
 </pre>
-
+</div>
 
 <p>
 For example, it might be given the input line
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">1 2 3 4 5 6 7 8 9 11 22 33 44 55
+<pre class="src src-pascal">1 2 3 4 5 6 7 8 9 11 22 33 44 55
 </pre>
+</div>
 
-
-<p> 
+<p>
 It will then produce the output line
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">1 3 5 7 9 11 33 55    44 22 8 6 4 2
+<pre class="src src-pascal">1 3 5 7 9 11 33 55    44 22 8 6 4 2
 </pre>
+</div>
 
-
-<p> 
+<p>
 This does satisfy the specification <i>as stated</i>.  But note that the odd numbers appear in the original order, whereas the even numbers are <i>reversed</i>.  At this point we make a change in the specification: Both sets of numbers in the output line have to appear in their original order.  In the next section we shall see how this can be done using a technique which is probably new to most readers.
 </p>
+
 <p>
-In the previous program the part <code>... recurse ...</code> was actually an <code>IF-THEN-ELSE</code> statement in which both branches recursed, one by first recursing and then writing, and the other by first writing and then recursing.  In this way the separation of the odd and even numbers was achieved.  Note also that the recursion is terminated by writing the required space.  The reason why the even numbers come out in the reverse order is that the first branch writes out the local variable on the way back from the recursion.
+In the previous program the part <code>&#x2026; recurse &#x2026;</code> was actually an <code>IF-THEN-ELSE</code> statement in which both branches recursed, one by first recursing and then writing, and the other by first writing and then recursing.  In this way the separation of the odd and even numbers was achieved.  Note also that the recursion is terminated by writing the required space.  The reason why the even numbers come out in the reverse order is that the first branch writes out the local variable on the way back from the recursion.
 </p>
+
 <p>
 It is worth noting the form in more detail:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">PROCEDURE recurse;
-BEGIN
-IF recursiontermination THEN ...        (* no more recursion    *)
-  ELSE
-    IF somecondition
-        THEN recurse ...                (* recursing first      *)
-        ELSE ... recurse                (* recursing last       *)
-END;
+<pre class="src src-pascal"><span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">recurse</span>;
+<span style="color: #00ffff;">BEGIN</span>
+<span style="color: #00ffff;">IF</span> recursiontermination <span style="color: #00ffff;">THEN</span> ...        <span style="color: #66f;">(* </span><span style="color: #66f;">no more recursion    *)</span>
+  <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">IF</span> somecondition
+        <span style="color: #00ffff;">THEN</span> recurse ...                <span style="color: #66f;">(* </span><span style="color: #66f;">recursing first      *)</span>
+        <span style="color: #00ffff;">ELSE</span> ... recurse                <span style="color: #66f;">(* </span><span style="color: #66f;">recursing last       *)</span>
+<span style="color: #00ffff;">END</span>;
 </pre>
-
-
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-3" class="outline-2">
+</div>
+<div id="outline-container-sec-3" class="outline-2">
 <h2 id="sec-3"><span class="section-number-2">3</span> Second order recursion</h2>
 <div class="outline-text-2" id="text-3">
-
-
 <p>
 Procedures (or functions) can take value parameters or variable parameters, but they can also take procedures (or functions) as parameters.  The latter mode can be used to revisit an earlier incarnation of the procedure.
 </p>
-<p>
-If a procedure takes a procedure as a formal parameter, then the first global (non-recursive) call to it must use a global procedure as the actual parameter.  If the procedure is recursive, then it may call itself in two ways: either by passing to itself a global or local procedure as a parameter, or by passing to itself its own parameter as a parameter.  In the first case, if the passed procedure is local, it will allow the local procedure to revisit the current incarnation &mdash; if indeed the local procedure, in the guise of a parameter, is ever called.  In the second case it prohibits the current incarnation from being revisited.  As for all recursive procedures, a clause is needed to escape from the recursion; and for the parameter procedures to have any effect at all, they must be called at this point (they cannot be passed on further).  If the parameter procedure being called is a local procedure from an earlier incarnation, then local variables of that incarnation are visible at this point.
-</p>
 
+<p>
+If a procedure takes a procedure as a formal parameter, then the first global (non-recursive) call to it must use a global procedure as the actual parameter.  If the procedure is recursive, then it may call itself in two ways: either by passing to itself a global or local procedure as a parameter, or by passing to itself its own parameter as a parameter.  In the first case, if the passed procedure is local, it will allow the local procedure to revisit the current incarnation &#x2014; if indeed the local procedure, in the guise of a parameter, is ever called.  In the second case it prohibits the current incarnation from being revisited.  As for all recursive procedures, a clause is needed to escape from the recursion; and for the parameter procedures to have any effect at all, they must be called at this point (they cannot be passed on further).  If the parameter procedure being called is a local procedure from an earlier incarnation, then local variables of that incarnation are visible at this point.
+</p>
 </div>
 
-<div id="outline-container-3-1" class="outline-3">
+<div id="outline-container-sec-3-1" class="outline-3">
 <h3 id="sec-3-1"><span class="section-number-3">3.1</span> An example of second order recursion</h3>
 <div class="outline-text-3" id="text-3-1">
-
-
 <p>
 The pattern of second order recursion is exemplified by the following program.  It repeatedly reads lines of what will be lower case letters from the input file, and for each line that it has read it writes the lower case letters in their order, then the upper case equivalents in reverse order, then the upper case equivalents in the original order, then the lower case letters in reverse order.  Between each lot of characters there is a separation of four blank spaces.
 </p>
+
 <p>
 Since there are four lots of characters, there are three occurrences of separating spaces.  In the program these occurrences have been commented as <code>(* 1 *)</code>, <code>(* 2 *)</code> and <code>(* 3 *)</code>.  The forward and backward sequences of the two kinds of characters have also been commented.
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">second_order_recursion</span>(input,output);
 
-<pre class="example">PROGRAM second_order_recursion(input,output);
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">writespace</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'    '</span>) <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">2 *)</span>
 
-PROCEDURE writespace;
-BEGIN write('    ') END; (* 2 *)
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">recurse</span>(PROCEDURE cp);
+<span style="color: #ff00ff;">VAR</span> ch : <span style="color: #ff00ff;">char</span>;
 
-PROCEDURE recurse(PROCEDURE cp);
-VAR ch : char;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">local</span>;
+    <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">local *)</span>                          <span style="color: #66f;">(* </span><span style="color: #66f;">upper case *)</span>
+    <span style="color: #00ffff;">write</span>(chr(ord(ch) + ord(<span style="color: #00ff00;">'A'</span>) - ord(<span style="color: #00ff00;">'a'</span>))); <span style="color: #66f;">(* </span><span style="color: #66f;">backward *)</span>
+    cp;                  <span style="color: #66f;">(* </span><span style="color: #66f;">when cp = writespace: 2 *)</span>
+    <span style="color: #00ffff;">write</span>(chr(ord(ch) + ord(<span style="color: #00ff00;">'A'</span>) - ord(<span style="color: #00ff00;">'a'</span>)))  <span style="color: #66f;">(* </span><span style="color: #66f;">forward *)</span>
+    <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">local *)</span>
 
-    PROCEDURE local;
-    BEGIN (* local *)                          (* upper case *)
-    write(chr(ord(ch) + ord('A') - ord('a'))); (* backward *)
-    cp;                  (* when cp = writespace: 2 *)
-    write(chr(ord(ch) + ord('A') - ord('a')))  (* forward *)
-    END; (* local *)
-
-BEGIN (* recurse *)
-IF eoln THEN
-    BEGIN
-    writespace;         (* 1 *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    writespace;         <span style="color: #66f;">(* </span><span style="color: #66f;">1 *)</span>
     cp;
-    writespace          (* 3 *)
-    END
-  ELSE
-    BEGIN               (* lower case   *)
-    read(ch);
-    write(ch);          (* forward  *)
+    writespace          <span style="color: #66f;">(* </span><span style="color: #66f;">3 *)</span>
+    <span style="color: #00ffff;">END</span>
+  <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span>               <span style="color: #66f;">(* </span><span style="color: #66f;">lower case   *)</span>
+    <span style="color: #00ffff;">read</span>(ch);
+    <span style="color: #00ffff;">write</span>(ch);          <span style="color: #66f;">(* </span><span style="color: #66f;">forward  *)</span>
     recurse(local);
-    write(ch)           (* backward *)
-    END
-END; (* recurse *)
+    <span style="color: #00ffff;">write</span>(ch)           <span style="color: #66f;">(* </span><span style="color: #66f;">backward *)</span>
+    <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
 
-BEGIN (* main *)
-WHILE NOT eof DO
-    BEGIN recurse(writespace); writeln; readln END
-END. (* main *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> recurse(writespace); writeln; readln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
-
+</div>
 
 <p>
-Do note that there is only one variable, and that it is local to procedure <code>recurse</code>.  That variable is accessed directly for reading the lower case characters and for writing them forward going up the recursion and for writing them backward coming back from the recursion.  So this part is exactly like the corresponding procedure in the first program.  That variable is also accessed indirectly, as a non-local variable, in procedure <code>local</code> for writing the upper case characters.  Such access has to occur through a runtime structure, either the static chain or an equivalent optimisation, the display.  The procedure <code>local</code> is passed as a procedure parameter to procedure <code>recurse</code> in the <code>ELSE</code> part of <code>recurse</code>.  When this happens, the entry point to procedure local has to be passed as a parameter, <i>and also</i> the static chain or its equivalent.  The reason why so many lesser implementations of Pascal do not get this right &mdash; if they allow procedures as parameters at all &mdash; is that they merely pass the entry point and not the static chain or its equivalent.  I look forward to the day when students do not report back to me: "It doesn't work with the Pascal on my micro".
+Do note that there is only one variable, and that it is local to procedure <code>recurse</code>.  That variable is accessed directly for reading the lower case characters and for writing them forward going up the recursion and for writing them backward coming back from the recursion.  So this part is exactly like the corresponding procedure in the first program.  That variable is also accessed indirectly, as a non-local variable, in procedure <code>local</code> for writing the upper case characters.  Such access has to occur through a runtime structure, either the static chain or an equivalent optimisation, the display.  The procedure <code>local</code> is passed as a procedure parameter to procedure <code>recurse</code> in the <code>ELSE</code> part of <code>recurse</code>.  When this happens, the entry point to procedure local has to be passed as a parameter, <i>and also</i> the static chain or its equivalent.  The reason why so many lesser implementations of Pascal do not get this right &#x2014; if they allow procedures as parameters at all &#x2014; is that they merely pass the entry point and not the static chain or its equivalent.  I look forward to the day when students do not report back to me: "It doesn't work with the Pascal on my micro".
 </p>
+
 <p>
 In the <code>ELSE</code> part of the preceding program, procedure <code>recurse</code> calls itself using a local procedure as a parameter.  Another procedure which is visible there is the procedure which has been passed as a parameter, and it could equally well be used as an actual parameter in a recursive call.  We should now study this schema:
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">global</span>;
+<span style="color: #00ffff;">BEGIN</span> ... <span style="color: #00ffff;">END</span>;
 
-<pre class="example">PROCEDURE global;
-BEGIN ... END;
-
-PROCEDURE recurse(PROCEDURE param);
-VAR loc : sometype;
-    PROCEDURE local;
-    BEGIN ... param ... END;            (* loc visible at ... *)
-BEGIN (* recurse *)
-IF recursiontermination THEN ...        (* no more recursion    *)
-  ELSE
-    IF somecondition
-        THEN ... recurse(local) ...     (* using local as actual *)
-        ELSE ... recurse(param) ...     (* using param as actual *)
-END; (* recurse *)
-BEGIN (* main *)
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">recurse</span>(PROCEDURE param);
+<span style="color: #ff00ff;">VAR</span> loc : sometype;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">local</span>;
+    <span style="color: #00ffff;">BEGIN</span> ... param ... <span style="color: #00ffff;">END</span>;            <span style="color: #66f;">(* </span><span style="color: #66f;">loc visible at ... *)</span>
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
+<span style="color: #00ffff;">IF</span> recursiontermination <span style="color: #00ffff;">THEN</span> ...        <span style="color: #66f;">(* </span><span style="color: #66f;">no more recursion    *)</span>
+  <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">IF</span> somecondition
+        <span style="color: #00ffff;">THEN</span> ... recurse(local) ...     <span style="color: #66f;">(* </span><span style="color: #66f;">using local as actual *)</span>
+        <span style="color: #00ffff;">ELSE</span> ... recurse(param) ...     <span style="color: #66f;">(* </span><span style="color: #66f;">using param as actual *)</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
  ... recurse(global) ...
-END. (* main *)
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
+</div>
 
-
-<p> 
-To use this schema for the earlier problem, we merely have to flesh out the <code>...</code> and a few other places.  The following is the standard Pascal source program for the odd-even problem.  The program reads lines of numbers, and for each line that it has read it will write one line, containing the even numbers in their original order, then a space of four characters, then the odd numbers in their original order.
+<p>
+To use this schema for the earlier problem, we merely have to flesh out the <code>&#x2026;</code> and a few other places.  The following is the standard Pascal source program for the odd-even problem.  The program reads lines of numbers, and for each line that it has read it will write one line, containing the even numbers in their original order, then a space of four characters, then the odd numbers in their original order.
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">oddevn</span>(input,output);
 
-<pre class="example">PROGRAM oddevn(input,output);
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">space</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'    '</span>) <span style="color: #00ffff;">END</span>;
 
-PROCEDURE space;
-BEGIN write('    ') END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">odev</span>(PROCEDURE cp);
+<span style="color: #ff00ff;">VAR</span> n : <span style="color: #ff00ff;">integer</span>;
 
-PROCEDURE odev(PROCEDURE cp);
-VAR n : integer;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">writelater</span>;
+    <span style="color: #00ffff;">BEGIN</span> cp; <span style="color: #00ffff;">write</span>(n:0,<span style="color: #00ff00;">' '</span>) <span style="color: #00ffff;">END</span>;
 
-    PROCEDURE writelater;
-    BEGIN cp; write(n:0,' ') END;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">odev *)</span>
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span> cp <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">read</span>(n);
+    <span style="color: #00ffff;">IF</span> n <span style="color: #00ffff;">MOD</span> 2 = 0
+        <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">write</span>(n:0,<span style="color: #00ff00;">' '</span>); odev(cp) <span style="color: #00ffff;">END</span>
+        <span style="color: #00ffff;">ELSE</span> odev(writelater)
+    <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">odev *)</span>
 
-BEGIN (* odev *)
-IF eoln THEN cp ELSE
-    BEGIN
-    read(n);
-    IF n MOD 2 = 0
-        THEN BEGIN write(n:0,' '); odev(cp) END
-        ELSE odev(writelater)
-    END
-END; (* odev *)
-
-BEGIN (* main, oddevn *)
-WHILE NOT eof  DO
-    BEGIN odev(space); readln; writeln END
-END. (* main, oddevn *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main, oddevn *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof  <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> odev(space); readln; writeln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main, oddevn *)</span>
 </pre>
-
+</div>
 
 <p>
 The following is the same program written in the language C.  The program uses a local function writelater defined within the function odev. This is not allowed by the C standard, but it is provided in one of the many extensions provided by gcc (the Gnu C compiler).  However, although gcc also compiles C++ programs, I am told that the gcc extension can handle local functions ONLY inside C programs.
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-c"><span style="color: #ff00ff; font-weight: bold;"># include</span> <span style="color: #00ff00;">&lt;stdio.h&gt;</span>
 
-<pre class="example"># include &lt;stdio.h&gt;
+<span style="color: #00ffff;">typedef</span> <span style="color: #ff00ff;">void</span> (*<span style="color: #ff00ff;">proc</span>)();
 
-typedef void (*proc)();
-
-int eoln() {
-    int i;
+<span style="color: #ff00ff;">int</span> <span style="color: #ffffff; font-weight: bold;">eoln</span>() {
+    <span style="color: #ff00ff;">int</span> <span style="color: #eedd82;">i</span>;
     i = getchar();
-    if (i == '\n') return 1;
+    <span style="color: #00ffff;">if</span> (i == <span style="color: #00ff00;">'\n'</span>) <span style="color: #00ffff;">return</span> 1;
     ungetc(i, stdin);
-    return 0;
+    <span style="color: #00ffff;">return</span> 0;
 }
 
-int eof() {
-    int i;
+<span style="color: #ff00ff;">int</span> <span style="color: #ffffff; font-weight: bold;">eof</span>() {
+    <span style="color: #ff00ff;">int</span> <span style="color: #eedd82;">i</span>;
     i = getchar();
-    if (i == EOF) return 1;
+    <span style="color: #00ffff;">if</span> (i == EOF) <span style="color: #00ffff;">return</span> 1;
     ungetc(i, stdin);
-    return 0;
+    <span style="color: #00ffff;">return</span> 0;
 }
 
-void space() {
+<span style="color: #ff00ff;">void</span> <span style="color: #ffffff; font-weight: bold;">space</span>() {
     printf(&amp;quot; &amp;quot;);
 }
 
-void odev(proc cp) {
-    int n;
+<span style="color: #ff00ff;">void</span> <span style="color: #ffffff; font-weight: bold;">odev</span>(<span style="color: #ff00ff;">proc</span> <span style="color: #eedd82;">cp</span>) {
+    <span style="color: #ff00ff;">int</span> <span style="color: #eedd82;">n</span>;
 
-    void writelater() {
+    <span style="color: #ff00ff;">void</span> <span style="color: #eedd82;">writelater</span>() {
         cp();
         printf(&amp;quot;%d &amp;quot;, n);
     }
 
-    if (eoln()) cp();
-    else {
+    <span style="color: #00ffff;">if</span> (eoln()) cp();
+    <span style="color: #00ffff;">else</span> {
         scanf(&amp;quot;%d&amp;quot;, &amp;amp;n);
-        if (n % 2 == 0) {
+        <span style="color: #00ffff;">if</span> (n % 2 == 0) {
             printf(&amp;quot;%d &amp;quot;, n);
             odev(cp);
         }
-        else odev(writelater);
+        <span style="color: #00ffff;">else</span> odev(writelater);
     }
 }
 
-int main() {
-    while (!eof()) {
+<span style="color: #ff00ff;">int</span> <span style="color: #ffffff; font-weight: bold;">main</span>() {
+    <span style="color: #00ffff;">while</span> (!eof()) {
         odev(space);
         printf(&amp;quot;\n&amp;quot;);
     }
 }
 </pre>
-
+</div>
 
 <p>
 I am grateful to John Cowan for providing me with this translation.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-2" class="outline-3">
+<div id="outline-container-sec-3-2" class="outline-3">
 <h3 id="sec-3-2"><span class="section-number-3">3.2</span> Three other examples</h3>
 <div class="outline-text-3" id="text-3-2">
-
-
 <p>
 It is easy enough to write an ordinary recursive program which reads lines of numbers and for each line that it has read it first writes the sum of the numbers in the line and then the numbers in the reverse of the original order.  The next program uses second order recursion to do the same but to write the numbers in the line in their original order.
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">addnumbers</span>(input,output);
+<span style="color: #ff00ff;">VAR</span> sum : <span style="color: #ff00ff;">integer</span>;
 
-<pre class="example">PROGRAM addnumbers(input,output);
-VAR sum : integer;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">skip</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">END</span>;
 
-PROCEDURE skip;
-BEGIN END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">recurse</span>(PROCEDURE cp);
+<span style="color: #ff00ff;">VAR</span> n : <span style="color: #ff00ff;">integer</span>;
 
-PROCEDURE recurse(PROCEDURE cp);
-VAR n : integer;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">writeforward</span>;
+    <span style="color: #00ffff;">BEGIN</span> cp; <span style="color: #00ffff;">write</span>(n:0,<span style="color: #00ff00;">' '</span>) <span style="color: #00ffff;">END</span>;
 
-    PROCEDURE writeforward;
-    BEGIN cp; write(n:0,' ') END;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
+<span style="color: #00ffff;">IF</span> eoln
+    <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">write</span>(sum:0,<span style="color: #00ff00;">': '</span>); cp <span style="color: #00ffff;">END</span>
+    <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">read</span>(n); sum := sum + n; recurse(writeforward) <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
 
-BEGIN (* recurse *)
-IF eoln
-    THEN BEGIN write(sum:0,': '); cp END
-    ELSE BEGIN read(n); sum := sum + n; recurse(writeforward) END
-END; (* recurse *)
-
-BEGIN (* main *)
-WHILE NOT eof DO
-    BEGIN sum := 0; recurse(skip); readln; writeln END
-END. (* main *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> sum := 0; recurse(skip); readln; writeln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
-
+</div>
 
 <p>
 In the preceding programs, when the end of the line has been reached the runtime stack contains a history of what has been read on the line.  At this point the stack was made accessible through the <code>cp</code> procedure.  There is no limit to the number of times the stack can be accessed at this point; this is illustrated by the next program.  It repeatedly reads lines of numbers, and for each line that it has read it writes 6 lines: For a divisor ranging from 1 to 6, each line contains those of the numbers that are divisible without remainder by the divisor.  Each line is headed by the divisor.  Thus, for the input line
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">5 4 3 2 1 3 4 5 6 77 88
+<pre class="src src-pascal">5 4 3 2 1 3 4 5 6 77 88
 </pre>
+</div>
 
-
-<p> 
+<p>
 it produces the output lines
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">1:  5 4 3 2 1 3 4 5 6 77 88
+<pre class="src src-pascal">1:  5 4 3 2 1 3 4 5 6 77 88
 2:  4 2 4 6 88
 3:  3 3 6
 4:  4 4 88
 5:  5 5
 6:  6
 </pre>
+</div>
 
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">revisit_repeatedly</span>(input,output);
 
+<span style="color: #ff00ff;">VAR</span> divisor : <span style="color: #ff00ff;">integer</span>;
 
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">skip</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">END</span>;
 
-<pre class="example">PROGRAM revisit_repeatedly(input,output);
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">recurse</span>(PROCEDURE cp);
+<span style="color: #ff00ff;">VAR</span> n : <span style="color: #ff00ff;">integer</span>;
 
-VAR divisor : integer;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">filter</span>;
+    <span style="color: #00ffff;">BEGIN</span> cp; <span style="color: #00ffff;">IF</span> n <span style="color: #00ffff;">MOD</span> divisor = 0 <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(n:0,<span style="color: #00ff00;">' '</span>) <span style="color: #00ffff;">END</span>;
 
-PROCEDURE skip;
-BEGIN END;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">FOR</span> divisor := 1 <span style="color: #00ffff;">TO</span> 6 <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">write</span>(divisor:0,<span style="color: #00ff00;">':  '</span>); cp; writeln <span style="color: #00ffff;">END</span>
+  <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">read</span>(n); recurse(filter) <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">recurse *)</span>
 
-PROCEDURE recurse(PROCEDURE cp);
-VAR n : integer;
-
-    PROCEDURE filter;
-    BEGIN cp; IF n MOD divisor = 0 THEN write(n:0,' ') END;
-
-BEGIN (* recurse *)
-IF eoln THEN
-    FOR divisor := 1 TO 6 DO
-        BEGIN write(divisor:0,':  '); cp; writeln END
-  ELSE
-    BEGIN read(n); recurse(filter) END
-END; (* recurse *)
-
-BEGIN (* main *)
-WHILE NOT eof DO
-    BEGIN recurse(skip); readln END
-END. (* main *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> recurse(skip); readln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
-
+</div>
 
 <p>
 The next program reads lines of numbers, and writes out that same line of numbers <i>in their order</i> except that duplicates of earlier numbers are not written.  To check for duplicates every number <code>n</code> in the input line has to be compared with every earlier incarnation of that same variable <code>n</code>.  Note that the parameter to the recursive procedure is not a continuation procedure but a Boolean valued function which can inspect the stack below.  For the comparison in <code>seen</code> it uses its parameter <code>i</code>.
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">noduplicates</span>(input,output);
 
-<pre class="example">PROGRAM noduplicates(input,output);
+<span style="color: #00ffff;">FUNCTION</span> <span style="color: #ffffff; font-weight: bold;">no</span>(i : <span style="color: #ff00ff;">integer</span>) : <span style="color: #ff00ff;">boolean</span>;
+<span style="color: #00ffff;">BEGIN</span> no := false <span style="color: #00ffff;">END</span>;
 
-FUNCTION no(i : integer) : boolean;
-BEGIN no := false END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">nodup</span>(FUNCTION seenbefore(i : <span style="color: #ff00ff;">integer</span>) : <span style="color: #ff00ff;">boolean</span>);
+<span style="color: #ff00ff;">VAR</span> n : <span style="color: #ff00ff;">integer</span>;
 
-PROCEDURE nodup(FUNCTION seenbefore(i : integer) : boolean);
-VAR n : integer;
+    <span style="color: #00ffff;">FUNCTION</span> <span style="color: #ffffff; font-weight: bold;">seen</span>(i : <span style="color: #ff00ff;">integer</span>) : <span style="color: #ff00ff;">boolean</span>;
+    <span style="color: #00ffff;">BEGIN</span> seen := (i = n) <span style="color: #00ffff;">OR</span> seenbefore(i) <span style="color: #00ffff;">END</span>;
 
-    FUNCTION seen(i : integer) : boolean;
-    BEGIN seen := (i = n) OR seenbefore(i) END;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">nodup *)</span>
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span> writeln <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">read</span>(n);
+    <span style="color: #00ffff;">IF</span> seenbefore(n) <span style="color: #00ffff;">THEN</span> nodup(seenbefore) <span style="color: #00ffff;">ELSE</span>
+        <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">write</span>(n:0,<span style="color: #00ff00;">' '</span>); nodup(seen) <span style="color: #00ffff;">END</span>
+    <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">nodup *)</span>
 
-BEGIN (* nodup *)
-IF eoln THEN writeln ELSE
-    BEGIN
-    read(n);
-    IF seenbefore(n) THEN nodup(seenbefore) ELSE
-        BEGIN write(n:0,' '); nodup(seen) END
-    END
-END; (* nodup *)
-
-BEGIN (* main *)
-WHILE NOT eof DO
-    BEGIN nodup(no); readln END
-END. (* main *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> nodup(no); readln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
-
+</div>
 
 <p>
-The next program combines features from two earlier programs &mdash; the program which partitions numbers from the input line into those whose remainder after division by 2 is 0 or 1, and the program which removes duplications.  This program does both: it reads lines and partitions into two groups without duplicates.  For variety (and efficiency) the parameter of the functions has been replaced by a global variable; this way the parameter does not have to be passed along in searches.  The recursive procedure <code>nodup</code> has a function and a procedure as parameter.  Both serve to inspect the earlier incarnations of the local variable <code>saved</code>.
+The next program combines features from two earlier programs &#x2014; the program which partitions numbers from the input line into those whose remainder after division by 2 is 0 or 1, and the program which removes duplications.  This program does both: it reads lines and partitions into two groups without duplicates.  For variety (and efficiency) the parameter of the functions has been replaced by a global variable; this way the parameter does not have to be passed along in searches.  The recursive procedure <code>nodup</code> has a function and a procedure as parameter.  Both serve to inspect the earlier incarnations of the local variable <code>saved</code>.
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">partition2nodups</span>(input,output);
 
-<pre class="example">PROGRAM partition2nodups(input,output);
+<span style="color: #ff00ff;">VAR</span> current : <span style="color: #ff00ff;">integer</span>;
 
-VAR current : integer;
+<span style="color: #00ffff;">FUNCTION</span> <span style="color: #ffffff; font-weight: bold;">no</span> : <span style="color: #ff00ff;">boolean</span>;
+<span style="color: #00ffff;">BEGIN</span> no := false <span style="color: #00ffff;">END</span>;
 
-FUNCTION no : boolean;
-BEGIN no := false END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">space</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'    '</span>) <span style="color: #00ffff;">END</span>;
 
-PROCEDURE space;
-BEGIN write('    ') END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">nodup</span>(FUNCTION old : <span style="color: #ff00ff;">boolean</span>;
+                <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">cp</span>);
 
-PROCEDURE nodup(FUNCTION old : boolean;
-                PROCEDURE cp);
+<span style="color: #ff00ff;">VAR</span> saved : <span style="color: #ff00ff;">integer</span>;
 
-VAR saved : integer;
+    <span style="color: #00ffff;">FUNCTION</span> <span style="color: #ffffff; font-weight: bold;">new</span> : <span style="color: #ff00ff;">boolean</span>;
+    <span style="color: #00ffff;">BEGIN</span> new := (current = saved) <span style="color: #00ffff;">OR</span> old <span style="color: #00ffff;">END</span>;
 
-    FUNCTION new : boolean;
-    BEGIN new := (current = saved) OR old END;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">writelater</span>;
+    <span style="color: #00ffff;">BEGIN</span> cp; <span style="color: #00ffff;">write</span>(saved:0,<span style="color: #00ff00;">' '</span>) <span style="color: #00ffff;">END</span>;
 
-    PROCEDURE writelater;
-    BEGIN cp; write(saved:0,' ') END;
-
-BEGIN (* nodup *)
-IF eoln THEN cp ELSE
-    BEGIN
-    read(current);
-    IF old THEN nodup(old,cp) ELSE
-        BEGIN
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">nodup *)</span>
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span> cp <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">read</span>(current);
+    <span style="color: #00ffff;">IF</span> old <span style="color: #00ffff;">THEN</span> nodup(old,cp) <span style="color: #00ffff;">ELSE</span>
+        <span style="color: #00ffff;">BEGIN</span>
         saved := current;
-        IF current MOD 2 = 0
-            THEN BEGIN write(current:0,' '); nodup(new,cp) END
-            ELSE nodup(new,writelater)
-        END
-    END
-END; (* nodup *)
+        <span style="color: #00ffff;">IF</span> current <span style="color: #00ffff;">MOD</span> 2 = 0
+            <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">write</span>(current:0,<span style="color: #00ff00;">' '</span>); nodup(new,cp) <span style="color: #00ffff;">END</span>
+            <span style="color: #00ffff;">ELSE</span> nodup(new,writelater)
+        <span style="color: #00ffff;">END</span>
+    <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">nodup *)</span>
 
-BEGIN (* main *)
-WHILE NOT eof DO
-    BEGIN nodup(no,space); writeln; readln END
-END. (* main *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> nodup(no,space); writeln; readln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
-
+</div>
 
 <p>
-The next program reads lines of numbers, and for each line of numbers it writes out in their order all second occurrences of numbers &mdash; first, third and any further occurrences are ignored.  Note that the second global variable serves as a <code>VAR</code> parameter to procedures <code>first_time</code> and <code>check</code>, this way it does not have to be passed along.
+The next program reads lines of numbers, and for each line of numbers it writes out in their order all second occurrences of numbers &#x2014; first, third and any further occurrences are ignored.  Note that the second global variable serves as a <code>VAR</code> parameter to procedures <code>first_time</code> and <code>check</code>, this way it does not have to be passed along.
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">partition2shodups</span>(input,output);
 
-<pre class="example">PROGRAM partition2shodups(input,output);
+<span style="color: #ff00ff;">VAR</span> current : <span style="color: #ff00ff;">integer</span>;
+    repetitions : <span style="color: #ff00ff;">integer</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">acts as VAR parameter to check *)</span>
 
-VAR current : integer;
-    repetitions : integer; (* acts as VAR parameter to check *)
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">first_time</span>;
+<span style="color: #00ffff;">BEGIN</span> repetitions := 1 <span style="color: #00ffff;">END</span>;
 
-PROCEDURE first_time;
-BEGIN repetitions := 1 END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">shodup</span>(PROCEDURE cp);
 
-PROCEDURE shodup(PROCEDURE cp);
+<span style="color: #ff00ff;">VAR</span> saved,reps : <span style="color: #ff00ff;">integer</span>;
 
-VAR saved,reps : integer;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">check</span>;
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">IF</span> current &lt;&gt; saved
+        <span style="color: #00ffff;">THEN</span> cp
+        <span style="color: #00ffff;">ELSE</span> repetitions := reps + 1
+    <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">check *)</span>
 
-    PROCEDURE check;
-    BEGIN
-    IF current &lt;&gt; saved
-        THEN cp
-        ELSE repetitions := reps + 1
-    END; (* check *)
-
-BEGIN (* shodup *)
-IF NOT eoln THEN
-    BEGIN
-    read(current);
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">shodup *)</span>
+<span style="color: #00ffff;">IF</span> <span style="color: #00ffff;">NOT</span> eoln <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">read</span>(current);
     cp;
-    IF repetitions = 2 THEN write(current:0,' ');
+    <span style="color: #00ffff;">IF</span> repetitions = 2 <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(current:0,<span style="color: #00ff00;">' '</span>);
     saved := current; reps := repetitions;
-    IF reps &gt; 2 THEN shodup(cp) ELSE shodup(check)
-    END
-END; (* shodup *)
+    <span style="color: #00ffff;">IF</span> reps &gt; 2 <span style="color: #00ffff;">THEN</span> shodup(cp) <span style="color: #00ffff;">ELSE</span> shodup(check)
+    <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">shodup *)</span>
 
-BEGIN (* main *)
-WHILE NOT eof DO
-    BEGIN shodup(first_time); writeln; readln END
-END. (* main *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> shodup(first_time); writeln; readln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
-
+</div>
 
 <p>
 The final program read lines of numbers and for each line of numbers it writes out a line of those numbers sorted in their order.
 </p>
 
+<div class="org-src-container">
 
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">slowsort</span>(input,output);
 
-<pre class="example">PROGRAM slowsort(input,output);
+<span style="color: #66f;">(* </span><span style="color: #66f;">adapted from a program written by M.F. Kuiper,</span>
+<span style="color: #66f;">   proved correct in Fokkinga (1987)</span>
+<span style="color: #66f;">   [ thanks Matthys ] *)</span>
 
-(* adapted from a program written by M.F. Kuiper,
-   proved correct in Fokkinga (1987)
-   [ thanks Matthys ] *)
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">skip</span>(m,n : <span style="color: #ff00ff;">integer</span>);
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #00ffff;">END</span>;
 
-PROCEDURE skip(m,n : integer);
-BEGIN END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">sort</span>(PROCEDURE cp(m,n : <span style="color: #ff00ff;">integer</span>));
+<span style="color: #ff00ff;">VAR</span> val : <span style="color: #ff00ff;">integer</span>;
 
-PROCEDURE sort(PROCEDURE cp(m,n : integer));
-VAR val : integer;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">locp</span>(m,n : <span style="color: #ff00ff;">integer</span>);
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">IF</span> (m &lt;= val) <span style="color: #00ffff;">AND</span> (val &lt; n) <span style="color: #00ffff;">THEN</span>
+         <span style="color: #00ffff;">BEGIN</span> cp(m,val); <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">' '</span>,val:1); cp(val,n) <span style="color: #00ffff;">END</span>
+       <span style="color: #00ffff;">ELSE</span> cp(m,n)
+    <span style="color: #00ffff;">END</span>;
 
-    PROCEDURE locp(m,n : integer);
-    BEGIN
-    IF (m &lt;= val) AND (val &lt; n) THEN
-         BEGIN cp(m,val); write(' ',val:1); cp(val,n) END
-       ELSE cp(m,n)
-    END;
+<span style="color: #00ffff;">BEGIN</span>  <span style="color: #66f;">(* </span><span style="color: #66f;">sort *)</span>
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span> cp(- maxint,maxint) <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span>  <span style="color: #00ffff;">read</span>(val); sort(locp) <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">sort *)</span>
 
-BEGIN  (* sort *)
-IF eoln THEN cp(- maxint,maxint) ELSE
-    BEGIN  read(val); sort(locp) END
-END; (* sort *)
-
-BEGIN  (* main *)
-WHILE NOT eof DO
-    BEGIN sort(skip); readln; writeln END
-END.
+<span style="color: #00ffff;">BEGIN</span>  <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span> sort(skip); readln; writeln <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>.
 </pre>
-
-
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-4" class="outline-2">
+</div>
+<div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4"><span class="section-number-2">4</span> A LET-expression evaluator</h2>
 <div class="outline-text-2" id="text-4">
-
-
 <p>
-The remainder of this chapter introduces an evaluator for arithmetic expressions with the <code>LET</code> constructor.  When an expression has been typed by the user, the program responds by writing a line starting with === followed by the value that has been computed.  The meaning of <code>LET</code>-expressions should become clear from the examples.  The following is an interaction with the program:
+The remainder of this chapter introduces an evaluator for arithmetic expressions with the <code>LET</code> constructor.  When an expression has been typed by the user, the program responds by writing a line starting with <code>=</code> followed by the value that has been computed.  The meaning of <code>LET</code>-expressions should become clear from the examples.  The following is an interaction with the program:
 </p>
 
-
-
-<pre class="example">$ SET VERIFY
+<pre class="example">
+$ SET VERIFY
 $ RUN 22LETEVL.EXE
 12345
 =     12345
@@ -787,14 +729,13 @@ LET a = 100 IN
       ^  unknown identifier
 </pre>
 
-
 <p>
 A session with the program has to be in accordance with the following grammar:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">session   ::=
+<pre class="src src-ebnf">session   ::=
         [ factor ] "."
 factor   ::=
         number |
@@ -805,317 +746,297 @@ expression   :=
 term   ::=
         factor [ ("*" | "/") factor ]
 </pre>
-
+</div>
 
 <p>
 A factor in the input will be evaluated immediately after it has been read.  A number has to be a non-negative integer in decimal notation.  The arithmetic operators have their usual meaning.  A <code>LET</code> declaration establishes a local scope for the factor in which the declared identifier has the value of the given expression.  In the example of the four nested <code>LET=s, both =a</code> and <code>b</code> are redefined in more local scopes.  The whole point of the exercise is to use continuations to perform the search for the most recent declaration of identifiers.
 </p>
-
 </div>
 
-<div id="outline-container-4-1" class="outline-3">
+<div id="outline-container-sec-4-1" class="outline-3">
 <h3 id="sec-4-1"><span class="section-number-3">4.1</span> The implementation</h3>
 <div class="outline-text-3" id="text-4-1">
-
-
-
-</div>
-
-<div id="outline-container-4-1-1" class="outline-4">
+</div><div id="outline-container-sec-4-1-1" class="outline-4">
 <h4 id="sec-4-1-1"><span class="section-number-4">4.1.1</span> Step 1: <i>Visibility requirements</i>.</h4>
 <div class="outline-text-4" id="text-4-1-1">
-
-<p>To implement the <code>LET</code>-evaluator we start with writing a recursive descent parser more or less along familiar lines.  Visibility requirements are a little different from what they have been in earlier programs.  They can be ascertained simply by noting which parsing procedure needs access to which other.  This leads to a new kind of nesting pattern, but this should not present any problems.
+<p>
+To implement the <code>LET</code>-evaluator we start with writing a recursive descent parser more or less along familiar lines.  Visibility requirements are a little different from what they have been in earlier programs.  They can be ascertained simply by noting which parsing procedure needs access to which other.  This leads to a new kind of nesting pattern, but this should not present any problems.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-1-2" class="outline-4">
+<div id="outline-container-sec-4-1-2" class="outline-4">
 <h4 id="sec-4-1-2"><span class="section-number-4">4.1.2</span> Step 2: <i>Parsing</i>.</h4>
 <div class="outline-text-4" id="text-4-1-2">
-
-<p>For the bodies of the three parsing procedures a few difficulties arise.  This is because there is no terminator and hence after a factor has been read from the input no additional symbol is to be read.  Hence the usual one symbol lookahead method does not work.  Instead, calls to procedure <code>getsym</code> have to occur in what might at first appear to be rather strange places.  In detail, procedure <code>factor</code> is not allowed to read past its last symbol, but procedures <code>expression</code> and <code>term</code> need to look ahead for a possible infix operator.  Technically, the grammar for <code>factor</code> is not an LL(1) grammar but a LL(0) grammar, but the grammar for expression and term is LL(1).  As a consequence, in the main program the call to <code>factor</code> has to be preceded by a call to <code>getsym</code>, whereas in <code>term</code> the calls to <code>factor</code> have to be followed by a call to <code>getsym</code>.  In <code>expression</code> the calls to <code>term</code> have to be preceded by calls to <code>getsym</code>, and in <code>factor</code> for the parenthesis case the call to <code>expression</code> is neither preceded nor followed by a call to <code>getsym</code>.  It is advisable to write just the parser for this part first, without the <code>LET</code> declarations.
+<p>
+For the bodies of the three parsing procedures a few difficulties arise.  This is because there is no terminator and hence after a factor has been read from the input no additional symbol is to be read.  Hence the usual one symbol lookahead method does not work.  Instead, calls to procedure <code>getsym</code> have to occur in what might at first appear to be rather strange places.  In detail, procedure <code>factor</code> is not allowed to read past its last symbol, but procedures <code>expression</code> and <code>term</code> need to look ahead for a possible infix operator.  Technically, the grammar for <code>factor</code> is not an LL(1) grammar but a LL(0) grammar, but the grammar for expression and term is LL(1).  As a consequence, in the main program the call to <code>factor</code> has to be preceded by a call to <code>getsym</code>, whereas in <code>term</code> the calls to <code>factor</code> have to be followed by a call to <code>getsym</code>.  In <code>expression</code> the calls to <code>term</code> have to be preceded by calls to <code>getsym</code>, and in <code>factor</code> for the parenthesis case the call to <code>expression</code> is neither preceded nor followed by a call to <code>getsym</code>.  It is advisable to write just the parser for this part first, without the <code>LET</code> declarations.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-1-3" class="outline-4">
+<div id="outline-container-sec-4-1-3" class="outline-4">
 <h4 id="sec-4-1-3"><span class="section-number-4">4.1.3</span> Step 3: <i>Evaluating</i>.</h4>
 <div class="outline-text-4" id="text-4-1-3">
-
-<p>Next, we turn the parser into an evaluator using the method first used in Chapter 3: Each of the parsing procedures <code>factor</code>, <code>expression</code> and <code>term</code> is given a <code>VAR</code> parameter to return a value, and at least the last two procedures need a local variable for computing values for the binary operators.  At this point the program should be able to handle any arithmetical expressions which do not contain <code>LET</code> declarations.
+<p>
+Next, we turn the parser into an evaluator using the method first used in Chapter 3: Each of the parsing procedures <code>factor</code>, <code>expression</code> and <code>term</code> is given a <code>VAR</code> parameter to return a value, and at least the last two procedures need a local variable for computing values for the binary operators.  At this point the program should be able to handle any arithmetical expressions which do not contain <code>LET</code> declarations.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-1-4" class="outline-4">
-<h4 id="sec-4-1-4"><span class="section-number-4">4.1.4</span> Step 4: <i>=LET= declarations</i>.</h4>
+<div id="outline-container-sec-4-1-4" class="outline-4">
+<h4 id="sec-4-1-4"><span class="section-number-4">4.1.4</span> Step 4: <i><code>LET</code> declarations</i>.</h4>
 <div class="outline-text-4" id="text-4-1-4">
-
-<p>It is an easy matter to make <code>getsym</code> recognise the two multi-character reserved words <code>LET</code> and <code>IN</code>, and to add a case to <code>factor</code> to parse declarations.  After the <code>LET</code>, the next symbol has to be an identifier and it has to be stored somewhere for potential use.  Also, the value of the following expression has to be stored.  Both the identifier and its value are then available inside the factor which is the <code>IN</code> part of the <code>LET</code>.  A conventional method would be to store the identifier and its associated value in a symbol table implemented as an <code>ARRAY</code> of <code>RECORDS</code> consisting of identifiers and their values.  When the <code>LET</code> is encountered, the identifier is entered, when the expression after the === has been evaluated its value is entered alongside, when inside the <code>IN</code> part an identifier is seen its value is retrieved, when the <code>IN</code> part is completed the identifier-value pair is popped.  This is the method we shall use freely in later programs.
+<p>
+It is an easy matter to make <code>getsym</code> recognise the two multi-character reserved words <code>LET</code> and <code>IN</code>, and to add a case to <code>factor</code> to parse declarations.  After the <code>LET</code>, the next symbol has to be an identifier and it has to be stored somewhere for potential use.  Also, the value of the following expression has to be stored.  Both the identifier and its value are then available inside the factor which is the <code>IN</code> part of the <code>LET</code>.  A conventional method would be to store the identifier and its associated value in a symbol table implemented as an <code>ARRAY</code> of <code>RECORDS</code> consisting of identifiers and their values.  When the <code>LET</code> is encountered, the identifier is entered, when the expression after the <code>=</code> has been evaluated its value is entered alongside, when inside the <code>IN</code> part an identifier is seen its value is retrieved, when the <code>IN</code> part is completed the identifier-value pair is popped.  This is the method we shall use freely in later programs.
 </p>
+
 <p>
 However, there is another way of implementing a symbol table which does not use an explicit <code>ARRAY</code> at all, but instead uses the recursion stack itself.  In a <code>LET</code> declaration the identifier and its value are saved in a local variable of procedure <code>factor</code>, and when <code>getsym</code> sees an identifier and needs to look up its value, it then descends along a chain of identifier-value pairs buried in the recursion stack.  For this purpose <code>getsym</code> has to be given a formal parameter which is a procedure to be invoked when an identifier is seen.  The actual parameter will always be a procedure that is local to <code>factor</code>, and, since it is local to <code>factor</code>, it can access identifier-value pairs that might have been saved in that particular incarnation of <code>factor</code>.  Hence, if the currently seen identifier matches the saved identifier, the numeric value to be returned is the saved value.  On the other hand, if there is no match, the search has to continue deeper into the stack, for a less recent incarnation.  Hence this local procedure has to be able to search deeper, calling another procedure which it has inherited from <code>factor</code> itself as a parameter.  Hence <code>factor</code> itself needs a parameter which is such a look-up procedure.  For the initial call to <code>factor</code> from the main program, a global look-up procedure is needed which fails to find anything and reports an error.
 </p>
+
 <p>
 In more detail, the case for <code>LET</code> in <code>factor</code> has to look like this: When <code>LET</code> has been seen a new identifier is expected, and <code>getsym</code> has to be given as an actual parameter a procedure local to <code>factor</code> which will save the current identifier in a variable local to <code>factor</code>.  The next symbol has to be <code>\equal</code>, and for this call to <code>getsym</code> no identifier is expected, but since some actual parameter is needed, the formal parameter of <code>factor</code> serves well.  Then comes a call to <code>expression</code>, using as its <code>VAR</code> parameter a variable local to <code>factor</code>, this will be the saved value of the expression.  At this point the new identifier-value pair is in two local variables of <code>factor</code>.  The current symbol has to be <code>IN</code>, otherwise an error is reported.  Next comes a call to <code>getsym</code> and then a recursive call to <code>factor</code>.  For both the chain of identifier-value pairs has to be augmented by the latest pair.  Hence for both calls the actual look-up parameter has to be a procedure local to <code>factor</code> which can access the latest pair.  The actual <code>VAR</code> parameter for the call to <code>factor</code> has to be the <code>VAR</code> parameter of the calling <code>factor</code>.  When the calling <code>factor</code> containing the <code>LET</code> declaration finally returns, its local variables containing the latest identifier-value pair disappear, and so does the procedure for accessing that pair.
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-4-2" class="outline-3">
+<div id="outline-container-sec-4-2" class="outline-3">
 <h3 id="sec-4-2"><span class="section-number-3">4.2</span> The program</h3>
 <div class="outline-text-3" id="text-4-2">
-
-
 <p>
 The following is the standard Pascal source program for the functional evaluator.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">PROGRAM let_expression_evaluator(input,output);
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">let_expression_evaluator</span>(input,output);
 
 LABEL 10,99;
 
-CONST
+<span style="color: #ff00ff;">CONST</span>
   interactive = true;
   alen = 8;
 
-TYPE
-  alfa = PACKED ARRAY [1..alen] OF char;
-  string20 = PACKED ARRAY [1..20] OF char;
+<span style="color: #ff00ff;">TYPE</span>
+  alfa = <span style="color: #ff00ff;">PACKED</span> <span style="color: #ff00ff;">ARRAY</span> [1..alen] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">char</span>;
+  string20 = <span style="color: #ff00ff;">PACKED</span> <span style="color: #ff00ff;">ARRAY</span> [1..20] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">char</span>;
   symbol = (lpar_,rpar_,let_,eq_,in_,
             add_,sub_,mul_,div_,num_,ident_);
 
-VAR
-  cc,cc0 : integer;
-  ch : char; al : alfa; n : integer; sy : symbol;
-  value : integer;
+<span style="color: #ff00ff;">VAR</span>
+  cc,cc0 : <span style="color: #ff00ff;">integer</span>;
+  ch : <span style="color: #ff00ff;">char</span>; al : alfa; n : <span style="color: #ff00ff;">integer</span>; sy : symbol;
+  value : <span style="color: #ff00ff;">integer</span>;
 
-PROCEDURE getch;
-BEGIN
-IF eof THEN GOTO 99;
-IF eoln THEN cc := -1;
-read(ch); cc := cc + 1
-END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">getch</span>;
+<span style="color: #00ffff;">BEGIN</span>
+<span style="color: #00ffff;">IF</span> eof <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">99</span>;
+<span style="color: #00ffff;">IF</span> eoln <span style="color: #00ffff;">THEN</span> cc := -1;
+<span style="color: #00ffff;">read</span>(ch); cc := cc + 1
+<span style="color: #00ffff;">END</span>;
 
-PROCEDURE error(message : string20);
-BEGIN writeln('^':cc0,'  ',message); readln; cc := -1; GOTO 10 END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">error</span>(<span style="color: #00ffff;">message</span> : string20);
+<span style="color: #00ffff;">BEGIN</span> writeln(<span style="color: #00ff00;">'^'</span>:cc0,<span style="color: #00ff00;">'  '</span>,<span style="color: #00ffff;">message</span>); readln; cc := -1; <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">10</span> <span style="color: #00ffff;">END</span>;
 
-PROCEDURE globalcontext;
-BEGIN error('unknown identifier  ') END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">globalcontext</span>;
+<span style="color: #00ffff;">BEGIN</span> error(<span style="color: #00ff00;">'unknown identifier  '</span>) <span style="color: #00ffff;">END</span>;
 
-PROCEDURE getsym(PROCEDURE context);
-VAR i : integer;
-BEGIN (* getsym *)
-WHILE ch &lt;= ' '  DO getch;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">getsym</span>(PROCEDURE context);
+<span style="color: #ff00ff;">VAR</span> i : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">getsym *)</span>
+<span style="color: #00ffff;">WHILE</span> ch &lt;= <span style="color: #00ff00;">' '</span>  <span style="color: #00ffff;">DO</span> getch;
 cc0 := cc;
-CASE ch OF
-    '(' : BEGIN sy := lpar_; getch END;
-    ')' : BEGIN sy := rpar_; getch END;
-    '+' : BEGIN sy := add_; getch END;
-    '-' : BEGIN sy := sub_; getch END;
-    '*' : BEGIN sy := mul_; getch END;
-    '/' : BEGIN sy := div_; getch END;
-    '=' : BEGIN sy := eq_; getch END;
-    '0','1','2','3','4','5','6','7','8','9':
-        BEGIN
+<span style="color: #00ffff;">CASE</span> ch <span style="color: #00ffff;">OF</span>
+    <span style="color: #00ff00;">'('</span> : <span style="color: #00ffff;">BEGIN</span> sy := lpar_; getch <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ff00;">')'</span> : <span style="color: #00ffff;">BEGIN</span> sy := rpar_; getch <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ff00;">'+'</span> : <span style="color: #00ffff;">BEGIN</span> sy := add_; getch <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ff00;">'-'</span> : <span style="color: #00ffff;">BEGIN</span> sy := sub_; getch <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ff00;">'*'</span> : <span style="color: #00ffff;">BEGIN</span> sy := mul_; getch <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ff00;">'/'</span> : <span style="color: #00ffff;">BEGIN</span> sy := div_; getch <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ff00;">'='</span> : <span style="color: #00ffff;">BEGIN</span> sy := eq_; getch <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ff00;">'0'</span>,<span style="color: #00ff00;">'1'</span>,<span style="color: #00ff00;">'2'</span>,<span style="color: #00ff00;">'3'</span>,<span style="color: #00ff00;">'4'</span>,<span style="color: #00ff00;">'5'</span>,<span style="color: #00ff00;">'6'</span>,<span style="color: #00ff00;">'7'</span>,<span style="color: #00ff00;">'8'</span>,<span style="color: #00ff00;">'9'</span>:
+        <span style="color: #00ffff;">BEGIN</span>
         n := 0; sy := num_;
-        REPEAT
-            n := 10 * n + (ord(ch) - ord('0')); getch
-            UNTIL NOT (ch IN ['0'..'9'])
-        END;
+        <span style="color: #00ffff;">REPEAT</span>
+            n := 10 * n + (ord(ch) - ord(<span style="color: #00ff00;">'0'</span>)); getch
+            <span style="color: #00ffff;">UNTIL</span> <span style="color: #00ffff;">NOT</span> (ch <span style="color: #00ffff;">IN</span> [<span style="color: #00ff00;">'0'</span>..<span style="color: #00ff00;">'9'</span>])
+        <span style="color: #00ffff;">END</span>;
     OTHERWISE
-        IF NOT (ch IN ['A'..'Z','a'..'z']) THEN
-            error('illegal character   ')
-          ELSE
-            BEGIN
-            i := 0; al := '        ';
-            REPEAT
-                IF i &lt; alen THEN
-                    BEGIN i := i + 1; al[i] := ch; getch END;
-                UNTIL NOT (CH in ['A'..'Z','a'..'z','0'..'9']);
-            IF al = 'LET     ' THEN sy := let_
-            ELSE IF al = 'IN      ' THEN sy := in_
-            ELSE context
-        END
-    END (* CASE *)
-END; (* getsym *)
+        <span style="color: #00ffff;">IF</span> <span style="color: #00ffff;">NOT</span> (ch <span style="color: #00ffff;">IN</span> [<span style="color: #00ff00;">'A'</span>..<span style="color: #00ff00;">'Z'</span>,<span style="color: #00ff00;">'a'</span>..<span style="color: #00ff00;">'z'</span>]) <span style="color: #00ffff;">THEN</span>
+            error(<span style="color: #00ff00;">'illegal character   '</span>)
+          <span style="color: #00ffff;">ELSE</span>
+            <span style="color: #00ffff;">BEGIN</span>
+            i := 0; al := <span style="color: #00ff00;">'        '</span>;
+            <span style="color: #00ffff;">REPEAT</span>
+                <span style="color: #00ffff;">IF</span> i &lt; alen <span style="color: #00ffff;">THEN</span>
+                    <span style="color: #00ffff;">BEGIN</span> i := i + 1; al[i] := ch; getch <span style="color: #00ffff;">END</span>;
+                <span style="color: #00ffff;">UNTIL</span> <span style="color: #00ffff;">NOT</span> (CH <span style="color: #00ffff;">in</span> [<span style="color: #00ff00;">'A'</span>..<span style="color: #00ff00;">'Z'</span>,<span style="color: #00ff00;">'a'</span>..<span style="color: #00ff00;">'z'</span>,<span style="color: #00ff00;">'0'</span>..<span style="color: #00ff00;">'9'</span>]);
+            <span style="color: #00ffff;">IF</span> al = <span style="color: #00ff00;">'LET     '</span> <span style="color: #00ffff;">THEN</span> sy := let_
+            <span style="color: #00ffff;">ELSE</span> <span style="color: #00ffff;">IF</span> al = <span style="color: #00ff00;">'IN      '</span> <span style="color: #00ffff;">THEN</span> sy := in_
+            <span style="color: #00ffff;">ELSE</span> context
+        <span style="color: #00ffff;">END</span>
+    <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">CASE *)</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">getsym *)</span>
 
-PROCEDURE factor(VAR x : integer;PROCEDURE oldcontext);
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">factor</span>(<span style="color: #ff00ff;">VAR</span> x : <span style="color: #ff00ff;">integer</span>;PROCEDURE oldcontext);
 
-VAR y : integer; al1 : alfa;
+<span style="color: #ff00ff;">VAR</span> y : <span style="color: #ff00ff;">integer</span>; al1 : alfa;
 
-    PROCEDURE nullcontext;
-    BEGIN sy := ident_; al1 := al  END;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">nullcontext</span>;
+    <span style="color: #00ffff;">BEGIN</span> sy := ident_; al1 := al  <span style="color: #00ffff;">END</span>;
 
-    PROCEDURE newcontext;
-    BEGIN
-    IF al = al1
-        THEN BEGIN sy := num_; n := y END
-        ELSE oldcontext
-    END; (* newcontext *)
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">newcontext</span>;
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">IF</span> al = al1
+        <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">BEGIN</span> sy := num_; n := y <span style="color: #00ffff;">END</span>
+        <span style="color: #00ffff;">ELSE</span> oldcontext
+    <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">newcontext *)</span>
 
-    PROCEDURE expression(VAR x : integer);
-    VAR y : integer; sy1 : symbol;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">expression</span>(<span style="color: #ff00ff;">VAR</span> x : <span style="color: #ff00ff;">integer</span>);
+    <span style="color: #ff00ff;">VAR</span> y : <span style="color: #ff00ff;">integer</span>; sy1 : symbol;
 
-        PROCEDURE term(VAR x : integer);
-        VAR y : integer; sy1 : symbol;
-        BEGIN (* term *)
+        <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">term</span>(<span style="color: #ff00ff;">VAR</span> x : <span style="color: #ff00ff;">integer</span>);
+        <span style="color: #ff00ff;">VAR</span> y : <span style="color: #ff00ff;">integer</span>; sy1 : symbol;
+        <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">term *)</span>
         factor(x,oldcontext); getsym(oldcontext);
-        WHILE sy IN [mul_,div_] DO
-            BEGIN sy1 := sy; getsym(oldcontext);
+        <span style="color: #00ffff;">WHILE</span> sy <span style="color: #00ffff;">IN</span> [mul_,div_] <span style="color: #00ffff;">DO</span>
+            <span style="color: #00ffff;">BEGIN</span> sy1 := sy; getsym(oldcontext);
             factor(y,oldcontext); getsym(oldcontext);
-            IF sy1 = mul_ THEN x := x * y ELSE x := x DIV y
-            END
-        END; (* term *)
+            <span style="color: #00ffff;">IF</span> sy1 = mul_ <span style="color: #00ffff;">THEN</span> x := x * y <span style="color: #00ffff;">ELSE</span> x := x <span style="color: #00ffff;">DIV</span> y
+            <span style="color: #00ffff;">END</span>
+        <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">term *)</span>
 
-    BEGIN (* expression *)
+    <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">expression *)</span>
     getsym(oldcontext); term(x);
-    WHILE sy IN [add_,sub_] DO
-        BEGIN sy1 := sy; getsym(oldcontext); term(y);
-        IF sy1 = add_ THEN x := x + y ELSE x := x - y
-        END
-    END; (* expression *)
+    <span style="color: #00ffff;">WHILE</span> sy <span style="color: #00ffff;">IN</span> [add_,sub_] <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">BEGIN</span> sy1 := sy; getsym(oldcontext); term(y);
+        <span style="color: #00ffff;">IF</span> sy1 = add_ <span style="color: #00ffff;">THEN</span> x := x + y <span style="color: #00ffff;">ELSE</span> x := x - y
+        <span style="color: #00ffff;">END</span>
+    <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">expression *)</span>
 
-BEGIN (* factor *)
-CASE sy OF
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">factor *)</span>
+<span style="color: #00ffff;">CASE</span> sy <span style="color: #00ffff;">OF</span>
     num_ :
         x := n;
     lpar_:
-        BEGIN
+        <span style="color: #00ffff;">BEGIN</span>
         expression(x);
-        IF sy &lt;&gt; rpar_ THEN error('")" expected        ')
-        END;
+        <span style="color: #00ffff;">IF</span> sy &lt;&gt; rpar_ <span style="color: #00ffff;">THEN</span> error(<span style="color: #00ff00;">'")" expected        '</span>)
+        <span style="color: #00ffff;">END</span>;
     let_ :
-        BEGIN
+        <span style="color: #00ffff;">BEGIN</span>
         getsym(nullcontext);
-        IF sy &lt;&gt; ident_ THEN error('identifier expected ');
+        <span style="color: #00ffff;">IF</span> sy &lt;&gt; ident_ <span style="color: #00ffff;">THEN</span> error(<span style="color: #00ff00;">'identifier expected '</span>);
         getsym(oldcontext);
-        IF sy &lt;&gt; eq_ THEN error('"=" expected        ');
+        <span style="color: #00ffff;">IF</span> sy &lt;&gt; eq_ <span style="color: #00ffff;">THEN</span> error(<span style="color: #00ff00;">'"=" expected        '</span>);
         expression(y);
-        IF sy &lt;&gt; in_ THEN error('"IN" expected       ');
+        <span style="color: #00ffff;">IF</span> sy &lt;&gt; in_ <span style="color: #00ffff;">THEN</span> error(<span style="color: #00ff00;">'"IN" expected       '</span>);
         getsym(newcontext); factor(x,newcontext);
-        END;
-    OTHERWISE error('illegal symbol      ')
-    END; (* CASE *)
-END; (* factor *)
+        <span style="color: #00ffff;">END</span>;
+    OTHERWISE error(<span style="color: #00ff00;">'illegal symbol      '</span>)
+    <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">CASE *)</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">factor *)</span>
 
-BEGIN (* main *)
-cc := 0; ch := ' ';
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+cc := 0; ch := <span style="color: #00ff00;">' '</span>;
 10:
-REPEAT
+<span style="color: #00ffff;">REPEAT</span>
     getsym(globalcontext);
     factor(value,globalcontext);
-    writeln('=',value)
-    UNTIL false;
+    writeln(<span style="color: #00ff00;">'='</span>,value)
+    <span style="color: #00ffff;">UNTIL</span> false;
 99:
-END.
+<span style="color: #00ffff;">END</span>.
 </pre>
-
-
-
+</div>
 </div>
 
-<div id="outline-container-4-2-1" class="outline-4">
+<div id="outline-container-sec-4-2-1" class="outline-4">
 <h4 id="sec-4-2-1"><span class="section-number-4">4.2.1</span> <i>Exercise</i>:</h4>
 <div class="outline-text-4" id="text-4-2-1">
-
-<p>The error pointer will not point to the exact position
+<p>
+The error pointer will not point to the exact position
 if the input line contains tabs. Fix procedure <code>getch</code>.
 </p>
 </div>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-5" class="outline-2">
+<div id="outline-container-sec-5" class="outline-2">
 <h2 id="sec-5"><span class="section-number-2">5</span> Backtracking implemented as second order recursion</h2>
 <div class="outline-text-2" id="text-5">
-
-
 <p>
 Second order recursion is useful for backtracking programs.  The following eight queens program is based on one given by Wirth(1976, pp 143 - 147), and it gives exactly the same solutions as Wirth's.  One difference is that one statement in Wirth's program, essentially
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">IF solution is incomplete
-    THEN call recursively for the next step
-    ELSE print solution
+<pre class="src src-pascal"><span style="color: #00ffff;">IF</span> solution <span style="color: #00ffff;">is</span> incomplete
+    <span style="color: #00ffff;">THEN</span> call recursively <span style="color: #00ffff;">for</span> the next step
+    <span style="color: #00ffff;">ELSE</span> print solution
 </pre>
+</div>
 
-
-<p> 
+<p>
 has been replaced by a simple call to the continuation procedure <code>cp</code>.  Two minor differences are that this program writes the number of tests performed for each placement, and that it allows the user to set a maximum for the number of solutions to be searched for.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">PROGRAM queens(input,output);
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">queens</span>(input,output);
 LABEL 99;
-VAR
-    i : integer;
-    a : ARRAY[ 1.. 8] OF boolean;
-    b : ARRAY[ 2..16] OF boolean;
-    c : ARRAY[-7.. 7] OF boolean;
-    x : ARRAY[ 1.. 8] OF integer;
-    num, max, tests : integer;
+<span style="color: #ff00ff;">VAR</span>
+    i : <span style="color: #ff00ff;">integer</span>;
+    a : <span style="color: #ff00ff;">ARRAY</span>[ 1.. 8] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">boolean</span>;
+    b : <span style="color: #ff00ff;">ARRAY</span>[ 2..16] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">boolean</span>;
+    c : <span style="color: #ff00ff;">ARRAY</span>[-7.. 7] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">boolean</span>;
+    x : <span style="color: #ff00ff;">ARRAY</span>[ 1.. 8] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">integer</span>;
+    num, max, tests : <span style="color: #ff00ff;">integer</span>;
 
-PROCEDURE show;
-VAR k : integer;
-BEGIN
-FOR k := 1 TO 8 DO write(x[k]:4); writeln(tests:10);
-num := num + 1; IF num = max THEN GOTO 99; tests := 0
-END; (* show *)
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">show</span>;
+<span style="color: #ff00ff;">VAR</span> k : <span style="color: #ff00ff;">integer</span>;
+<span style="color: #00ffff;">BEGIN</span>
+<span style="color: #00ffff;">FOR</span> k := 1 <span style="color: #00ffff;">TO</span> 8 <span style="color: #00ffff;">DO</span> <span style="color: #00ffff;">write</span>(x[k]:4); writeln(tests:10);
+num := num + 1; <span style="color: #00ffff;">IF</span> num = max <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">99</span>; tests := 0
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">show *)</span>
 
-PROCEDURE try(i : integer; PROCEDURE cp);
-VAR j : integer;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">try</span>(i : <span style="color: #ff00ff;">integer</span>; PROCEDURE cp);
+<span style="color: #ff00ff;">VAR</span> j : <span style="color: #ff00ff;">integer</span>;
 
-    PROCEDURE test;
-    BEGIN
-    FOR j := 1 TO 8 DO
-        BEGIN
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">test</span>;
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">FOR</span> j := 1 <span style="color: #00ffff;">TO</span> 8 <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">BEGIN</span>
         tests := tests + 1;
-        IF a[j] AND b[i+j] AND c[i-j] THEN
-            BEGIN
+        <span style="color: #00ffff;">IF</span> a[j] <span style="color: #00ffff;">AND</span> b[i+j] <span style="color: #00ffff;">AND</span> c[i-j] <span style="color: #00ffff;">THEN</span>
+            <span style="color: #00ffff;">BEGIN</span>
             x[i] := j;
             a[j] := false; b[i+j] := false; c[i-j] := false;
             cp;
             a[j] := true; b[i+j] := true; c[i-j] := true;
-            END
-        END (* FOR *)
-    END; (* test *)
+            <span style="color: #00ffff;">END</span>
+        <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">FOR *)</span>
+    <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">test *)</span>
 
-BEGIN (* try *)
-IF i &gt; 0 THEN try(i-1,test) ELSE cp
-END; (* try *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">try *)</span>
+<span style="color: #00ffff;">IF</span> i &gt; 0 <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">try</span>(i-1,test) <span style="color: #00ffff;">ELSE</span> cp
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">try *)</span>
 
-BEGIN (* main *)
-FOR i := 1 TO 8 DO a[i] := true;
-FOR i := 2 TO 16 DO b[i] := true;
-FOR i := -7 TO 7 DO c[i] := true;
-read(max); num := 0; tests := 0;
-try(8,show);
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+<span style="color: #00ffff;">FOR</span> i := 1 <span style="color: #00ffff;">TO</span> 8 <span style="color: #00ffff;">DO</span> a[i] := true;
+<span style="color: #00ffff;">FOR</span> i := 2 <span style="color: #00ffff;">TO</span> 16 <span style="color: #00ffff;">DO</span> b[i] := true;
+<span style="color: #00ffff;">FOR</span> i := -7 <span style="color: #00ffff;">TO</span> 7 <span style="color: #00ffff;">DO</span> c[i] := true;
+<span style="color: #00ffff;">read</span>(max); num := 0; tests := 0;
+<span style="color: #00ffff;">try</span>(8,show);
 99:
-END. (* main *)
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
-
+</div>
 
 <p>
 If the input number given is 12, then the output from the program will consist of the following 12 lines; they are identical to the ones in Wirth (1976, p~147).
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">1   5   8   6   3   7   2   4       876
+<pre class="src src-pascal">1   5   8   6   3   7   2   4       876
 1   6   8   3   7   4   2   5       264
 1   7   4   6   8   2   5   3       200
 1   7   5   8   2   4   6   3       136
@@ -1128,76 +1049,68 @@ If the input number given is 12, then the output from the program will consist o
 2   7   5   8   1   4   6   3       160
 2   8   6   1   3   5   7   4       336
 </pre>
+</div>
 
-
-<p> 
+<p>
 It is worth noting the essential pattern in procedure test; that same pattern will be seen again and again in what follows.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">IF somecondition THEN
+<pre class="src src-pascal"><span style="color: #00ffff;">IF</span> somecondition <span style="color: #00ffff;">THEN</span>
     modify some global variables;
     cp;
     restore those global variables
 </pre>
+</div>
 
-
-<p> 
+<p>
 Second order recursion makes it possible to write clean programs for the traversal of AND-OR trees.  In such trees each node is either a leaf node, or it is an AND-node or an OR-node with two subtrees, its left and its right.  The traversal procedure sketched below has two parameters, an ordinary value parameter which is a tree, and a continuation which is a parameterless procedure.  When the traversal procedure is called globally, the first parameter is the tree to be traversed, and the second parameter is a global procedure which either does nothing at all, or writes out the value of global variables which might have been modified by processing leaves.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">PROCEDURE traverse(t : tree; PROCEDURE cp);
-    PROCEDURE traverse-right;
-    BEGIN traverse(right(t),cp) END;
-BEGIN (* traverse *)
-CASE kind(t) OF
-    leaf : BEGIN
-           use leaf to modify some global variables
+<pre class="src src-pascal"><span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">traverse</span>(t : tree; PROCEDURE cp);
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">traverse</span>-right;
+    <span style="color: #00ffff;">BEGIN</span> traverse(right(t),cp) <span style="color: #00ffff;">END</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">traverse *)</span>
+<span style="color: #00ffff;">CASE</span> kind(t) <span style="color: #00ffff;">OF</span>
+    leaf : <span style="color: #00ffff;">BEGIN</span>
+           use leaf <span style="color: #00ffff;">to</span> modify some global variables
            cp;
            restore global variables
-           END;
-    and  : traverse(left(t),traverseright);
-    or   : BEGIN
+           <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ffff;">and</span>  : traverse(left(t),traverseright);
+    <span style="color: #00ffff;">or</span>   : <span style="color: #00ffff;">BEGIN</span>
            traverse(left(t),cp);
            traverse(right(t),cp
-           END;
-    END (* CASE *)
-END; (* traverse *)
+           <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">CASE *)</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">traverse *)</span>
 </pre>
+</div>
 
-
-<p> 
+<p>
 In later chapters we shall use similar procedures to implement backtracking in programs for expanding regular expressions, for the semantic tableaux method in logic, for parsing in accordance with a context free grammar, and for tracing possible firing sequences in Petri nets.
 </p>
+
 <p>
 It is possible to extend the technique of higher order recursion even further.  Chapter 12 describes some examples of third order recursion, and Chapter 15 uses it for an implementation of theorem prover for monadic predicate logic.  An example of fourth order recursion is given in the appendix.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6" class="outline-2">
+<div id="outline-container-sec-6" class="outline-2">
 <h2 id="sec-6"><span class="section-number-2">6</span> <i>Reading</i>:</h2>
 <div class="outline-text-2" id="text-6">
-
-<p>For a description of the technique of using continuations as parameters see Barrett, Ramsay and Sloman (1986, pp 201 - 205), for using continuations to implement backtracking see Mellish and Hardy (1984, p 150), for a non-recursive implementation of backtracking with continuations see Ramsay and Barrett (1987, pp 60 - 62).  Note that all three references are in the language POP-11.  Grune and Jacobs (1990, pp 137 - 139) give a Pascal program which uses continuations to implement backtracking to write all the strings in the language generated by a particular context free language.
+<p>
+For a description of the technique of using continuations as parameters see Barrett, Ramsay and Sloman (1986, pp 201 - 205), for using continuations to implement backtracking see Mellish and Hardy (1984, p 150), for a non-recursive implementation of backtracking with continuations see Ramsay and Barrett (1987, pp 60 - 62).  Note that all three references are in the language POP-11.  Grune and Jacobs (1990, pp 137 - 139) give a Pascal program which uses continuations to implement backtracking to write all the strings in the language generated by a particular context free language.
 </p>
+
 <p>
 If you are wondering how procedures as parameters are implemented, see MacLennan (1983, pp 247 - 250) and Capon and Jinks (1988, pp 160 and 170).
 </p>
 </div>
 </div>
-</div>
-
-<div id="postamble">
-<p class="date">Date: 2013-01-11 07:38:05 CST</p>
-<p class="author">Author: michal</p>
-<p class="creator">Org version 7.8.11 with Emacs version 24</p>
-<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
-
 </div>
 </body>
 </html>

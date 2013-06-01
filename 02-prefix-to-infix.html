@@ -1,66 +1,38 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Chapter 2: Prefix To Infix Translator</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Chapter 2: Prefix To Infix Translator"/>
+<!-- 2013-05-31 Fri 19:02 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-01-11 07:38:11 CST"/>
 <meta name="author" content="michal"/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
-<style type="text/css">
- <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
-  .title  { text-align: center; }
-  .todo   { color: red; }
-  .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
-  .timestamp { color: #bebebe; }
-  .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
-  pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
-  }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
-  dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
-    background: #ffffcc;
-  }
-  textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
-  /*]]>*/-->
-</style>
+<link rel="stylesheet" type="text/css" href="/etc/style.css">
 <script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012  Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
 <!--/*--><![CDATA[/*><!--*/
  function CodeHighlightOn(elem, id)
  {
@@ -82,71 +54,50 @@
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
-
-</div>
-
 <div id="content">
 <h1 class="title">Chapter 2: Prefix To Infix Translator</h1>
-
-
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 intro</a></li>
-<li><a href="#sec-2">2 Infix and Prefix Notation</a></li>
-<li><a href="#sec-3">3 User Manual</a></li>
-<li><a href="#sec-4">4 Designing the Implementation</a></li>
-<li><a href="#sec-5">5 The Program</a></li>
-<li><a href="#sec-6">6 Exercises And Reading</a>
+<li><a href="#sec-1">1. Infix and Prefix Notation</a></li>
+<li><a href="#sec-2">2. User Manual</a></li>
+<li><a href="#sec-3">3. Designing the Implementation</a></li>
+<li><a href="#sec-4">4. The Program</a></li>
+<li><a href="#sec-5">5. Exercises And Reading</a>
 <ul>
-<li><a href="#sec-6-1">6.1 <i>OTHERWISE</i>:</a></li>
-<li><a href="#sec-6-2">6.2 <i>Statistics</i>:</a></li>
-<li><a href="#sec-6-3">6.3 <i>Postfix</i>:</a></li>
-<li><a href="#sec-6-4">6.4 <i>No outermost parentheses</i>:</a></li>
-<li><a href="#sec-6-5">6.5 <i>Further minimisation of parentheses</i>:</a></li>
-<li><a href="#sec-6-6">6.6 <i>Multi-line input</i>:</a></li>
-<li><a href="#sec-6-7">6.7 <i>Elimination of recursion</i>:</a></li>
-<li><a href="#sec-6-8">6.8 <i>Proof reading</i>:</a></li>
-<li><a href="#sec-6-9">6.9 <i>Cambridge notation</i>:</a></li>
-<li><a href="#sec-6-10">6.10 <i>More difficult translations</i>:</a></li>
-<li><a href="#sec-6-11">6.11 <i>Eliminate GOTO</i>:</a></li>
-<li><a href="#sec-6-12">6.12 <i>Reading</i>:</a></li>
+<li><a href="#sec-5-1">5.1. <i>OTHERWISE</i>:</a></li>
+<li><a href="#sec-5-2">5.2. <i>Statistics</i>:</a></li>
+<li><a href="#sec-5-3">5.3. <i>Postfix</i>:</a></li>
+<li><a href="#sec-5-4">5.4. <i>No outermost parentheses</i>:</a></li>
+<li><a href="#sec-5-5">5.5. <i>Further minimisation of parentheses</i>:</a></li>
+<li><a href="#sec-5-6">5.6. <i>Multi-line input</i>:</a></li>
+<li><a href="#sec-5-7">5.7. <i>Elimination of recursion</i>:</a></li>
+<li><a href="#sec-5-8">5.8. <i>Proof reading</i>:</a></li>
+<li><a href="#sec-5-9">5.9. <i>Cambridge notation</i>:</a></li>
+<li><a href="#sec-5-10">5.10. <i>More difficult translations</i>:</a></li>
+<li><a href="#sec-5-11">5.11. <i>Eliminate GOTO</i>:</a></li>
+<li><a href="#sec-5-12">5.12. <i>Reading</i>:</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
-
-<div id="outline-container-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
-<div class="outline-text-2" id="text-1">
-
-
 <p>
 In this chapter we shall design a very small translator from one simple language to another simple language.  The two languages chosen are for the propositional calculus in logic.  The reason for choosing logic languages is that every symbol needed is a single character.  This makes the processing of languages particularly easy.
 </p>
-</div>
 
-</div>
-
-<div id="outline-container-2" class="outline-2">
-<h2 id="sec-2"><span class="section-number-2">2</span> Infix and Prefix Notation</h2>
-<div class="outline-text-2" id="text-2">
-
-
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Infix and Prefix Notation</h2>
+<div class="outline-text-2" id="text-1">
 <p>
 We begin by giving a definition of FORMULA in infix notation:
 </p>
 
-
-
-<pre class="example">1) A lower case letter, i.e. 'a', 'b' .. 'z' is a formula.
+<pre class="example">
+1) A lower case letter, i.e. 'a', 'b' .. 'z' is a formula.
 2) If p is a formula, then the following is  also a formula:
         -p                      - negation
 3) If p and q are formulas, then the following are also formulas:
@@ -156,14 +107,12 @@ We begin by giving a definition of FORMULA in infix notation:
         (p = q)                 - equivalence
 </pre>
 
-
 <p>
 Nothing else is a formula.  For our purposes it was not necessary to specify compound formulas as negations, conjunctions and so on, since in this chapter we are not concerned with meaning.  Note that we have used the common convention of using p and q as variables ranging over arbitrary formulas, even though they are also real formulas.  An alternative way of describing formulas is:
 </p>
 
-
-
-<pre class="example">A formula is either
+<pre class="example">
+A formula is either
         a lower case letter, or
         the symbol '-'
           followed by a formula, or
@@ -174,14 +123,12 @@ Nothing else is a formula.  For our purposes it was not necessary to specify com
           followed by the symbol ')'
 </pre>
 
-
 <p>
 Parentheses serve to indicate which subformulas belong to which infix operator.  It is possible to eliminate the need for parentheses completely by the following technique: Replace the left parenthesis by the operator, delete the operator in its infix position, and also delete the right parenthesis.  Then every operator, whether unary or binary, has to be followed by the appropriate number of subformulas, namely one or two.  Because the operators always precede their operands, this notation is called prefix notation.  The device was invented by Polish logicians in the 1930's and is often called Polish notation.  We shall follow their tradition by using capital letters for the operators: one unary operator 'N' which means negation, and four binary operators 'K', 'A', 'C' and 'E' which mean conjunction, alternation (=disjunction), conditional and equivalence.  A semi-formal grammar thus is:
 </p>
 
-
-
-<pre class="example">A formula is either
+<pre class="example">
+A formula is either
         a lower case letter, or
         the symbol 'N'
           followed by a formula, or
@@ -189,14 +136,12 @@ Parentheses serve to indicate which subformulas belong to which infix operator. 
           followed by two formulas
 </pre>
 
-
 <p>
 We now have two notations for propositional logic, and we intend to write a program which can translate from prefix notation to infix notation.  The reason we choose this particular translation is none other than that it is very easy to write the program.  But first we have to specify the translation from prefix to infix.  One way to do so is by a translation grammar:
 </p>
 
-
-
-<pre class="example">A prefix formula is either
+<pre class="example">
+A prefix formula is either
     'a' or 'b' or .. or 'z'     
         and its infix translation is itself, or
     'N' F
@@ -221,432 +166,416 @@ We now have two notations for propositional logic, and we intend to write a prog
             where G1 and G2 are infix translations of F1 and F2.
 </pre>
 
-
 <p>
 In the official manual to follow, the input language and the output language are specified by a grammar written in what is called BNF notation.  Such a grammar consists of one or more "productions".  A production consists of a "non-terminal" symbol, followed by the three characters "::=", which may be read as "is", followed by an "expression".  An expression is built from terminal symbols (which are quoted) and non-terminal symbols by means of two operations: 1) concatenation, which means "followed by", and 2) the infix alternation operator "|", which means "or".  Concatenation takes precedence over alternation, and parentheses may be used to override these precedences.  We also use the ellipsis ".." for material to be interpolated in some obvious way.  You should compare the BNF grammars in the manual with the equivalent informal grammars given earlier.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3" class="outline-2">
-<h2 id="sec-3"><span class="section-number-2">3</span> User Manual</h2>
-<div class="outline-text-2" id="text-3">
-
-
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> User Manual</h2>
+<div class="outline-text-2" id="text-2">
 <p>
 The program PREINF translates logical formulas in prefix notation to formulas in infix notation.  In the standard interpretations of the two notations, an output formula is logically equivalent to its input formula.
 </p>
+
 <p>
 The BNF grammar for the input formulas in prefix notation is as follows:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">formula  ::=
+<pre class="src src-ebnf">formula  ::=
         'a' | 'b' | .. | 'z' |
         'N' formula |
         ( 'A' | 'C' | 'E' | 'K' ) formula formula
 </pre>
-
+</div>
 
 <p>
 The program indicates its readiness to read a prefix formula with the prompt "Formula :".  When reading it ignores white space such as blanks and tabs, for readability it is often desirable to include white space inside longer formulas.  The program also treats new lines as white space and ignores them.  However, it is better not to break a formula over several lines because part of the translation of the previous line will appear as soon as that line is terminated, and thus interfere with the next input line.
 </p>
+
 <p>
 The BNF grammar for the output in fully parenthesised infix notation is as follows:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">formula  ::=
+<pre class="src src-bnf">formula  ::=
         'a' | 'b' | .. | 'z' |
         '-' formula |
         '(' formula ( 'v' | '&amp;' | '&gt;' | '=' ) formula ')'
 </pre>
-
+</div>
 
 <p>
 For readability, the program surrounds the infix operators with spaces.  Atomic formulas 'a', 'b' .. 'z' are translated as themselves.  Compound formulas built from one or two subformulas are translated by translating the subformulas and building an infix formula from the translations of the subformulas.  The translation of the operators is given by the following table:
 </p>
 
+
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
-<caption></caption>
-<colgroup><col class="left" /><col class="left" /><col class="left" /><col class="left" /><col class="left" /><col class="left" />
+
+
+<colgroup>
+<col class="left"/>
+
+<col class="left"/>
+
+<col class="left"/>
+
+<col class="left"/>
+
+<col class="left"/>
+
+<col class="left"/>
 </colgroup>
 <tbody>
-<tr><td class="left">Prefix Operator:</td><td class="left">N</td><td class="left">A</td><td class="left">C</td><td class="left">E</td><td class="left">K</td></tr>
-<tr><td class="left">Infix  Operator:</td><td class="left">-</td><td class="left">v</td><td class="left">&gt;</td><td class="left">\equal</td><td class="left">&amp;</td></tr>
+<tr>
+<td class="left">Prefix Operator:</td>
+<td class="left">N</td>
+<td class="left">A</td>
+<td class="left">C</td>
+<td class="left">E</td>
+<td class="left">K</td>
+</tr>
+
+<tr>
+<td class="left">Infix  Operator:</td>
+<td class="left">-</td>
+<td class="left">v</td>
+<td class="left">&gt;</td>
+<td class="left">=</td>
+<td class="left">&amp;</td>
+</tr>
 </tbody>
 </table>
-
 
 <p>
 Some sample translations are:
 </p>
+
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
-<caption></caption>
-<colgroup><col class="left" /><col class="left" />
+
+
+<colgroup>
+<col class="left"/>
+
+<col class="left"/>
 </colgroup>
 <thead>
-<tr><th scope="col" class="left">Prefix:</th><th scope="col" class="left">Infix:</th></tr>
+<tr>
+<th scope="col" class="left">Prefix:</th>
+<th scope="col" class="left">Infix:</th>
+</tr>
 </thead>
 <tbody>
-<tr><td class="left">p</td><td class="left">p</td></tr>
-<tr><td class="left">Nq</td><td class="left">-q</td></tr>
-<tr><td class="left">K Np q</td><td class="left">(-p &amp; q)</td></tr>
-<tr><td class="left">A N K Np q r</td><td class="left">(-(-p &amp; q) v r)</td></tr>
-<tr><td class="left">C E p q C Nq p</td><td class="left">((p = q) &gt; (-q &gt; p))</td></tr>
+<tr>
+<td class="left">p</td>
+<td class="left">p</td>
+</tr>
+
+<tr>
+<td class="left">Nq</td>
+<td class="left">-q</td>
+</tr>
+
+<tr>
+<td class="left">K Np q</td>
+<td class="left">(-p &amp; q)</td>
+</tr>
+
+<tr>
+<td class="left">A N K Np q r</td>
+<td class="left">(-(-p &amp; q) v r)</td>
+</tr>
+
+<tr>
+<td class="left">C E p q C Nq p</td>
+<td class="left">((p = q) &gt; (-q &gt; p))</td>
+</tr>
 </tbody>
 </table>
-
 
 
 <p>
 If during the reading of a formula a printing character is detected which cannot be the beginning of a legal formula in prefix, then an error message is produced and the rest of the input line is ignored.  For example, when the offending character is X, the error message will be:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">Error : seen "X" when "a".."z","N","A","C","E" or "K" expected
+<pre class="src src-text">Error : seen "X" when "a".."z","N","A","C","E" or "K" expected
 </pre>
-
+</div>
 
 <p>
 The program terminates when the end of the input file is reached.  If this occurs halfway through a formula, then no error is signalled.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4" class="outline-2">
-<h2 id="sec-4"><span class="section-number-2">4</span> Designing the Implementation</h2>
-<div class="outline-text-2" id="text-4">
-
-
+<div id="outline-container-sec-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Designing the Implementation</h2>
+<div class="outline-text-2" id="text-3">
 <p>
 To be able to write this program, you should know about variables, flow of control (including procedure calls), reading characters and writing strings of characters.  You should also know about arrays.  You need not know about recursion - this may well be the first recursive program you have seen.  Probably this is quite a good first example problem which is best solved recursively.  If you have understood the translation grammar, you are well on the way.
 </p>
+
 <p>
 One way of specifying which character is the translation of a given prefix operator is by means of a table, best implemented as an array.  Since this never changes, the program begins by initialising the translation table at the few capital letters that are actually used as prefix operators, the values assigned are the characters which serve as the corresponding operators for the infix notation.
 </p>
+
 <p>
 Then the program enters a REPEAT loop.  There it writes a new line; this is to terminate the previous translation, if any.  Then it writes the prompt on a line.  Then it calls a procedure which we call <i>prefix</i>, because it has essentially the structure of the grammar for prefix formulas.  This procedure will read a formula in prefix and translate it to infix.  Then it writes a new line.  The REPEAT loop goes nominally forever.
 </p>
+
 <p>
 The procedure <i>prefix</i> has a local variable which is generally the last printing character that has been read.  The body of the procedure has to first read the next printing character, and then take some action depending on what the character was.
 </p>
+
 <p>
 To read the first printing character, the procedure enters a loop: first it tests whether the end of the input file has been reached, if so the procedure jumps to the end of the program and exits.  If not, the procedure reads the next character from the input file and puts it into the the local variable.  This is repeated until the last character read was indeed a printing character, and not white space.  If during this loop the end of the input file is reached, the procedure jumps to the end of the program.
 </p>
+
 <p>
 At this point the character will be a printing character.  Now a choice has to made by the procedure:
 </p>
-<ol>
+
+<ol class="org-ol">
 <li>If the character is a lower case letter, then it just has to write it out again.
-
 </li>
+
 <li>If the character is the letter 'N', then it writes the translation of 'N' (which is '-') and then the procedure calls itself recursively once in order to translate the negand.
-
 </li>
+
 <li>If the character is one of the binary operators 'A', 'C', 'E' or 'K', then it writes the required opening parenthesis, then it calls itself recursively to translate the first subformula, then it writes the character which is the translation of the binary operator that is seen, but surrounding it with one space to the left and one to the right, then it calls itself recursively to translate the second subformula, and finally it writes the closing parenthesis.
-
 </li>
+
 <li>However, if the character is none of the above, then the procedure writes the error message, skips the rest of the input line and jumps to the beginning of the REPEAT loop of the main program.  The choice is best made by a CASE statement.  All of this follows the translation grammar quite closely.
 </li>
 </ol>
-
 
 <p>
 In later chapters the descriptions of programs given will be at the level of detail of the preceding description.  However, since this may well be the first PASCAL program that you see or write, we now give a version in what is called pseudo-code: it is neither PASCAL nor English, but something somewhere in between.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">PROGRAM to translate from prefix to infix;
-Declare a translation table for the operators;
-PROCEDURE prefix;
-read the next printing character from the input
-        (but if end of file is reached, jump to end of program)
-CASE this character OF
-        a lower case letter:
-            write the character to the output;
-        the letter 'N':
-            write the translation of 'N'
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">to</span> translate from prefix <span style="color: #00ffff;">to</span> infix;
+Declare a translation table <span style="color: #00ffff;">for</span> the operators;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">prefix</span>;
+<span style="color: #00ffff;">read</span> the next printing character from the input
+        (but <span style="color: #00ffff;">if</span> <span style="color: #00ffff;">end</span> <span style="color: #00ffff;">of</span> <span style="color: #ff00ff;">file</span> <span style="color: #00ffff;">is</span> reached, jump <span style="color: #00ffff;">to</span> <span style="color: #00ffff;">end</span> <span style="color: #00ffff;">of</span> program)
+<span style="color: #00ffff;">CASE</span> this character <span style="color: #00ffff;">OF</span>
+        a lower <span style="color: #00ffff;">case</span> letter:
+            <span style="color: #00ffff;">write</span> the character <span style="color: #00ffff;">to</span> the output;
+        the letter <span style="color: #00ff00;">'N'</span>:
+            <span style="color: #00ffff;">write</span> the translation <span style="color: #00ffff;">of</span> <span style="color: #00ff00;">'N'</span>
             CALL PROCEDURE prefix
-        one of the letters 'A', 'C', 'E', 'K':
-            write '('
+        one <span style="color: #00ffff;">of</span> the letters <span style="color: #00ff00;">'A'</span>, <span style="color: #00ff00;">'C'</span>, <span style="color: #00ff00;">'E'</span>, <span style="color: #00ff00;">'K'</span>:
+            <span style="color: #00ffff;">write</span> <span style="color: #00ff00;">'('</span>
             CALL PROCEDURE prefix
-            write the translation of the character
+            <span style="color: #00ffff;">write</span> the translation <span style="color: #00ffff;">of</span> the character
             CALL PROCEDURE prefix
-            write ')'
-        anything else:
-            write an error message, ignore rest of line
-            jump to prompt writing in main program
-END of prefix;
-BEGIN main program
+            <span style="color: #00ffff;">write</span> <span style="color: #00ff00;">')'</span>
+        anything <span style="color: #00ffff;">else</span>:
+            <span style="color: #00ffff;">write</span> an error <span style="color: #00ffff;">message</span>, ignore rest <span style="color: #00ffff;">of</span> line
+            jump <span style="color: #00ffff;">to</span> prompt writing <span style="color: #00ffff;">in</span> main program
+<span style="color: #00ffff;">END</span> <span style="color: #00ffff;">of</span> prefix;
+<span style="color: #00ffff;">BEGIN</span> main program
 initialise the translation table -      A C E K N    (prefix)
                                         v &gt; = &amp; -    (infix)
 REPEATEDLY
-        write a prompt 'Formula :'
-        CALL PROCEDURE prefix (to read and translate a formula)
-END main program
+        <span style="color: #00ffff;">write</span> a prompt <span style="color: #00ff00;">'Formula :'</span>
+        CALL PROCEDURE prefix (<span style="color: #00ffff;">to</span> <span style="color: #00ffff;">read</span> <span style="color: #00ffff;">and</span> translate a formula)
+<span style="color: #00ffff;">END</span> main program
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-5" class="outline-2">
-<h2 id="sec-5"><span class="section-number-2">5</span> The Program</h2>
-<div class="outline-text-2" id="text-5">
-
-
+</div>
+<div id="outline-container-sec-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> The Program</h2>
+<div class="outline-text-2" id="text-4">
 <p>
 Here is the complete program:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">PROGRAM prefix_to_infix(input,output);
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">prefix_to_infix</span>(input,output);
 
 LABEL 1, 99;
 
-VAR t : ARRAY[char] OF char;
+<span style="color: #ff00ff;">VAR</span> t : <span style="color: #ff00ff;">ARRAY</span>[<span style="color: #ff00ff;">char</span>] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">char</span>;
 
-PROCEDURE prefix;
-VAR ch : char;
-BEGIN (* prefix *)
-REPEAT
-    IF eof THEN GOTO 99;
-    read(ch)
-    UNTIL ch &gt; ' ';
-CASE ch OF
-    'a','b','c','d','e','f','g','h','i','j','k','l','m',
-    'n','o','p','q','r','s','t','u','v','w','x','y','z' :
-        write(ch);
-    'N' :
-        BEGIN
-        write(t[ch]); prefix
-        END;
-    'A','C','E','K' :
-        BEGIN
-        write('(');
-        prefix; write(' ',t[ch],' '); prefix;
-        write(')')
-        END;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">prefix</span>;
+<span style="color: #ff00ff;">VAR</span> ch : <span style="color: #ff00ff;">char</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">prefix *)</span>
+<span style="color: #00ffff;">REPEAT</span>
+    <span style="color: #00ffff;">IF</span> eof <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">99</span>;
+    <span style="color: #00ffff;">read</span>(ch)
+    <span style="color: #00ffff;">UNTIL</span> ch &gt; <span style="color: #00ff00;">' '</span>;
+<span style="color: #00ffff;">CASE</span> ch <span style="color: #00ffff;">OF</span>
+    <span style="color: #00ff00;">'a'</span>,<span style="color: #00ff00;">'b'</span>,<span style="color: #00ff00;">'c'</span>,<span style="color: #00ff00;">'d'</span>,<span style="color: #00ff00;">'e'</span>,<span style="color: #00ff00;">'f'</span>,<span style="color: #00ff00;">'g'</span>,<span style="color: #00ff00;">'h'</span>,<span style="color: #00ff00;">'i'</span>,<span style="color: #00ff00;">'j'</span>,<span style="color: #00ff00;">'k'</span>,<span style="color: #00ff00;">'l'</span>,<span style="color: #00ff00;">'m'</span>,
+    <span style="color: #00ff00;">'n'</span>,<span style="color: #00ff00;">'o'</span>,<span style="color: #00ff00;">'p'</span>,<span style="color: #00ff00;">'q'</span>,<span style="color: #00ff00;">'r'</span>,<span style="color: #00ff00;">'s'</span>,<span style="color: #00ff00;">'t'</span>,<span style="color: #00ff00;">'u'</span>,<span style="color: #00ff00;">'v'</span>,<span style="color: #00ff00;">'w'</span>,<span style="color: #00ff00;">'x'</span>,<span style="color: #00ff00;">'y'</span>,<span style="color: #00ff00;">'z'</span> :
+        <span style="color: #00ffff;">write</span>(ch);
+    <span style="color: #00ff00;">'N'</span> :
+        <span style="color: #00ffff;">BEGIN</span>
+        <span style="color: #00ffff;">write</span>(t[ch]); prefix
+        <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ff00;">'A'</span>,<span style="color: #00ff00;">'C'</span>,<span style="color: #00ff00;">'E'</span>,<span style="color: #00ff00;">'K'</span> :
+        <span style="color: #00ffff;">BEGIN</span>
+        <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'('</span>);
+        prefix; <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">' '</span>,t[ch],<span style="color: #00ff00;">' '</span>); prefix;
+        <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">')'</span>)
+        <span style="color: #00ffff;">END</span>;
     OTHERWISE
-        BEGIN
+        <span style="color: #00ffff;">BEGIN</span>
         writeln;
-        writeln('Error : seen "',ch,
-            '" when "a".."z","N","A","C","E" or "K" expected.');
+        writeln(<span style="color: #00ff00;">'Error : seen "'</span>,ch,
+            <span style="color: #00ff00;">'" when "a".."z","N","A","C","E" or "K" expected.'</span>);
         readln;
-        GOTO 1
-        END;
-    END (* CASE *)
-END; (* prefix *)
+        <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">1</span>
+        <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">CASE *)</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">prefix *)</span>
 
-BEGIN (* main *)
-t['A']:='v'; t['C']:='&gt;'; t['E']:='='; t['K']:='&amp;'; t['N']:='-';
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+t[<span style="color: #00ff00;">'A'</span>]:=<span style="color: #00ff00;">'v'</span>; t[<span style="color: #00ff00;">'C'</span>]:=<span style="color: #00ff00;">'&gt;'</span>; t[<span style="color: #00ff00;">'E'</span>]:=<span style="color: #00ff00;">'='</span>; t[<span style="color: #00ff00;">'K'</span>]:=<span style="color: #00ff00;">'&amp;'</span>; t[<span style="color: #00ff00;">'N'</span>]:=<span style="color: #00ff00;">'-'</span>;
 1:
-REPEAT
+<span style="color: #00ffff;">REPEAT</span>
     writeln;
-    writeln('Formula :');
+    writeln(<span style="color: #00ff00;">'Formula :'</span>);
     prefix;
     writeln;
-    UNTIL false;
+    <span style="color: #00ffff;">UNTIL</span> false;
 99:
-END.
+<span style="color: #00ffff;">END</span>.
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-6" class="outline-2">
-<h2 id="sec-6"><span class="section-number-2">6</span> Exercises And Reading</h2>
-<div class="outline-text-2" id="text-6">
-
-
-
 </div>
-
-<div id="outline-container-6-1" class="outline-3">
-<h3 id="sec-6-1"><span class="section-number-3">6.1</span> <i>OTHERWISE</i>:</h3>
-<div class="outline-text-3" id="text-6-1">
-
-
+<div id="outline-container-sec-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Exercises And Reading</h2>
+<div class="outline-text-2" id="text-5">
+</div><div id="outline-container-sec-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> <i>OTHERWISE</i>:</h3>
+<div class="outline-text-3" id="text-5-1">
 <p>
 In standard PASCAL there is no OTHERWISE in CASE statements.  It is always possible to rewrite a CASE statement without the OTHERWISE, by wrapping it inside an IF-THEN-ELSE:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">IF we have a normal case THEN
-    CASE
+<pre class="src src-pascal"><span style="color: #00ffff;">IF</span> we have a normal <span style="color: #00ffff;">case</span> <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">CASE</span>
         ...
-  ELSE here the otherwise statement
+  <span style="color: #00ffff;">ELSE</span> here the otherwise statement
 </pre>
-
+</div>
 
 <p>
 Rewrite procedure <i>prefix</i> in this manner.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-2" class="outline-3">
-<h3 id="sec-6-2"><span class="section-number-3">6.2</span> <i>Statistics</i>:</h3>
-<div class="outline-text-3" id="text-6-2">
-
-
+<div id="outline-container-sec-5-2" class="outline-3">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> <i>Statistics</i>:</h3>
+<div class="outline-text-3" id="text-5-2">
 <p>
 Modify the program so that it keeps a count of the total number of formulas that it has translated, and also a count of the total number of errors encountered.  Before the program exits, it should then print these statistics.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-3" class="outline-3">
-<h3 id="sec-6-3"><span class="section-number-3">6.3</span> <i>Postfix</i>:</h3>
-<div class="outline-text-3" id="text-6-3">
-
-
+<div id="outline-container-sec-5-3" class="outline-3">
+<h3 id="sec-5-3"><span class="section-number-3">5.3</span> <i>Postfix</i>:</h3>
+<div class="outline-text-3" id="text-5-3">
 <p>
 Give a grammar for postfix notation, which is like prefix notation except that the operators are written after the subformulas.  Write a translation grammar from prefix to postfix.  Modify the manual, and modify the program so that it translates into postfix.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-4" class="outline-3">
-<h3 id="sec-6-4"><span class="section-number-3">6.4</span> <i>No outermost parentheses</i>:</h3>
-<div class="outline-text-3" id="text-6-4">
-
-
+<div id="outline-container-sec-5-4" class="outline-3">
+<h3 id="sec-5-4"><span class="section-number-3">5.4</span> <i>No outermost parentheses</i>:</h3>
+<div class="outline-text-3" id="text-5-4">
 <p>
 Modify the original prefix to infix translator so that it does not write the outermost parentheses if any.  So "Kpq" should be translated as "p &amp; q", "C N A a b c" as "-(a v b) &gt; c".  But you should also write an informal or formal grammar for this infix notation, and a translation grammar.  This is probably harder than just fixing the program.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-5" class="outline-3">
-<h3 id="sec-6-5"><span class="section-number-3">6.5</span> <i>Further minimisation of parentheses</i>:</h3>
-<div class="outline-text-3" id="text-6-5">
-
-
+<div id="outline-container-sec-5-5" class="outline-3">
+<h3 id="sec-5-5"><span class="section-number-3">5.5</span> <i>Further minimisation of parentheses</i>:</h3>
+<div class="outline-text-3" id="text-5-5">
 <p>
-By giving the infix operators a precedence it is possible to further reduce the need for parentheses.  One possibility is to let "&amp;" take precedence over "v" which takes precedence over "<sub>&gt</sub>;" and "=" which have the same precedence.  Thus "a &amp; b v c &amp; d" will be understood as "(a &amp; b) v (c &amp; d)".  Rewrite the translator so that it uses precedences in the infix notation.  Rewrite the manual, too.
+By giving the infix operators a precedence it is possible to further reduce the need for parentheses.  One possibility is to let "&amp;" take precedence over "v" which takes precedence over "_&gt;" and "=" which have the same precedence.  Thus "a &amp; b v c &amp; d" will be understood as "(a &amp; b) v (c &amp; d)".  Rewrite the translator so that it uses precedences in the infix notation.  Rewrite the manual, too.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-6" class="outline-3">
-<h3 id="sec-6-6"><span class="section-number-3">6.6</span> <i>Multi-line input</i>:</h3>
-<div class="outline-text-3" id="text-6-6">
-
-
+<div id="outline-container-sec-5-6" class="outline-3">
+<h3 id="sec-5-6"><span class="section-number-3">5.6</span> <i>Multi-line input</i>:</h3>
+<div class="outline-text-3" id="text-5-6">
 <p>
 Modify the program (and the manual) so that input formulas written over several lines are treated better.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-7" class="outline-3">
-<h3 id="sec-6-7"><span class="section-number-3">6.7</span> <i>Elimination of recursion</i>:</h3>
-<div class="outline-text-3" id="text-6-7">
-
-
+<div id="outline-container-sec-5-7" class="outline-3">
+<h3 id="sec-5-7"><span class="section-number-3">5.7</span> <i>Elimination of recursion</i>:</h3>
+<div class="outline-text-3" id="text-5-7">
 <p>
 When one has a recursive problem, in general the best way to solve it is to use a recursive solution.  In our case we were dealing with formulas which were defined recursively, and the simplest way to parse and translate them was to use the recursion facility provided by PASCAL.  Rewrite either the original program or one of the later versions without using any recursive procedures.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-8" class="outline-3">
-<h3 id="sec-6-8"><span class="section-number-3">6.8</span> <i>Proof reading</i>:</h3>
-<div class="outline-text-3" id="text-6-8">
-
-
+<div id="outline-container-sec-5-8" class="outline-3">
+<h3 id="sec-5-8"><span class="section-number-3">5.8</span> <i>Proof reading</i>:</h3>
+<div class="outline-text-3" id="text-5-8">
 <p>
 Read the Manual with extreme care and determine whether it correctly describes a) the intention of the designer, and b) the actual translation program.  Also, compare the informal style in which the translation was specified in the manual with the formal translation grammar given earlier.  Assuming that users are already familiar with the two notations, which style of specifying the translation is better?  Which style is more helpful for writing the program?
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-9" class="outline-3">
-<h3 id="sec-6-9"><span class="section-number-3">6.9</span> <i>Cambridge notation</i>:</h3>
-<div class="outline-text-3" id="text-6-9">
-
-
+<div id="outline-container-sec-5-9" class="outline-3">
+<h3 id="sec-5-9"><span class="section-number-3">5.9</span> <i>Cambridge notation</i>:</h3>
+<div class="outline-text-3" id="text-5-9">
 <p>
 This is a prefix notation in which at least conjunction and disjunction (the associative operators) can have more than two operands.  Parentheses are used before the operator and after the last operand.  Implement a Cambridge to infix translator.  To make the notation more like LISP, you could use AND and OR; for other operators use NOT, IMP and IFF.  An input formula might then look like this:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(AND (OR a b c) (NOT (OR d e (NOT f))) (OR g h (AND i j k l)))
+<pre class="src src-pascal">(<span style="color: #00ffff;">AND</span> (<span style="color: #00ffff;">OR</span> a b c) (<span style="color: #00ffff;">NOT</span> (<span style="color: #00ffff;">OR</span> d e (<span style="color: #00ffff;">NOT</span> f))) (<span style="color: #00ffff;">OR</span> g h (<span style="color: #00ffff;">AND</span> i j k l)))
 </pre>
-
+</div>
 
 <p>
 Does it make sense to allow conjunctions and disjunctions with only one operand?  Does it make sense to allow implication and equivalence to take more than two operands?  Does it make sense to allow negation to have more than one operand?  Can one make sense of operators with zero operands?  Discuss these questions, and then implement your views in a Cambridge to infix translator.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-10" class="outline-3">
-<h3 id="sec-6-10"><span class="section-number-3">6.10</span> <i>More difficult translations</i>:</h3>
-<div class="outline-text-3" id="text-6-10">
-
-
+<div id="outline-container-sec-5-10" class="outline-3">
+<h3 id="sec-5-10"><span class="section-number-3">5.10</span> <i>More difficult translations</i>:</h3>
+<div class="outline-text-3" id="text-5-10">
 <p>
 Why is there no exercise to translate from infix to prefix, or from postfix to infix, or from postfix to prefix?  All of these translations involve shifting an operator from the middle or the right forward to the front or the middle.  Describe some of the problems that you would expect to encounter with the programming skills that you have now.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-11" class="outline-3">
-<h3 id="sec-6-11"><span class="section-number-3">6.11</span> <i>Eliminate GOTO</i>:</h3>
-<div class="outline-text-3" id="text-6-11">
-
-
+<div id="outline-container-sec-5-11" class="outline-3">
+<h3 id="sec-5-11"><span class="section-number-3">5.11</span> <i>Eliminate GOTO</i>:</h3>
+<div class="outline-text-3" id="text-5-11">
 <p>
 It is at least cumbersome and probably quite difficult to rewrite the program without GOTO.  Do try it, but ensure that your program behaves either like the original or as described in the manual (in case there is a difference!).
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-12" class="outline-3">
-<h3 id="sec-6-12"><span class="section-number-3">6.12</span> <i>Reading</i>:</h3>
-<div class="outline-text-3" id="text-6-12">
-
-
+<div id="outline-container-sec-5-12" class="outline-3">
+<h3 id="sec-5-12"><span class="section-number-3">5.12</span> <i>Reading</i>:</h3>
+<div class="outline-text-3" id="text-5-12">
 <p>
 If you had problems with understanding the PASCAL program, then you should consult any one of the many and often very good introductory books on PASCAL.  If you had problems getting your program into the computer, read the manual for your editor.
 </p>
 </div>
 </div>
 </div>
-</div>
-
-<div id="postamble">
-<p class="date">Date: 2013-01-11 07:38:11 CST</p>
-<p class="author">Author: michal</p>
-<p class="creator">Org version 7.8.11 with Emacs version 24</p>
-<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
-
 </div>
 </body>
 </html>

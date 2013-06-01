@@ -1,66 +1,38 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<title>Chapter x : Self-compiling compilers</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Chapter x : Self-compiling compilers"/>
+<title>Chapter 21 : Self-compiling compilers</title>
+<!-- 2013-05-31 Fri 19:02 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-01-11 07:34:47 CST"/>
 <meta name="author" content="michal"/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
-<style type="text/css">
- <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
-  .title  { text-align: center; }
-  .todo   { color: red; }
-  .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
-  .timestamp { color: #bebebe; }
-  .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
-  pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
-  }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
-  dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
-    background: #ffffcc;
-  }
-  textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
-  /*]]>*/-->
-</style>
+<link rel="stylesheet" type="text/css" href="/etc/style.css">
 <script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012  Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
 <!--/*--><![CDATA[/*><!--*/
  function CodeHighlightOn(elem, id)
  {
@@ -82,61 +54,50 @@
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
-
-</div>
-
 <div id="content">
-<h1 class="title">Chapter x : Self-compiling compilers</h1>
-
-
+<h1 class="title">Chapter 21 : Self-compiling compilers</h1>
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 intro</a></li>
-<li><a href="#sec-2">2 Introduction</a>
+<li><a href="#sec-1">1. </a></li>
+<li><a href="#sec-2">2. Introduction</a>
 <ul>
-<li><a href="#sec-2-1">2.1 General</a></li>
-<li><a href="#sec-2-2">2.2 The source language and the target language</a></li>
+<li><a href="#sec-2-1">2.1. General</a></li>
+<li><a href="#sec-2-2">2.2. The source language and the target language</a></li>
 </ul>
 </li>
-<li><a href="#sec-3">3 A small self-compiling compiler</a>
+<li><a href="#sec-3">3. A small self-compiling compiler</a>
 <ul>
-<li><a href="#sec-3-1">3.1 Rationale for HITECO 1</a></li>
-<li><a href="#sec-3-2">3.2 The HITECO source code</a></li>
-<li><a href="#sec-3-3">3.3 The TECO target code</a></li>
+<li><a href="#sec-3-1">3.1. Rationale for HITECO 1</a></li>
+<li><a href="#sec-3-2">3.2. The HITECO source code</a></li>
+<li><a href="#sec-3-3">3.3. The TECO target code</a></li>
 </ul>
 </li>
-<li><a href="#sec-4">4 Bootstrapping</a>
+<li><a href="#sec-4">4. Bootstrapping</a>
 <ul>
-<li><a href="#sec-4-1">4.1 The bootstrapping process in general</a></li>
-<li><a href="#sec-4-2">4.2 Bootstrap to HITECO 2</a></li>
-<li><a href="#sec-4-3">4.3 Bootstrap to HITECO 3</a></li>
+<li><a href="#sec-4-1">4.1. The bootstrapping process in general</a></li>
+<li><a href="#sec-4-2">4.2. Bootstrap to HITECO 2</a></li>
+<li><a href="#sec-4-3">4.3. Bootstrap to HITECO 3</a></li>
 </ul>
 </li>
-<li><a href="#sec-5">5 A useable self-compiling compiler</a>
+<li><a href="#sec-5">5. A useable self-compiling compiler</a>
 <ul>
-<li><a href="#sec-5-1">5.1 A description of HITECO 4</a></li>
-<li><a href="#sec-5-2">5.2 The HITECO 4 source</a></li>
-<li><a href="#sec-5-3">5.3 The TECO target code</a></li>
-<li><a href="#sec-5-4">5.4 In conclusion</a></li>
+<li><a href="#sec-5-1">5.1. A description of HITECO 4</a></li>
+<li><a href="#sec-5-2">5.2. The HITECO 4 source</a></li>
+<li><a href="#sec-5-3">5.3. The TECO target code</a></li>
+<li><a href="#sec-5-4">5.4. In conclusion</a></li>
 </ul>
 </li>
-<li><a href="#sec-6">6 Exercises and reading</a></li>
+<li><a href="#sec-6">6. Exercises and reading</a></li>
 </ul>
 </div>
 </div>
-
-<div id="outline-container-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <a id="intro" name="intro"></a></h2>
 <div class="outline-text-2" id="text-1">
-
-
 <p>
 In previous chapters several compilers for very small languages
 have been designed,
@@ -145,27 +106,20 @@ In this chapter several self-compiling compilers are described.
 The later ones were <i>bootstrapped</i> from the earlier ones.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2"><span class="section-number-2">2</span> Introduction</h2>
 <div class="outline-text-2" id="text-2">
-
-
 <p>
 This section describes some of the general notions
 of self-compilations,
 and some language specific background.
 </p>
-
 </div>
 
-<div id="outline-container-2-1" class="outline-3">
+<div id="outline-container-sec-2-1" class="outline-3">
 <h3 id="sec-2-1"><span class="section-number-3">2.1</span> General</h3>
 <div class="outline-text-3" id="text-2-1">
-
-
 <p>
 Compilers for large languages can be formidable,
 especially if they are to generate efficient code for
@@ -179,6 +133,7 @@ This occurs for example when compiling code for a virtual machine,
 where this virtual code is either interpreted by a software interpreter,
 or further compiled into some actual machine code.
 </p>
+
 <p>
 Almost any large universal language is suitable for
 reading strings of input characters,
@@ -193,6 +148,7 @@ the easier it is to write a compiler for it in a given language;
 the simpler the language in which the compiler is to be written,
 the harder it is to write a compiler in it for a given language.
 </p>
+
 <p>
 If a language is suitable for writing compilers,
 then it becomes possible to write a compiler for
@@ -207,6 +163,7 @@ that has been used to bootstrap most of the early Pascal compilers.
 But because Pascal is fairly large,
 any Pascal compiler will be quite large.
 </p>
+
 <p>
 But a self-compiling compiler need not be large at all.
 If the language that it compiles is minimally adequate
@@ -220,6 +177,7 @@ but it would be easy to change the target language.
 Both the source and the target forms of the compilers
 are included in the text.
 </p>
+
 <p>
 The remainder of this chapter contains a description
 of a family of quite simple string languages,
@@ -231,19 +189,16 @@ forms of the compilers are respectively
 7, 12, 17 and 26 blocks (of 512 bytes) long.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2-2" class="outline-3">
+<div id="outline-container-sec-2-2" class="outline-3">
 <h3 id="sec-2-2"><span class="section-number-3">2.2</span> The source language and the target language</h3>
 <div class="outline-text-3" id="text-2-2">
-
-
 <p>
 This section describes some common features of
 all the HITECO source languages
 and some general features of the TECO target language.
 </p>
+
 <p>
 The first source language HITECO 1 was chosen so as to be as small
 as possible,
@@ -253,6 +208,7 @@ so a deterministic parser was required.
 In turn, this implied the LL1 condition:
 that all alternatives begin with distinct keywords.
 </p>
+
 <p>
 The later languages evolved in a natural way:
 First new features were seen to be desirable,
@@ -267,6 +223,7 @@ or because they had been replaced by better ones.
 This bootstrapping process is described in
 more general terms in a later section.
 </p>
+
 <p>
 The source languages were to a large extent influenced by the initial
 target language TECO,
@@ -281,10 +238,12 @@ All this means that TECO can be seen as a barely legible machine language
 for a powerful string processing machine;
 it needs a high level version which would be easier to read.
 </p>
+
 <p>
 The remainder of this section should be skipped by readers who
 are only interested in HITECO as a source language.
 </p>
+
 <p>
 TECO supports the types integer, character and strings of characters.
 There is a distinguished string, the editing buffer,
@@ -294,6 +253,7 @@ In addition, there are a number of registers
 containing single integers or single characters,
 or strings of characters.
 </p>
+
 <p>
 Among the operations applicable to the editing buffer are
 anchored searches.
@@ -319,6 +279,7 @@ pointing to a position in the source and
 pointing to a position in the target.
 So it is simpler to generate code by appending it to registers.
 </p>
+
 <p>
 When a compiler is compiling itself it is
 executing procedures which are located somewhere,
@@ -340,14 +301,10 @@ by the command <code>M9</code>).
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-3" class="outline-2">
+<div id="outline-container-sec-3" class="outline-2">
 <h2 id="sec-3"><span class="section-number-2">3</span> A small self-compiling compiler</h2>
 <div class="outline-text-2" id="text-3">
-
-
 <p>
 The first generation in the HITECO family
 consists of very small string to string translator written
@@ -362,14 +319,11 @@ nor does it have data structures,
 and it cannot manipulate characters
 except by treating them as short symbols.
 </p>
-
 </div>
 
-<div id="outline-container-3-1" class="outline-3">
+<div id="outline-container-sec-3-1" class="outline-3">
 <h3 id="sec-3-1"><span class="section-number-3">3.1</span> Rationale for HITECO 1</h3>
 <div class="outline-text-3" id="text-3-1">
-
-
 <p>
 This first version of HITECO
 was designed in such a way that the parser does not even know
@@ -391,6 +345,7 @@ which has to be followed by a quoted terminal and then a statement,
 and there is an explicit concatenation operator <code>;</code>,
 and round parentheses may be used for grouping.
 </p>
+
 <p>
 The grammar uses only one non-terminal <code>STATEMENT</code>.
 In the extended BNF which is used below,
@@ -400,9 +355,8 @@ the vertical bar denotes alternation,
 and the square brackets denote indefinite repetition of what they enclose.
 </p>
 
-
-
-<pre class="example">STATEMENT ::=
+<pre class="example">
+STATEMENT ::=
         "STATEMENT" |
         "VARIABLE" |
         "QUOTE" |
@@ -433,7 +387,6 @@ and the square brackets denote indefinite repetition of what they enclose.
             MESSAGE
 </pre>
 
-
 <p>
 As may be seen from the above,
 a statement is either one of the five single terminals
@@ -443,7 +396,7 @@ or is the terminal <code>PUT</code> followed by code,
 or it is the terminal <code>CHECK</code> followed by a quote and a message,
 or it is the terminal <code>REP</code> followed by a quote and then a statement,
 or it is the terminal <code>LET</code> followed by a variable,
-then the terminal === and then a statement,
+then the terminal <code>=</code> and then a statement,
 or it is the terminal <code>(</code> followed by one or more statements
 separated by the terminal <code>;</code> and terminated by the terminal <code>)</code>,
 or it is the terminal <code>CHOICE</code>
@@ -454,14 +407,10 @@ followed by the terminal <code>OTHERWISE</code> and a message.
 whereas <code>STATEMENT</code> is a terminal.)
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-2" class="outline-3">
+<div id="outline-container-sec-3-2" class="outline-3">
 <h3 id="sec-3-2"><span class="section-number-3">3.2</span> The HITECO source code</h3>
 <div class="outline-text-3" id="text-3-2">
-
-
 <p>
 The HITECO 1 source code consists of one page of text.
 It is a single <code>LET</code> statement which places a single
@@ -493,9 +442,8 @@ one gets the syntax of HITECO without the messy code
 that has to be generated.
 </p>
 
-
-
-<pre class="example">LET A =
+<pre class="example">
+LET A =
   CHOICE
     WHEN "STATEMENT"     PUT "@:^U9'MA'"
     WHEN "VARIABLE"      PUT "@:^U9'M3'"
@@ -535,7 +483,6 @@ that has to be generated.
       "illegal in statement"
 </pre>
 
-
 <p>
 TECO is just about an ideal processor for HITECO;
 this is not surprising
@@ -543,6 +490,7 @@ since HITECO was designed for that purpose.
 Nevertheless it was found convenient to augment TECO
 with five small procedures which act as run-time support:
 </p>
+
 <p>
 The first one handles quotes, codes and messages:
 essentially it remembers the first printing character which initiates the item
@@ -554,7 +502,7 @@ The next one is a simple scanner which skips blanks,
 tabs and newlines.
 The next one handles errors: it writes the current line
 up to the current parsing position,
-then it writes ===HERE=&gt;=, then it writes the rest of the line.
+then it writes <code>==HERE=&gt;</code>, then it writes the rest of the line.
 The next procedure is used solely for formatting the target code
 by writing a newline without the need for the newline character
 in the source (which would spoil its appearance).
@@ -563,9 +511,8 @@ parsing position is a letter,
 otherwise it calls the error procedure and writes a message.
 </p>
 
-
-
-<pre class="example">PUT %
+<pre class="example">
+PUT %
 
 !    R U N   T I M E   S U P P O R T   !
 
@@ -593,7 +540,6 @@ C Q7"NQ8@:^U9\\' M6
  .
 </pre>
 
-
 <p>
 Since the runtime support does not involve any recursive calls,
 it would have been possible to unfold such calls
@@ -605,14 +551,10 @@ However, since such a "pure" compiler would be of some
 interest, it is worth contemplating.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-3" class="outline-3">
+<div id="outline-container-sec-3-3" class="outline-3">
 <h3 id="sec-3-3"><span class="section-number-3">3.3</span> The TECO target code</h3>
 <div class="outline-text-3" id="text-3-3">
-
-
 <p>
 This section is specific to the TECO implementation
 of HITECO.
@@ -631,6 +573,7 @@ The remaining short portions constitute the run-time
 environment, they are loaded into the Q-registers
 as indicated.
 </p>
+
 <p>
 The file contains several control-A characters
 which are not printed by the line printer.
@@ -641,9 +584,8 @@ up-arrow and A.
 In all other respects the file is exactly as shown here.
 </p>
 
-
-
-<pre class="example">@^UA/
+<pre class="example">
+@^UA/
   &lt;
     @::S"STATEMENT""SM6
       @:^U9'MA'0;'
@@ -702,18 +644,12 @@ C Q7"NQ8@:^U9\\' M6
 @^U3/0A"A 0A@:^U9\\ CM6 |M5^A VARIABLE EXPECTED ^A'
 /
 </pre>
-
-
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-4" class="outline-2">
+<div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4"><span class="section-number-2">4</span> Bootstrapping</h2>
 <div class="outline-text-2" id="text-4">
-
-
 <p>
 For all self-compiling compilers,
 the first compilation has to be done by hand,
@@ -725,18 +661,15 @@ If all went well,
 the two target versions should be identical.
 &gt;From then on everything is done by bootstrapping.
 This section gives a general description of the process of bootstrapping
-compilers &mdash; using an early form of a compiler to help produce
+compilers &#x2014; using an early form of a compiler to help produce
 a better form, and a specific description of bootstrapping
 HITECO.
 </p>
-
 </div>
 
-<div id="outline-container-4-1" class="outline-3">
+<div id="outline-container-sec-4-1" class="outline-3">
 <h3 id="sec-4-1"><span class="section-number-3">4.1</span> The bootstrapping process in general</h3>
 <div class="outline-text-3" id="text-4-1">
-
-
 <p>
 A compiler which compiles itself can be used to compile any programs
 in the language it compiles,
@@ -748,7 +681,8 @@ bootstrapping device for writing a better compiler.
 Here <i>better</i> can mean several things.
 In the first place, if the language it compiles is the same as the original,
 then it can mean any one of:
-</p><ol>
+</p>
+<ol class="org-ol">
 <li>prettier formatting of the target code, making it easier to read, or
 </li>
 <li>greater efficiency during the compilation process, or
@@ -756,18 +690,20 @@ then it can mean any one of:
 <li>greater efficiency of the code that is produced.
 </li>
 </ol>
-
-<p>Note that for a compiler that is not written in itself,
-</p><ol>
+<p>
+Note that for a compiler that is not written in itself,
+</p>
+<ol class="org-ol">
 <li>and 3) are quite distinct aspects of efficiency,
 </li>
 </ol>
-
-<p>and that for a self-compiling compiler
+<p>
+and that for a self-compiling compiler
 the way to achieve 2) is to achieve 3).
 On the other hand, <i>better</i> can also mean a different source language
 which is
-</p><ol>
+</p>
+<ol class="org-ol">
 <li>easier to read, or
 </li>
 <li>makes the writing of the compiler easier, or
@@ -775,9 +711,10 @@ which is
 <li>has more useable features.
 </li>
 </ol>
-
-<p>The way to achieve 4) and 5) is to achieve 6).
+<p>
+The way to achieve 4) and 5) is to achieve 6).
 </p>
+
 <p>
 The bootstrapping process consists of repeatedly applying the following steps.
 Assume that version(i) of the compiler exists in two forms,
@@ -817,6 +754,7 @@ in the previous language.
 Another compilation produces target(i+2),
 and the bootstrap is complete.
 </p>
+
 <p>
 A very useful check to make is the seemingly pointless self-compilation:
 use target(i) to compile source(i) producing target(i+1).
@@ -830,14 +768,10 @@ in that case an error has occurred earlier.
 In this way self-compilation is an important internal check.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-2" class="outline-3">
+<div id="outline-container-sec-4-2" class="outline-3">
 <h3 id="sec-4-2"><span class="section-number-3">4.2</span> Bootstrap to HITECO 2</h3>
 <div class="outline-text-3" id="text-4-2">
-
-
 <p>
 The first generation in the HITECO family
 consists of a very small string to string translator written
@@ -850,6 +784,7 @@ which could not be written in HITECO 1 itself.
 The principal objective of HITECO 2 was to make it possible
 to write this runtime support in HITECO 2 itself.
 </p>
+
 <p>
 HITECO is adequate for expressing grammmatical constructions
 for a language in which the terminals are symbols.
@@ -858,6 +793,7 @@ and it cannot manipulate characters.
 But both of these are required in the run time support.
 So, these features were added to HITECO2.
 </p>
+
 <p>
 HITECO2 can be described by a grammar with three nonterminals:
 <code>STATEMENT</code>, <code>CONDITION</code> and <code>EXPRESSION</code>.
@@ -878,12 +814,14 @@ The bodies of the three rules should be easy enough to
 reconstruct by ignoring the right half of the page with
 the code generation.
 </p>
+
 <p>
 The run-time support for HITECO2 is almost identical
 to that of HITECO1, except that it is now written in HITECO2 itself.
 There are five procedures in the run-time support,
 and their code is located in registers 3, 4, 5, 6 and 7.
 </p>
+
 <p>
 The largest and most important compiling procedure is for <code>STATEMENT</code>,
 and it is essentially an enriched version of the single
@@ -899,6 +837,7 @@ The new flow of control statements include a conventional <code>IF_THEN</code>
 statement with an optional <code>ELSE</code> part,
 and a new <code>LOOP</code> statement with =EXIT=s.
 </p>
+
 <p>
 The condition of the <code>IF</code> part of a conditional is handled by a separate
 compiling procedure;
@@ -910,6 +849,7 @@ a digit, or either of the two.
 The last is needed because the compiler cannot handle more general
 disjunctions.
 </p>
+
 <p>
 An expression is either a number, recognised by its initial leading digit,
 or the value of the inbuilt special variable <code>CH</code>
@@ -918,6 +858,7 @@ as seen by the scanner,
 or a variable whose value is in a <code>REGISTER</code>,
 or a parameter of a procedure.
 </p>
+
 <p>
 The procedure which the <code>LET</code> statement
 puts into register 7 is invoked in <code>STATEMENT</code>
@@ -934,12 +875,13 @@ and in this case the quotation symbols are retained,
 and <code>MESSAGE</code> uses parameter 2,
 and in this case <code>^A</code> (control-A) is used as the quotation symbol.
 </p>
+
 <p>
 The procedure which the <code>LET</code> statement
 puts into register 6 is the scanner which
 uses the inbuilt procedure <code>GETCH</code> to skip
 one character for spaces and tabs, and two characters
-for carriage returns &mdash; the other character skipped
+for carriage returns &#x2014; the other character skipped
 is the line feed.
 The conditional is in a loop,
 the inbuilt procedure <code>RESTART</code> sends control back
@@ -947,6 +889,7 @@ to the beginning of the loop,
 and the inbuilt procedure <code>EXIT</code> sends control
 beyond the end of the loop.
 </p>
+
 <p>
 The procedure which the <code>LET</code> statement
 puts into register 5 is the error
@@ -960,8 +903,9 @@ a new line to the object code.
 The procedure which the <code>LET</code> statement
 puts into register 3 checks that the
 current character being scanned is
-a symbol constituent &mdash; essentially a letter or a digit.
+a symbol constituent &#x2014; essentially a letter or a digit.
 </p>
+
 <p>
 The following is the HITECO2 compiler written in HITECO2 itself.
 The target form of HITECO2 written in TECO is not given here
@@ -969,9 +913,8 @@ because it is just an enriched form of the target form of HITECO1
 written in TECO.
 </p>
 
-
-
-<pre class="example">LET A =
+<pre class="example">
+LET A =
   CHOICE
     WHEN "GEN"                  (PUT "@:^U9\@:^U9&amp;\";
       CODE;                      PUT "@:^U9\&amp;\")
@@ -1109,17 +1052,11 @@ LET 7 =
   SCAN)
  .
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-4-3" class="outline-3">
+<div id="outline-container-sec-4-3" class="outline-3">
 <h3 id="sec-4-3"><span class="section-number-3">4.3</span> Bootstrap to HITECO 3</h3>
 <div class="outline-text-3" id="text-4-3">
-
-
 <p>
 One of the principal shortcomings of HITECO2
 was the fact that procedures only had single character names.
@@ -1135,6 +1072,7 @@ To obtain a normal recursive descent compiler,
 the nonterminals of the grammar should correspond to
 compiling procedures.
 </p>
+
 <p>
 Except for very simple grammars,
 recursive descent parsers have to satisfy quite
@@ -1174,6 +1112,7 @@ right Q-register.
 Apart from the change just described,
 the language was left fairly unchanged.
 </p>
+
 <p>
 The same process of bootstrapping was applied to HITECO2 to obtain
 a new self-compiling compiler for a language HITECO3.
@@ -1190,27 +1129,20 @@ in the next version, as described in detail in the next section.
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-5" class="outline-2">
+<div id="outline-container-sec-5" class="outline-2">
 <h2 id="sec-5"><span class="section-number-2">5</span> A useable self-compiling compiler</h2>
 <div class="outline-text-2" id="text-5">
-
-
 <p>
 The fourth generation of HITECO adds several new features.
 Some of the design decisions are discussed,
 and both the HITECO and the TECO versions of the translator are given.
 </p>
-
 </div>
 
-<div id="outline-container-5-1" class="outline-3">
+<div id="outline-container-sec-5-1" class="outline-3">
 <h3 id="sec-5-1"><span class="section-number-3">5.1</span> A description of HITECO 4</h3>
 <div class="outline-text-3" id="text-5-1">
-
-
 <p>
 A program begins with forward declarations of all procedures,
 this is necessary because nesting of procedures is not possible
@@ -1218,6 +1150,7 @@ and there is mutual recursion for which the calling procedure
 has to know where the code for the called procedure is located.
 The HITECO4 compiler begins with forward declarations of 18 procedures.
 </p>
+
 <p>
 The first compiling procedure is for the non-terminal <code>program</code>.
 Its body consists of a statement sequence,
@@ -1239,14 +1172,15 @@ The error message then will be:
 ='PROCEDURE' expected in program=.
 After the word <code>PROCEDURE</code> a procedure name is expected;
 this is handled by a separate compiling procedure.
-Following that, === is required,
+Following that, <code>=</code> is required,
 otherwise the error message ='=' expected in program= is given.
 As may be seen from these two examples,
 required symbols are written in double quotes,
 followed by another quotation containing another part of the
 error message.
-After the === a statement is expected, as described next.
+After the <code>=</code> a statement is expected, as described next.
 </p>
+
 <p>
 The long compiling procedure for the non-terminal <code>statement</code>
 has as its body a single <code>CHOICE</code> statement.
@@ -1256,7 +1190,7 @@ if it is, then the body of the particular choice is entered.
 So a <code>CHOICE</code> statement is somewhat similar to a <code>CASE</code> statement.
 The first few choices are inbuilt atomic statements,
 mostly having to do with code generation.
-The next few take parameters, but they are still atomic statements ---
+The next few take parameters, but they are still atomic statements &#x2014;
 they do not have further statements as parts.
 The first non-atomic statement type is the <code>LOOP</code> statement,
 consisting of the keyword <code>LOOP</code> followed by another statement.
@@ -1268,11 +1202,11 @@ an  <code>EXIT</code> statement or at least contain one.
 In the compiling procedure for statement,
 following the <code>LOOP</code> statement is the compound statement: <code>(</code>
 followed by a <code>SEQ=uence of statements =SEP=arated by =;</code>,
-followed by <code>)</code> &mdash; otherwise the error
+followed by <code>)</code> &#x2014; otherwise the error
 ='=' expected in compound statement= is given.
 <code>SEQ</code>-statements are explained a little further down,
 as consisting of <code>SEQ</code> followed by a statement followed by <code>SEP</code>
-and then a quote &mdash; the separator, such as <code>;</code> above.
+and then a quote &#x2014; the separator, such as <code>;</code> above.
 The next kind of statement is the <code>CHOICE</code> statement,
 consisting of <code>CHOICE</code>, a list of choices that are handled by
 a separate compiling procedure,
@@ -1283,16 +1217,17 @@ for <code>statement</code> describes the structure of the statement
 which is the body of the compiling procedure.
 The remaining compound statements are mostly self-explanatory,
 except perhaps the <code>TO</code> statement, which is like a <code>FOR</code> statement
-of Pascal without the <code>FOR</code> part &mdash; the expression is evaluated
+of Pascal without the <code>FOR</code> part &#x2014; the expression is evaluated
 and its value is the number of times the <code>DO</code> part will be executed.
 </p>
+
 <p>
 If a statement does not start with any of the explicit keyword choices,
 then the <code>OTHERWISE</code> part of the compiling procedure for statement is
 activated.
 If the current character is a double quote,
 then the characters up to the closing quote are taken
-as a required terminal &mdash; such as <code>)</code>, <code>THEN</code>, <code>DO</code> etc.,
+as a required terminal &#x2014; such as <code>)</code>, <code>THEN</code>, <code>DO</code> etc.,
 and if they are not present,
 then the required terminal together with the following
 explanatory <code>MESSAGE</code> are combined to report an error.
@@ -1305,6 +1240,7 @@ If the current character is an uppercase letter,
 then it is the name of a variable in an assignment statement,
 for which <code>:=</code> and an expression are expected next.
 </p>
+
 <p>
 The next compiling procedure is for the non-terminal <code>CONDITION</code>.
 A condition consists either of the keyword <code>MATCH</code>
@@ -1315,6 +1251,7 @@ typical of the problems with self-compiling compilers:
 The first <code>MATCH</code> is already compiled, the quoted ="MATCH"=
 is what the next generation will require.)
 </p>
+
 <p>
 The next compiling procedure is for <code>expression</code>,
 not in an ideal syntax but forced by the limited recursion facility
@@ -1329,20 +1266,21 @@ beginning with arithmetic infix operators;
 the procedure <code>predicate</code> deals with either
 postfix predicates or comparison operators followed by expressions.
 </p>
+
 <p>
 There are a few more compiling procedures for parameter lists
 (which the compiler does not check),
-and for three other kinds of lists ---
+and for three other kinds of lists &#x2014;
 those in <code>CHOICE</code>, <code>OPCODE</code> and <code>CASE</code> statements.
 </p>
+
 <p>
 The target code consists of a number of procedure
 bodies which are stored in Q-registers:
 </p>
 
-
-
-<pre class="example">REGISTER        PROCEDURE
+<pre class="example">
+REGISTER        PROCEDURE
                                 (compiling procedures)
 E               program
 F               statement
@@ -1365,27 +1303,21 @@ V               glc
 I               declaration
 </pre>
 
-
 <p>
     To compile a HITECO 4 program, the TECO command <code>ME</code>
 has to be given.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-2" class="outline-3">
+<div id="outline-container-sec-5-2" class="outline-3">
 <h3 id="sec-5-2"><span class="section-number-3">5.2</span> The HITECO 4 source</h3>
 <div class="outline-text-3" id="text-5-2">
-
-
 <p>
 The following is the source:
 </p>
 
-
-
-<pre class="example">DECLARE (* forward names of procedures *)
+<pre class="example">
+DECLARE (* forward names of procedures *)
   program
   statement condition expression declaration
   listchoices listopcodes listcases infix
@@ -1693,25 +1625,18 @@ PROCEDURE declaration =
 
  .
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-5-3" class="outline-3">
+<div id="outline-container-sec-5-3" class="outline-3">
 <h3 id="sec-5-3"><span class="section-number-3">5.3</span> The TECO target code</h3>
 <div class="outline-text-3" id="text-5-3">
-
-
 <p>
 The TECO target code is given here for completeness,
 most readers will want to skip the following three pages.
 </p>
 
-
-
-<pre class="example">! HITECO VERSION 4 !
+<pre class="example">
+! HITECO VERSION 4 !
 ! COMPILATION = ! 368 U9
 
 @^UE`0MVMP@::S"DECLARE""SMPMI'&lt;0A-^^."=0;'1T@::S"PROCEDURE""SMP
@@ -1888,17 +1813,11 @@ symbol table is empty
 0A-^^."=CMP0;'@:^U8+@::S\+&lt; 0A"C 0A@:^U888 C F&lt; | MP 0; &gt;@:^U8+\"S^^+%8@:^U8''@:^U8+U7 0;'
 +&gt;@:^U8+ MO 0U7 0;&gt; MP Q7+`
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-5-4" class="outline-3">
+<div id="outline-container-sec-5-4" class="outline-3">
 <h3 id="sec-5-4"><span class="section-number-3">5.4</span> In conclusion</h3>
 <div class="outline-text-3" id="text-5-4">
-
-
 <p>
 The HITECO project as described here
 took about 6 man weeks to implement;
@@ -1911,21 +1830,23 @@ Further work should now concentrate on making available
 to the HITECO user those features of TECO which the HITECO
 compiler does not use itself.
 </p>
+
 <p>
 TECO is a powerful language,
 and it has numerous features that would not normally
 be used in interactive text editing.
 But there were some deficiencies:
 The most annoying problem was the absurdly small
-recursion stack of the old version of TECO ---
+recursion stack of the old version of TECO &#x2014;
 in the manual[!] it is said to be <code>about 10</code>.
 Several intermediate versions of HITECO failed because
 they required recursion just slightly deeper than TECO
 will tolerate.
 </p>
+
 <p>
-There are a number of things which ---
-with the wisdom of hindsight ---
+There are a number of things which &#x2014;
+with the wisdom of hindsight &#x2014;
 I would have liked to have done differently.
 It would have been nice to have organised the versions in such a way
 that each one can compile itself and its immediate successor.
@@ -1948,6 +1869,7 @@ but uses the very generous Q-register push-down list instead.
 Such a change would best be done by modifying version 4,
 but the price might be a dramatic loss of efficiency.
 </p>
+
 <p>
 It is worth noting that the limitation on the size of the
 recursion stack has been removed in the 1990 version
@@ -1956,14 +1878,10 @@ of VAX TECO.
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-6" class="outline-2">
+<div id="outline-container-sec-6" class="outline-2">
 <h2 id="sec-6"><span class="section-number-2">6</span> Exercises and reading</h2>
 <div class="outline-text-2" id="text-6">
-
-
 <p>
 <i>Modifying the source language</i>:
 You have an offer from a Polish software agent who
@@ -1981,6 +1899,7 @@ editing the target is not allowed
 The final product to be delivered is to consist of a source version
 and a target version.
 </p>
+
 <p>
 <i>Modifying the target language</i>:
 Two of my students have used version 1 as a starting point
@@ -1989,6 +1908,7 @@ as the target language.
 One of them volunteered the information that it was fun,
 the other one did not say anything.
 </p>
+
 <p>
 Use version 4 as a starting point
 to write a self-compiling compiler which uses C or Pascal
@@ -2004,6 +1924,7 @@ Alternatively,
 if you do not have TECO to run a HITECO compiler
 use the source as an aid in designing a new self-compiling compiler.
 </p>
+
 <p>
 <i>Reading</i>:
 A very comprehensive general account of self-compilation
@@ -2011,14 +1932,6 @@ and bootstrapping can be found in Lecarme and Pellissier Gart (1986).
 </p>
 </div>
 </div>
-</div>
-
-<div id="postamble">
-<p class="date">Date: 2013-01-11 07:34:47 CST</p>
-<p class="author">Author: michal</p>
-<p class="creator">Org version 7.8.11 with Emacs version 24</p>
-<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
-
 </div>
 </body>
 </html>

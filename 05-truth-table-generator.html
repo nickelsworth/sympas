@@ -1,66 +1,38 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Chapter 5 : Truth table generator</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Chapter 5 : Truth table generator"/>
+<!-- 2013-05-31 Fri 19:02 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-01-11 07:38:09 CST"/>
 <meta name="author" content="michal"/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
-<style type="text/css">
- <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
-  .title  { text-align: center; }
-  .todo   { color: red; }
-  .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
-  .timestamp { color: #bebebe; }
-  .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
-  pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
-  }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
-  dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
-    background: #ffffcc;
-  }
-  textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
-  /*]]>*/-->
-</style>
+<link rel="stylesheet" type="text/css" href="/etc/style.css">
 <script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012  Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
 <!--/*--><![CDATA[/*><!--*/
  function CodeHighlightOn(elem, id)
  {
@@ -82,92 +54,78 @@
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
-
-</div>
-
 <div id="content">
 <h1 class="title">Chapter 5 : Truth table generator</h1>
-
-
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 intro</a></li>
-<li><a href="#sec-2">2 User manual</a></li>
-<li><a href="#sec-3">3 Designing the implementation</a>
+<li><a href="#sec-1">1. </a></li>
+<li><a href="#sec-2">2. User manual</a></li>
+<li><a href="#sec-3">3. Designing the implementation</a>
 <ul>
-<li><a href="#sec-3-1">3.1 The translation to internal form</a>
+<li><a href="#sec-3-1">3.1. The translation to internal form</a>
 <ul>
-<li><a href="#sec-3-1-1">3.1.1 Step 1: <i>Visibility requirements</i>.</a></li>
-<li><a href="#sec-3-1-2">3.1.2 Step 2: <i>Parsing</i>.</a></li>
-<li><a href="#sec-3-1-3">3.1.3 Step 3: <i>Selecting an internal code</i>.</a></li>
-<li><a href="#sec-3-1-4">3.1.4 Step 4: <i>Translation - Generating postfix code</i>.</a></li>
+<li><a href="#sec-3-1-1">3.1.1. Step 1: <i>Visibility requirements</i>.</a></li>
+<li><a href="#sec-3-1-2">3.1.2. Step 2: <i>Parsing</i>.</a></li>
+<li><a href="#sec-3-1-3">3.1.3. Step 3: <i>Selecting an internal code</i>.</a></li>
+<li><a href="#sec-3-1-4">3.1.4. Step 4: <i>Translation - Generating postfix code</i>.</a></li>
 </ul>
 </li>
-<li><a href="#sec-3-2">3.2 The truth table generator</a>
+<li><a href="#sec-3-2">3.2. The truth table generator</a>
 <ul>
-<li><a href="#sec-3-2-1">3.2.1 Step 5: <i>Assigning values to variables</i>.</a></li>
-<li><a href="#sec-3-2-2">3.2.2 Step 6: <i>The evaluator</i>.</a></li>
-</ul></li>
+<li><a href="#sec-3-2-1">3.2.1. Step 5: <i>Assigning values to variables</i>.</a></li>
+<li><a href="#sec-3-2-2">3.2.2. Step 6: <i>The evaluator</i>.</a></li>
 </ul>
 </li>
-<li><a href="#sec-4">4 The program</a></li>
-<li><a href="#sec-5">5 Exercises and reading</a>
+</ul>
+</li>
+<li><a href="#sec-4">4. The program</a></li>
+<li><a href="#sec-5">5. Exercises and reading</a>
 <ul>
-<li><a href="#sec-5-1">5.1 <i>Better output</i>:</a></li>
-<li><a href="#sec-5-2">5.2 <i>Optimisation</i>:</a></li>
-<li><a href="#sec-5-3">5.3 <i>Values of subformulas</i>:</a></li>
-<li><a href="#sec-5-4">5.4 <i>Symbolic operators</i>:</a></li>
-<li><a href="#sec-5-5">5.5 <i>Translator</i>:</a></li>
-<li><a href="#sec-5-6">5.6 <i>Text Macros</i>:</a></li>
-<li><a href="#sec-5-7">5.7 <i>Syntax Macros</i>:</a></li>
-<li><a href="#sec-5-8">5.8 <i>Run Time Calls</i>:</a></li>
-<li><a href="#sec-5-9">5.9 <i>A difficult optimisation</i>:</a></li>
-<li><a href="#sec-5-10">5.10 <i>Other logics</i>:</a></li>
-<li><a href="#sec-5-11">5.11 <i>Cartesian Product</i>:</a></li>
-<li><a href="#sec-5-12">5.12 <i>Reading</i>:</a></li>
-<li><a href="#sec-5-13">5.13 <i>Petri Nets</i>:</a></li>
-<li><a href="#sec-5-14">5.14 <i>Compiling into Pascal</i>:</a></li>
-<li><a href="#sec-5-15">5.15 <i>Petri Nets again</i>:</a></li>
+<li><a href="#sec-5-1">5.1. <i>Better output</i>:</a></li>
+<li><a href="#sec-5-2">5.2. <i>Optimisation</i>:</a></li>
+<li><a href="#sec-5-3">5.3. <i>Values of subformulas</i>:</a></li>
+<li><a href="#sec-5-4">5.4. <i>Symbolic operators</i>:</a></li>
+<li><a href="#sec-5-5">5.5. <i>Translator</i>:</a></li>
+<li><a href="#sec-5-6">5.6. <i>Text Macros</i>:</a></li>
+<li><a href="#sec-5-7">5.7. <i>Syntax Macros</i>:</a></li>
+<li><a href="#sec-5-8">5.8. <i>Run Time Calls</i>:</a></li>
+<li><a href="#sec-5-9">5.9. <i>A difficult optimisation</i>:</a></li>
+<li><a href="#sec-5-10">5.10. <i>Other logics</i>:</a></li>
+<li><a href="#sec-5-11">5.11. <i>Cartesian Product</i>:</a></li>
+<li><a href="#sec-5-12">5.12. <i>Reading</i>:</a></li>
+<li><a href="#sec-5-13">5.13. <i>Petri Nets</i>:</a></li>
+<li><a href="#sec-5-14">5.14. <i>Compiling into Pascal</i>:</a></li>
+<li><a href="#sec-5-15">5.15. <i>Petri Nets again</i>:</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
-
-<div id="outline-container-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <a id="intro" name="intro"></a></h2>
 <div class="outline-text-2" id="text-1">
-
-
 <p>
 In this chapter we shall write a program which reads formulas in propositional logic and writes their truth table.  The input language for the formulas uses infix notation, but the various binary operators have different precedences and they can be repeated.  This minimises the need for parentheses and hence makes formulas much easier to read.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2"><span class="section-number-2">2</span> User manual</h2>
 <div class="outline-text-2" id="text-2">
-
-
 <p>
 The program TRUTAB repeatedly reads formulas in propositional logic and writes truth tables.  The formulas consist of atoms which are constants or variables, together with truth functional operators written in infix notation.  For the truth tables, the program generates all combinations of truth values for the propositional variables that occur in a given formula, and for each combination it evaluates the formula.
 </p>
+
 <p>
 The program indicates its readiness for user input with a <code>?</code> as a prompt.  The grammar for user input is given by the following BNF grammar, where <code>|</code> denotes alternation, <code>[</code> and <code>]</code> denote indefinite repetition, and <code>{</code> and <code>}</code> denote option.  There are the following five productions:
 </p>
 
-
-
-<pre class="example">input        ::=   [formula '.'] | '.'
+<pre class="example">
+input        ::=   [formula '.'] | '.'
 formula      ::=   expression {('&gt;' | '=') formula}
 expression   ::=   term ['v' term]
 term         ::=   factor ['&amp;' factor]
@@ -177,29 +135,26 @@ factor       ::=   'a' | 'b' .. 'z' |
                    '(' formula ')'
 </pre>
 
-
 <p>
 White space characters such as blanks, tabs and newlines are ignored.  If an error occurs during input, an error message is given and the remainder of the current input line is discarded.  If the offending character is <code>X</code>, then the error message will be one of the following:
 </p>
 
-
-
-<pre class="example">seen "X" when "." expected
+<pre class="example">
+seen "X" when "." expected
 seen "X" when beginning of factor expected
 seen "X" when right parenthesis expected
 </pre>
 
-
 <p>
 For each correct input formula a truth table is produced.  For a formula with N propositional variables <code>a</code> .. <code>z</code>, the table consists of a header line and 2<sup>N</sup> lines of truth values.  The header line consists of the variables in the formula, in alphabetical order and separated by a space.  The lines of truth values consist of the truth values of the propositional variables, written under the names of the variables in the header line, then a separating space =" "=, followed by the truth value of the formula.  Note that if the formula only contains the constants <code>0</code> and <code>1</code>, then N=0 and hence there will be 2<sup>0</sup>=1 line in the table, containing just the truth value of the formula.
 </p>
+
 <p>
 The truth value of the formula is computed from the truth values of its subformulas, as follows: The constants <code>0</code> and <code>1</code> evaluate to themselves.  Variables evaluate to the value given by the row.  Compound formulas are evaluated in accordance with these tables, where <code>p</code> and <code>q</code> are arbitrary formulas:
 </p>
 
-
-
-<pre class="example">p q   |     p v q   p &amp; q   p &gt; q   p = q           p   |   -p
+<pre class="example">
+p q   |     p v q   p &amp; q   p &gt; q   p = q           p   |   -p
 ------+----------------------------------           ----+-----
 1 1   |       1       1       1       1             1   |   0
 1 0   |       1       0       0       0             0   |   1
@@ -207,14 +162,12 @@ The truth value of the formula is computed from the truth values of its subformu
 0 0   |       0       0       1       1
 </pre>
 
-
 <p>
 The following is a short interaction with the program.
 </p>
 
-
-
-<pre class="example">?  p &amp; (q v r)  =  (p &amp; q) v (p &amp; r).
+<pre class="example">
+?  p &amp; (q v r)  =  (p &amp; q) v (p &amp; r).
 p q r 
 1 1 1     1
 1 1 0     1
@@ -240,45 +193,31 @@ a b
 ?  .
 </pre>
 
-
 <p>
 Observe how each input line, following the <code>?</code> prompt, is followed by a formula.  The next line is output from the program, it contains just the propositional variables in the formula, 3, 1, 2 and 0 in the examples.  Following that are the 2<sup>N</sup> lines of the truth table.  Note that in these lines the truth value of the formula is <i>not</i> written under the main operator; such a desirable refinement is part of one of the exercises.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3" class="outline-2">
+<div id="outline-container-sec-3" class="outline-2">
 <h2 id="sec-3"><span class="section-number-2">3</span> Designing the implementation</h2>
 <div class="outline-text-2" id="text-3">
-
-
 <p>
 When writing a truth table by hand, we essentially do this: Starting with an assignment of true to all propositional variables that occur in the given formula, we successively generate lines by changing assignments to variables, and for each line we evaluate the formula using the definitions of the operators and using the currently assigned values of the variables.  So the formula is needed repeatedly, and in the program it will have to be read and stored.  As a first design stage, then, the main program has to have this structure: Repeatedly write a prompt, read a formula and store it in internal form, check for the final period <code>.</code>, and then do a truth table on the internal form.  &gt;From the grammar it is easily seen that the definition of formula is (indirectly) recursive, so reading a formula and storing it in internal form is best done by a separate procedure.  Also, writing a truth table is essentially a recursive process, so this will be done by a recursive procedure too.
 </p>
-
 </div>
 
-<div id="outline-container-3-1" class="outline-3">
+<div id="outline-container-sec-3-1" class="outline-3">
 <h3 id="sec-3-1"><span class="section-number-3">3.1</span> The translation to internal form</h3>
 <div class="outline-text-3" id="text-3-1">
-
-
-
-</div>
-
-<div id="outline-container-3-1-1" class="outline-4">
+</div><div id="outline-container-sec-3-1-1" class="outline-4">
 <h4 id="sec-3-1-1"><span class="section-number-4">3.1.1</span> Step 1: <i>Visibility requirements</i>.</h4>
 <div class="outline-text-4" id="text-3-1-1">
-
-
 <p>
 Our first task is to design a procedure for reading and storing formulas, and we concentrate on the reading first.  In the grammar there are actually four non-terminals: <code>formula</code>, <code>expression</code>, <code>term</code> and <code>factor</code>; each of them becomes a reading or parsing procedure.  They have to be arranged in such a way that for any given procedure the ones that it may call are visible to it.  Inspection of the grammar reveals that <code>formula</code> needs <code>expression</code> and itself, <code>expression</code> needs <code>term</code>, <code>term</code> needs <code>factor</code>, and <code>factor</code> needs itself and <code>formula</code>.  A convenient spin-off from the block structure of Pascal is that it makes it easy to satisfy these requirements, by arranging the procedures in this way:
 </p>
 
-
-
-<pre class="example">PROCEDURE formula;
+<pre class="example">
+PROCEDURE formula;
     PROCEDURE expression;
         PROCEDURE term;
             PROCEDURE factor;
@@ -288,26 +227,20 @@ Our first task is to design a procedure for reading and storing formulas, and we
 Body of formula;
 </pre>
 
-
 <p>
 Any procedure can call itself and any more global procedure to its left and any (at most one here) local procedure one step to its right.  This more than satisfies the visibility requirements for the parser.  typical for languages with several infix operators of different precedences.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-1-2" class="outline-4">
+<div id="outline-container-sec-3-1-2" class="outline-4">
 <h4 id="sec-3-1-2"><span class="section-number-4">3.1.2</span> Step 2: <i>Parsing</i>.</h4>
 <div class="outline-text-4" id="text-3-1-2">
-
-
 <p>
 The bodies of each of the four parsing procedures follow the BNF grammar in essential structure: inside <code>formula</code> the curly <code>{ }</code> braces become an <code>IF</code> statement, inside <i>expression</i> and <code>term</code> the square <code>[ ]</code> brackets become <code>WHILE</code> statements, and the choice inside <code>factor</code> becomes the by now familiar <code>CASE</code> statement.  An important point to note is that in some of the detail the parsing procedures have to be different from the parsing procedures for the prefix and the fully parenthesised infix grammars in earlier chapters.  This arises because all infix operators are optional here, so the parsing procedures that deal with them must be able to inspect the next printing character and then either take some appropriate action or ignore it.  That so far ignored character is still sitting there, where it might be picked up by another parsing procedure, or it may be the terminating period.  This also explains why a grammar with optional infix operators needs either a terminator or outermost parentheses.  Hence the body of, for example, <code>PROCEDURE</code> <code>term</code> has to look like this:
 </p>
 
-
-
-<pre class="example">factor;
+<pre class="example">
+factor;
 WHILE ch = '&amp;' DO
     BEGIN
     getch;
@@ -315,65 +248,49 @@ WHILE ch = '&amp;' DO
     END
 </pre>
 
-
 <p>
 For the same reason <code>PROCEDURE</code> <code>factor</code> does not start with a call to <code>getch</code>, but inspects the current character.  And finally, in the main program the initial call to <code>formula</code> has to be preceded by a call to <code>getch</code> and has to be followed by a check for the terminator.  As described up to this point, the parsing procedures merely read formulas and perhaps complain about the two sorts of errors that can occur inside <code>factor</code>.  If you are writing the program yourself, you should get this part right first.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-1-3" class="outline-4">
+<div id="outline-container-sec-3-1-3" class="outline-4">
 <h4 id="sec-3-1-3"><span class="section-number-4">3.1.3</span> Step 3: <i>Selecting an internal code</i>.</h4>
 <div class="outline-text-4" id="text-3-1-3">
-
-
 <p>
-The procedures do not yet store the formula in internal form.  The formula could be stored in an internal form which is identical to the external form being read &mdash; this was the method used in the macro expander, and it was appropriate there.  Even blanks could be stored, and in that case the storing should be done inside the <code>REPEAT</code> loop of <code>getch</code>.  But blanks are not really needed, since they are semantically insignificant; so the storing could be done after the <code>REPEAT</code> loop of <code>getch</code>.  This method would store all the printing characters, including parentheses.  But do we really need these?  After all, they merely serve to override precedences, and precedences are there to save parentheses (Huh?).  For later processing by the truth table generator only essential semantic information is needed, as could be provided by prefix or postfix notation.  (In Chapter 7 we shall see another internal notation.)  It is best to think ahead now and consider how the internal code will be used in the evaluator part of the truth table generator.  The simplest evaluators are recursive, like the infix evaluator in Chapter 3.  Another kind of evaluator uses postfix code which is evaluated on an explicit stack of intermediate values.  The details are described later.
+The procedures do not yet store the formula in internal form.  The formula could be stored in an internal form which is identical to the external form being read &#x2014; this was the method used in the macro expander, and it was appropriate there.  Even blanks could be stored, and in that case the storing should be done inside the <code>REPEAT</code> loop of <code>getch</code>.  But blanks are not really needed, since they are semantically insignificant; so the storing could be done after the <code>REPEAT</code> loop of <code>getch</code>.  This method would store all the printing characters, including parentheses.  But do we really need these?  After all, they merely serve to override precedences, and precedences are there to save parentheses (Huh?).  For later processing by the truth table generator only essential semantic information is needed, as could be provided by prefix or postfix notation.  (In Chapter 7 we shall see another internal notation.)  It is best to think ahead now and consider how the internal code will be used in the evaluator part of the truth table generator.  The simplest evaluators are recursive, like the infix evaluator in Chapter 3.  Another kind of evaluator uses postfix code which is evaluated on an explicit stack of intermediate values.  The details are described later.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-1-4" class="outline-4">
+<div id="outline-container-sec-3-1-4" class="outline-4">
 <h4 id="sec-3-1-4"><span class="section-number-4">3.1.4</span> Step 4: <i>Translation - Generating postfix code</i>.</h4>
 <div class="outline-text-4" id="text-3-1-4">
-
-
 <p>
-As postfix alphabet we take the original infix alphabet, except that for disjunction we use <code>#</code> to avoid confusion with the variable <code>v</code>.  Generating postfix code is done by inserting appropriate calls to a code generating routine into the parsers.  Inside <code>factor</code>, code generation is straightforward in the case of constants and variables.  Negations are generated after the negand, another factor, has been read and its code generated.  For infix operators the code can be generated after the second subformula has been read and translated.  Note that the code for <code>p &amp; q &amp; r</code> will be <code>pq&amp;r&amp;</code>, this has the advantage that the stack will not grow unnecessarily.  But <code>p &gt; q &gt; r</code> should be understood as <code>p &gt; (q &gt; r)</code>, and this should be translated as <code>pqr&gt;&gt;</code>.  For this reason the grammar already makes a distinction between <code>&amp;</code> and <code>v</code> on the one hand, and <code>&gt;</code> on the other.  Another minor point is that inside the parsing procedure for <code>formula</code> a local variable has to be used to save which of <code>&gt;</code> or === had been seen.  Since code has to be generated at several places in the parser, the task is best delegated to a procedure which takes a character parameter.  Its body is similar to where the macro expander stores characters of macros: it increments the variable which indicates the last used part of memory and then deposits its parameter there.
+As postfix alphabet we take the original infix alphabet, except that for disjunction we use <code>#</code> to avoid confusion with the variable <code>v</code>.  Generating postfix code is done by inserting appropriate calls to a code generating routine into the parsers.  Inside <code>factor</code>, code generation is straightforward in the case of constants and variables.  Negations are generated after the negand, another factor, has been read and its code generated.  For infix operators the code can be generated after the second subformula has been read and translated.  Note that the code for <code>p &amp; q &amp; r</code> will be <code>pq&amp;r&amp;</code>, this has the advantage that the stack will not grow unnecessarily.  But <code>p &gt; q &gt; r</code> should be understood as <code>p &gt; (q &gt; r)</code>, and this should be translated as <code>pqr&gt;&gt;</code>.  For this reason the grammar already makes a distinction between <code>&amp;</code> and <code>v</code> on the one hand, and <code>&gt;</code> on the other.  Another minor point is that inside the parsing procedure for <code>formula</code> a local variable has to be used to save which of <code>&gt;</code> or <code>=</code> had been seen.  Since code has to be generated at several places in the parser, the task is best delegated to a procedure which takes a character parameter.  Its body is similar to where the macro expander stores characters of macros: it increments the variable which indicates the last used part of memory and then deposits its parameter there.
 </p>
+
 <p>
 To be able to check that the postfix code is correct, it is useful to be able to see it when developing the program.  The following device is on purpose not documented in the manual: If the formula is not terminated with a period but with a question mark instead, then the program will write out the internal representation of the formula before doing the truth table.  A similar <i>secret</i> device, known to the implementor but not documented in the manual, will be used in many other programs in this book.  Such a device can save endless editing sessions of adding and removing write statements which trace values of variables and of parameters.  The method is probably more useful than a debugger.
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-3-2" class="outline-3">
+<div id="outline-container-sec-3-2" class="outline-3">
 <h3 id="sec-3-2"><span class="section-number-3">3.2</span> The truth table generator</h3>
 <div class="outline-text-3" id="text-3-2">
-
-
 <p>
 The truth table generator receives the internal version of the formula, repeatedly assigns various values to the propositional variables in the formula, and for each complete assignment it evaluates the formula.  Assigning values and evaluating are two distinct tasks.
 </p>
-
 </div>
 
-<div id="outline-container-3-2-1" class="outline-4">
+<div id="outline-container-sec-3-2-1" class="outline-4">
 <h4 id="sec-3-2-1"><span class="section-number-4">3.2.1</span> Step 5: <i>Assigning values to variables</i>.</h4>
 <div class="outline-text-4" id="text-3-2-1">
-
-
 <p>
 Let us begin with the unrealistic case of a formula in which each of the possible 26 possible propositional variables actually occur.  To assign all combinations of truth values to the 26 variables, the program has to make <code>a</code> true and continue, and then make <code>a</code> false and continue.  Continuing means doing the same to <code>b</code>, to <code>c</code> and so forth, hence a recursive solution is called for.  When all propositional variables have been assigned, i.e. when <code>z</code> has been passed, the recursion stops and the formula can be evaluated.  As a first draft, consider a procedure which is initially called with the actual parameter <code>a</code>:
 </p>
 
-
-
-<pre class="example">PROCEDURE table(v : char);
+<pre class="example">
+PROCEDURE table(v : char);
 BEGIN
 IF v &gt; 'z' THEN evaluate the formula ELSE
     BEGIN
@@ -383,14 +300,12 @@ IF v &gt; 'z' THEN evaluate the formula ELSE
 END;
 </pre>
 
-
 <p>
 This is essentially correct for the unrealistic case, but for realistic formulas in which most of the possible 26 variables do not actually occur, something else is needed.  Firstly, before doing the truth table, it is necessary to write the names of all variables that actually occur.  Secondly, in the <code>table</code> procedure, when all the variables have been given values, before evaluating the formula, it is necessary to write the values of the variables that actually occur.  Thirdly, when the body of the <code>table</code> procedure is entered, the parameter variable should be replaced by the next variable that actually occurs.  So instead of recursing with the next possible variable, <code>succ(v)</code>, the alphabetically next actually occurring variable should be used.  A wasteful way of doing so would be to find the next actual variable every time it is needed by searching through the formula.  A better way is to create a set of actual variables as the formula is being read: when <code>factor</code> sees a variable, put it into this set.  This set of actual variables is used at each of the three places mentioned.  In the third of these places, the table procedure, the pseudo code now looks like this:
 </p>
 
-
-
-<pre class="example">PROCEDURE table(v : char);
+<pre class="example">
+PROCEDURE table(v : char);
 BEGIN
 WHILE NOT (v IN the set of actual variables) DO
     v := succ(v);
@@ -407,47 +322,43 @@ IF v &gt; 'z' THEN
 END;
 </pre>
 
-
 <p>
-To stop the <code>WHILE</code> loop from racing off the end, the main program has to put the successor of <code>z</code> into the set to act as a sentinel.  There are several ways of making variables true or false &mdash; one is to have a boolean array, another is to have a set of variables that are currently true.
+To stop the <code>WHILE</code> loop from racing off the end, the main program has to put the successor of <code>z</code> into the set to act as a sentinel.  There are several ways of making variables true or false &#x2014; one is to have a boolean array, another is to have a set of variables that are currently true.
 </p>
+
 <p>
 As described, the procedure executes several <code>WHILE</code> loops, one for each actually occurring variable, but each loop only traverses a portion of the potential variables.  A further, but probably minor improvement is this: The next actuals can be computed globally after the formula has been read and before it is passed to the <code>table</code> procedure.  This can be done by a single <code>FOR</code> loop through all the 26 potential variables, and it creates an array which for each actual variables contains the next actual variable.  The loop also finds the first actual variable, and the <code>table</code> procedure is then called with this first actual variable as a parameter.  (This optimisation is left as one of the exercises.)
 </p>
+
 <p>
 The part of the table generator which generates values of variables is now complete.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-2-2" class="outline-4">
+<div id="outline-container-sec-3-2-2" class="outline-4">
 <h4 id="sec-3-2-2"><span class="section-number-4">3.2.2</span> Step 6: <i>The evaluator</i>.</h4>
 <div class="outline-text-4" id="text-3-2-2">
-
-
 <p>
 Since the length of the postfix representation is known by the time it is being evaluated, the evaluator can consist of a <code>FOR</code> loop which steps through the postfix code, an array of characters.  At each step it examines the current character in the postfix, and depending on what the character is, it does something to a stack of booleans which is initially empty.
 </p>
-<ol>
+
+<ol class="org-ol">
 <li>If the character is one of the two constants, push its value onto the stack; if the character is a propositional variable, look up its current value and push that onto the stack.
-
 </li>
+
 <li>If the character is <code>-</code>, replace the top value on the stack by its negation.
-
 </li>
+
 <li>If the character is a binary operator, replace the two values on the top by a single value computed from the other two; for example, if the character is <code>&amp;</code>, replace the top two values by the value of their conjunction. When the end of the postfix is reached, the stack will contain just one value which is the value of the formula.
 </li>
 </ol>
-
 
 <p>
 Here is an example; for readability the postfix has been spaced out.  Below the postfix code is a trace of the stack; note that <i>time flows from left to right</i>.
 </p>
 
-
-
-<pre class="example">                                infix:
+<pre class="example">
+                                infix:
                                 (p v q v r) &amp; -(s &gt; t &gt; u)
 current values:                 postfix:
 p q r s t u                     p q # r # s t u &gt; &gt; - &amp;
@@ -458,400 +369,346 @@ p q r s t u                     p q # r # s t u &gt; &gt; - &amp;
                         stack:  1 1 1 1 1 1 1 1 1 1 1 0
 </pre>
 
-
 <p>
 The stack is best implemented as an <code>ARRAY</code> of boolean values, together with an integer variable which is the top.  When the formula has been evaluated, its value can be written, but that value should be preceded on the same line by the current values of each of the actual variables.  Before the main program sends the formula to the table generator, it should write a line with the names of the actual variables.  Both the writing of the current values and the writing of the names makes use of the set of actuals collected during parsing.
 </p>
 </div>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-4" class="outline-2">
+<div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4"><span class="section-number-2">4</span> The program</h2>
 <div class="outline-text-2" id="text-4">
-
-
 <p>
 The following is the standard Pascal source for the truth table program TRUTAB.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">PROGRAM truthtable(input,output);
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">truthtable</span>(input,output);
 
 LABEL 1, 99;
 
-CONST
+<span style="color: #ff00ff;">CONST</span>
     maxcode = 200;
     maxstack = 30;
 
-TYPE
-    message = PACKED ARRAY [1..30] OF char;
+<span style="color: #ff00ff;">TYPE</span>
+    <span style="color: #00ffff;">message</span> = <span style="color: #ff00ff;">PACKED</span> <span style="color: #ff00ff;">ARRAY</span> [1..30] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">char</span>;
 
-VAR
-    ch : char;
-    code : ARRAY [1..maxcode] OF char;
-    codeindex : integer;
+<span style="color: #ff00ff;">VAR</span>
+    ch : <span style="color: #ff00ff;">char</span>;
+    code : <span style="color: #ff00ff;">ARRAY</span> [1..maxcode] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">char</span>;
+    codeindex : <span style="color: #ff00ff;">integer</span>;
 
-    occurrences,truevars  : SET OF char;
-    c : char;
+    occurrences,truevars  : <span style="color: #ff00ff;">SET</span> <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">char</span>;
+    c : <span style="color: #ff00ff;">char</span>;
 
-    i : integer;
+    i : <span style="color: #ff00ff;">integer</span>;
 
-PROCEDURE error(mes : message);
-BEGIN (* error *)
-writeln('seen "',ch,'" when ',mes);
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">error</span>(mes : <span style="color: #00ffff;">message</span>);
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">error *)</span>
+writeln(<span style="color: #00ff00;">'seen "'</span>,ch,<span style="color: #00ff00;">'" when '</span>,mes);
 readln;
-GOTO 1
-END; (* error *)
+<span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">1</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">error *)</span>
 
-PROCEDURE getch;
-BEGIN (* getch *)
-REPEAT
-    IF eof THEN goto 99;
-    read(ch);
-    write(ch)   (* for batch use *)
-    UNTIL ch &gt; ' '
-END; (* getch *)
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">getch</span>;
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">getch *)</span>
+<span style="color: #00ffff;">REPEAT</span>
+    <span style="color: #00ffff;">IF</span> eof <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">goto</span> <span style="color: #7fffd4;">99</span>;
+    <span style="color: #00ffff;">read</span>(ch);
+    <span style="color: #00ffff;">write</span>(ch)   <span style="color: #66f;">(* </span><span style="color: #66f;">for batch use *)</span>
+    <span style="color: #00ffff;">UNTIL</span> ch &gt; <span style="color: #00ff00;">' '</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">getch *)</span>
 
-PROCEDURE generate(o : char);
-BEGIN (* generate *)
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">generate</span>(o : <span style="color: #ff00ff;">char</span>);
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">generate *)</span>
 codeindex  :=  codeindex + 1;
 code[codeindex] := o
-END; (* generate *)
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">generate *)</span>
 
-(* - - - - -  T R A N S L A T O R  - - - - - *)
+<span style="color: #66f;">(* </span><span style="color: #66f;">- - - - -  T R A N S L A T O R  - - - - - *)</span>
 
-PROCEDURE formula;
-VAR localchar : char;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">formula</span>;
+<span style="color: #ff00ff;">VAR</span> localchar : <span style="color: #ff00ff;">char</span>;
 
-    PROCEDURE expression;
+    <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">expression</span>;
 
-        PROCEDURE term;
+        <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">term</span>;
 
-            PROCEDURE factor;
-            BEGIN
-            CASE ch of
-                'a','b','c','d','e','f','g','h','i',
-                'j','k','l','m','n','o','p','q','r',
-                's','t','u','v','w','x','y','z',
-                '0','1' :
-                    BEGIN
+            <span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">factor</span>;
+            <span style="color: #00ffff;">BEGIN</span>
+            <span style="color: #00ffff;">CASE</span> ch <span style="color: #00ffff;">of</span>
+                <span style="color: #00ff00;">'a'</span>,<span style="color: #00ff00;">'b'</span>,<span style="color: #00ff00;">'c'</span>,<span style="color: #00ff00;">'d'</span>,<span style="color: #00ff00;">'e'</span>,<span style="color: #00ff00;">'f'</span>,<span style="color: #00ff00;">'g'</span>,<span style="color: #00ff00;">'h'</span>,<span style="color: #00ff00;">'i'</span>,
+                <span style="color: #00ff00;">'j'</span>,<span style="color: #00ff00;">'k'</span>,<span style="color: #00ff00;">'l'</span>,<span style="color: #00ff00;">'m'</span>,<span style="color: #00ff00;">'n'</span>,<span style="color: #00ff00;">'o'</span>,<span style="color: #00ff00;">'p'</span>,<span style="color: #00ff00;">'q'</span>,<span style="color: #00ff00;">'r'</span>,
+                <span style="color: #00ff00;">'s'</span>,<span style="color: #00ff00;">'t'</span>,<span style="color: #00ff00;">'u'</span>,<span style="color: #00ff00;">'v'</span>,<span style="color: #00ff00;">'w'</span>,<span style="color: #00ff00;">'x'</span>,<span style="color: #00ff00;">'y'</span>,<span style="color: #00ff00;">'z'</span>,
+                <span style="color: #00ff00;">'0'</span>,<span style="color: #00ff00;">'1'</span> :
+                    <span style="color: #00ffff;">BEGIN</span>
                     generate(ch);
                     occurrences := occurrences + [ch];
                     getch
-                    END;
-                '-' :
-                    BEGIN
+                    <span style="color: #00ffff;">END</span>;
+                <span style="color: #00ff00;">'-'</span> :
+                    <span style="color: #00ffff;">BEGIN</span>
                     getch;
                     factor;
-                    generate('-')
-                    END;
-                '(' :
-                    BEGIN
+                    generate(<span style="color: #00ff00;">'-'</span>)
+                    <span style="color: #00ffff;">END</span>;
+                <span style="color: #00ff00;">'('</span> :
+                    <span style="color: #00ffff;">BEGIN</span>
                     getch;
                     formula;
-                    IF ch = ')' THEN getch ELSE
-                        error('right parenthesis expected    ')
-                    END
+                    <span style="color: #00ffff;">IF</span> ch = <span style="color: #00ff00;">')'</span> <span style="color: #00ffff;">THEN</span> getch <span style="color: #00ffff;">ELSE</span>
+                        error(<span style="color: #00ff00;">'right parenthesis expected    '</span>)
+                    <span style="color: #00ffff;">END</span>
                 OTHERWISE
-                    error('beginning of factor expected  ');
-                END (* CASE *)
-            END; (* factor *)
+                    error(<span style="color: #00ff00;">'beginning of factor expected  '</span>);
+                <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">CASE *)</span>
+            <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">factor *)</span>
 
-        BEGIN (* term *)
+        <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">term *)</span>
         factor;
-        WHILE ch = '&amp;' DO
-            BEGIN
+        <span style="color: #00ffff;">WHILE</span> ch = <span style="color: #00ff00;">'&amp;'</span> <span style="color: #00ffff;">DO</span>
+            <span style="color: #00ffff;">BEGIN</span>
             getch;
             factor;
-            generate('&amp;')
-            END (* WHILE *)
-        END; (* term *)
+            generate(<span style="color: #00ff00;">'&amp;'</span>)
+            <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">WHILE *)</span>
+        <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">term *)</span>
 
-    BEGIN (* expression *)
+    <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">expression *)</span>
     term;
-    WHILE ch IN ['#','v'] DO
-        BEGIN
+    <span style="color: #00ffff;">WHILE</span> ch <span style="color: #00ffff;">IN</span> [<span style="color: #00ff00;">'#'</span>,<span style="color: #00ff00;">'v'</span>] <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">BEGIN</span>
         getch;
         term;
-        generate('#')
-        END (* WHILE *)
-    END; (* expression *)
+        generate(<span style="color: #00ff00;">'#'</span>)
+        <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">WHILE *)</span>
+    <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">expression *)</span>
 
-BEGIN (* formula *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">formula *)</span>
 expression;
-IF (ch = '&gt;') OR (ch = '=') THEN
-    BEGIN
+<span style="color: #00ffff;">IF</span> (ch = <span style="color: #00ff00;">'&gt;'</span>) <span style="color: #00ffff;">OR</span> (ch = <span style="color: #00ff00;">'='</span>) <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">BEGIN</span>
     localchar := ch;
     getch;
     formula;
     generate(localchar)
-    END (* WHILE *)
-END; (* formula *)
+    <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">WHILE *)</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">formula *)</span>
 
-(* - - - - -  T A B L E   G E N E R A T O R  - - - - - *)
+<span style="color: #66f;">(* </span><span style="color: #66f;">- - - - -  T A B L E   G E N E R A T O R  - - - - - *)</span>
 
-PROCEDURE table(v : char);
-VAR c : char;
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">table</span>(v : <span style="color: #ff00ff;">char</span>);
+<span style="color: #ff00ff;">VAR</span> c : <span style="color: #ff00ff;">char</span>;
 
-    FUNCTION val : boolean;
-    VAR
-        s : ARRAY [1..maxstack] OF boolean;
-        t : integer; (* top of stack *)
-        i : integer;
-    BEGIN (* val *)
+    <span style="color: #00ffff;">FUNCTION</span> <span style="color: #ffffff; font-weight: bold;">val</span> : <span style="color: #ff00ff;">boolean</span>;
+    <span style="color: #ff00ff;">VAR</span>
+        s : <span style="color: #ff00ff;">ARRAY</span> [1..maxstack] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">boolean</span>;
+        t : <span style="color: #ff00ff;">integer</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">top of stack *)</span>
+        i : <span style="color: #ff00ff;">integer</span>;
+    <span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">val *)</span>
     t := 0;
-    FOR i := 1 TO codeindex DO
-        CASE code[i] OF
-            'a','b','c','d','e','f','g','h','i','j','k','l','m',
-            'n','o','p','q','r','s','t','u','v','w','x','y','z' :
-                  BEGIN t := t+1; s[t] := code[i] IN truevars END;
-            '1' : BEGIN t := t+1; s[t] := true                END;
-            '0' : BEGIN t := t+1; s[t] := false               END;
-            '-' : BEGIN           s[t] := NOT s[t]            END;
-            '&amp;' : BEGIN t := t-1; s[t] := s[t] AND s[t+1]     END;
-            '#' : BEGIN t := t-1; s[t] := s[t] OR  s[t+1]     END;
-            '&gt;' : BEGIN t := t-1; s[t] := s[t] &lt;=  s[t+1]     END;
-            '=' : BEGIN t := t-1; s[t] := s[t]  =  s[t+1]     END
-            END; (* CASE *)
+    <span style="color: #00ffff;">FOR</span> i := 1 <span style="color: #00ffff;">TO</span> codeindex <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">CASE</span> code[i] <span style="color: #00ffff;">OF</span>
+            <span style="color: #00ff00;">'a'</span>,<span style="color: #00ff00;">'b'</span>,<span style="color: #00ff00;">'c'</span>,<span style="color: #00ff00;">'d'</span>,<span style="color: #00ff00;">'e'</span>,<span style="color: #00ff00;">'f'</span>,<span style="color: #00ff00;">'g'</span>,<span style="color: #00ff00;">'h'</span>,<span style="color: #00ff00;">'i'</span>,<span style="color: #00ff00;">'j'</span>,<span style="color: #00ff00;">'k'</span>,<span style="color: #00ff00;">'l'</span>,<span style="color: #00ff00;">'m'</span>,
+            <span style="color: #00ff00;">'n'</span>,<span style="color: #00ff00;">'o'</span>,<span style="color: #00ff00;">'p'</span>,<span style="color: #00ff00;">'q'</span>,<span style="color: #00ff00;">'r'</span>,<span style="color: #00ff00;">'s'</span>,<span style="color: #00ff00;">'t'</span>,<span style="color: #00ff00;">'u'</span>,<span style="color: #00ff00;">'v'</span>,<span style="color: #00ff00;">'w'</span>,<span style="color: #00ff00;">'x'</span>,<span style="color: #00ff00;">'y'</span>,<span style="color: #00ff00;">'z'</span> :
+                  <span style="color: #00ffff;">BEGIN</span> t := t+1; s[t] := code[i] <span style="color: #00ffff;">IN</span> truevars <span style="color: #00ffff;">END</span>;
+            <span style="color: #00ff00;">'1'</span> : <span style="color: #00ffff;">BEGIN</span> t := t+1; s[t] := true                <span style="color: #00ffff;">END</span>;
+            <span style="color: #00ff00;">'0'</span> : <span style="color: #00ffff;">BEGIN</span> t := t+1; s[t] := false               <span style="color: #00ffff;">END</span>;
+            <span style="color: #00ff00;">'-'</span> : <span style="color: #00ffff;">BEGIN</span>           s[t] := <span style="color: #00ffff;">NOT</span> s[t]            <span style="color: #00ffff;">END</span>;
+            <span style="color: #00ff00;">'&amp;'</span> : <span style="color: #00ffff;">BEGIN</span> t := t-1; s[t] := s[t] <span style="color: #00ffff;">AND</span> s[t+1]     <span style="color: #00ffff;">END</span>;
+            <span style="color: #00ff00;">'#'</span> : <span style="color: #00ffff;">BEGIN</span> t := t-1; s[t] := s[t] <span style="color: #00ffff;">OR</span>  s[t+1]     <span style="color: #00ffff;">END</span>;
+            <span style="color: #00ff00;">'&gt;'</span> : <span style="color: #00ffff;">BEGIN</span> t := t-1; s[t] := s[t] &lt;=  s[t+1]     <span style="color: #00ffff;">END</span>;
+            <span style="color: #00ff00;">'='</span> : <span style="color: #00ffff;">BEGIN</span> t := t-1; s[t] := s[t]  =  s[t+1]     <span style="color: #00ffff;">END</span>
+            <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">CASE *)</span>
     val := s[1]
-    END; (* val *)
+    <span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">val *)</span>
 
-BEGIN (* table *)
-WHILE NOT (v IN occurrences) DO v := succ(v);
-IF v &gt; 'z' THEN
-    BEGIN
-    FOR v := 'a' TO 'z' DO
-        IF v IN occurrences
-            THEN write(ord(v IN truevars):1,' ');
-    writeln('    ',ord(val):1)
-    END
-  ELSE
-    BEGIN
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">table *)</span>
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> (v <span style="color: #00ffff;">IN</span> occurrences) <span style="color: #00ffff;">DO</span> v := succ(v);
+<span style="color: #00ffff;">IF</span> v &gt; <span style="color: #00ff00;">'z'</span> <span style="color: #00ffff;">THEN</span>
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">FOR</span> v := <span style="color: #00ff00;">'a'</span> <span style="color: #00ffff;">TO</span> <span style="color: #00ff00;">'z'</span> <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">IF</span> v <span style="color: #00ffff;">IN</span> occurrences
+            <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(ord(v <span style="color: #00ffff;">IN</span> truevars):1,<span style="color: #00ff00;">' '</span>);
+    writeln(<span style="color: #00ff00;">'    '</span>,ord(val):1)
+    <span style="color: #00ffff;">END</span>
+  <span style="color: #00ffff;">ELSE</span>
+    <span style="color: #00ffff;">BEGIN</span>
     truevars := truevars + [v]; table(succ(v));
     truevars := truevars - [v]; table(succ(v))
-    END
-END; (* table *)
+    <span style="color: #00ffff;">END</span>
+<span style="color: #00ffff;">END</span>; <span style="color: #66f;">(* </span><span style="color: #66f;">table *)</span>
 
-(* - - - - -  M A I N  - - - - - *)
+<span style="color: #66f;">(* </span><span style="color: #66f;">- - - - -  M A I N  - - - - - *)</span>
 
-BEGIN (* main *)
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 1:
-REPEAT
-    write('? ');
+<span style="color: #00ffff;">REPEAT</span>
+    <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'? '</span>);
     getch;
-    IF ch = '.' THEN GOTO 99;
-    codeindex := 0; occurrences := [succ('z')];
+    <span style="color: #00ffff;">IF</span> ch = <span style="color: #00ff00;">'.'</span> <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">99</span>;
+    codeindex := 0; occurrences := [succ(<span style="color: #00ff00;">'z'</span>)];
     formula;
-    IF NOT (ch IN ['.','?']) THEN
-        error('"." expected                  ');
+    <span style="color: #00ffff;">IF</span> <span style="color: #00ffff;">NOT</span> (ch <span style="color: #00ffff;">IN</span> [<span style="color: #00ff00;">'.'</span>,<span style="color: #00ff00;">'?'</span>]) <span style="color: #00ffff;">THEN</span>
+        error(<span style="color: #00ff00;">'"." expected                  '</span>);
     writeln;
-    IF ch = '?' THEN
-        BEGIN
-        write('POSTFIX: ');
-        FOR i := 1 TO codeindex DO write(code[i]);
+    <span style="color: #00ffff;">IF</span> ch = <span style="color: #00ff00;">'?'</span> <span style="color: #00ffff;">THEN</span>
+        <span style="color: #00ffff;">BEGIN</span>
+        <span style="color: #00ffff;">write</span>(<span style="color: #00ff00;">'POSTFIX: '</span>);
+        <span style="color: #00ffff;">FOR</span> i := 1 <span style="color: #00ffff;">TO</span> codeindex <span style="color: #00ffff;">DO</span> <span style="color: #00ffff;">write</span>(code[i]);
         writeln
-        END;
-    FOR c := 'a' TO 'z' DO
-        IF c IN occurrences THEN write(c,' ');
+        <span style="color: #00ffff;">END</span>;
+    <span style="color: #00ffff;">FOR</span> c := <span style="color: #00ff00;">'a'</span> <span style="color: #00ffff;">TO</span> <span style="color: #00ff00;">'z'</span> <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">IF</span> c <span style="color: #00ffff;">IN</span> occurrences <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">write</span>(c,<span style="color: #00ff00;">' '</span>);
     writeln;
-    table('a')
-    UNTIL false;
+    table(<span style="color: #00ff00;">'a'</span>)
+    <span style="color: #00ffff;">UNTIL</span> false;
 99:
-END.
+<span style="color: #00ffff;">END</span>.
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-5" class="outline-2">
+</div>
+<div id="outline-container-sec-5" class="outline-2">
 <h2 id="sec-5"><span class="section-number-2">5</span> Exercises and reading</h2>
 <div class="outline-text-2" id="text-5">
-
-
-
-</div>
-
-<div id="outline-container-5-1" class="outline-3">
+</div><div id="outline-container-sec-5-1" class="outline-3">
 <h3 id="sec-5-1"><span class="section-number-3">5.1</span> <i>Better output</i>:</h3>
 <div class="outline-text-3" id="text-5-1">
-
-
 <p>
 Modify the program so that after doing the truth table for a formula it will write <code>tautology</code> if the formula was true in every line, <code>selfcontradiction</code> if the formula was false in every line, and <code>contingent</code> if the formula was true in some lines and false in others.  Looking at large truth table is boring, so some users might prefer merely to be told whether the formula they have typed is a tautology, a self contradiction, or a contingency.  Devise a way of letting the user tell the program whether the entire table is required.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-2" class="outline-3">
+<div id="outline-container-sec-5-2" class="outline-3">
 <h3 id="sec-5-2"><span class="section-number-3">5.2</span> <i>Optimisation</i>:</h3>
 <div class="outline-text-3" id="text-5-2">
-
-<p>Implement the optimisation outlined at the end of the description of the table procedure.
+<p>
+Implement the optimisation outlined at the end of the description of the table procedure.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-3" class="outline-3">
+<div id="outline-container-sec-5-3" class="outline-3">
 <h3 id="sec-5-3"><span class="section-number-3">5.3</span> <i>Values of subformulas</i>:</h3>
 <div class="outline-text-3" id="text-5-3">
-
-<p>Change the program so that in every line it will write the values of all subformulas, directly underneath the operators of the formula as typed in by the user.
+<p>
+Change the program so that in every line it will write the values of all subformulas, directly underneath the operators of the formula as typed in by the user.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-4" class="outline-3">
+<div id="outline-container-sec-5-4" class="outline-3">
 <h3 id="sec-5-4"><span class="section-number-3">5.4</span> <i>Symbolic operators</i>:</h3>
 <div class="outline-text-3" id="text-5-4">
-
-<p>Modify the program so that it can use <code>NOT</code>, <code>AND</code>, <code>OR</code>, <code>IMP</code> and <code>IFF</code> as the operators.
+<p>
+Modify the program so that it can use <code>NOT</code>, <code>AND</code>, <code>OR</code>, <code>IMP</code> and <code>IFF</code> as the operators.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-5" class="outline-3">
+<div id="outline-container-sec-5-5" class="outline-3">
 <h3 id="sec-5-5"><span class="section-number-3">5.5</span> <i>Translator</i>:</h3>
 <div class="outline-text-3" id="text-5-5">
-
-<p>If you have devised a way of translating from fully parenthesised infix notation to prefix notation, then you might consider the problem of translating from the minimally parenthesised infix notation with operator precedences to prefix notation.  More likely than not, the method you used for the fully parenthesised notation will not work for the minimally parenthesised notation.
+<p>
+If you have devised a way of translating from fully parenthesised infix notation to prefix notation, then you might consider the problem of translating from the minimally parenthesised infix notation with operator precedences to prefix notation.  More likely than not, the method you used for the fully parenthesised notation will not work for the minimally parenthesised notation.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-6" class="outline-3">
+<div id="outline-container-sec-5-6" class="outline-3">
 <h3 id="sec-5-6"><span class="section-number-3">5.6</span> <i>Text Macros</i>:</h3>
 <div class="outline-text-3" id="text-5-6">
-
-<p>Devise a way for users to define (upper case) string or text macros, similar to the macro expander in Chapter 4.  Any formula can then be preceded by a sequence of macro definitions, and procedure <code>getch</code> has to know whether it is supposed to be reading from the input file or whether it is supposed to retrieve characters from a macro.  An alternative is to allow definitions anywhere in a formula, in that case even definitions should be handled by <code>getch</code>, and neither the main program nor the parsing procedures know anything about macros.  Text macros are extremely powerful, they would allow definitions such as <code>A = = =(p &amp; q)</code> but also definitions such as <code>B = = =(((-</code> or the equally strange <code>C = = =&amp; r) &gt; s))</code>.  However, macros such as <code>B</code> and <code>C</code> can be very error-prone in use.
+<p>
+Devise a way for users to define (upper case) string or text macros, similar to the macro expander in Chapter 4.  Any formula can then be preceded by a sequence of macro definitions, and procedure <code>getch</code> has to know whether it is supposed to be reading from the input file or whether it is supposed to retrieve characters from a macro.  An alternative is to allow definitions anywhere in a formula, in that case even definitions should be handled by <code>getch</code>, and neither the main program nor the parsing procedures know anything about macros.  Text macros are extremely powerful, they would allow definitions such as <code>A = = =(p &amp; q)</code> but also definitions such as <code>B = = =(((-</code> or the equally strange <code>C = = =&amp; r) &gt; s))</code>.  However, macros such as <code>B</code> and <code>C</code> can be very error-prone in use.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-7" class="outline-3">
+<div id="outline-container-sec-5-7" class="outline-3">
 <h3 id="sec-5-7"><span class="section-number-3">5.7</span> <i>Syntax Macros</i>:</h3>
 <div class="outline-text-3" id="text-5-7">
-
-<p>At the expense of expressive power, the above difficulty can be avoided by insisting that in any macro the body, the right hand side, is actually processed by the parser and that it has to be a complete formula or maybe a factor.  This will allow macro <code>A</code> but not macros <code>B</code> and <code>C</code>.  There are two methods in which the body might be stored: in source form or in translated form.  In both a call to a macro occurs inside a factor, as an atom.  In the first method the body would have to be translated at every call.  In the second method the translated form would merely be copied at every call, clearly this method is more efficient.  Neither text macros nor syntax macros require any change to the stack evaluator.
+<p>
+At the expense of expressive power, the above difficulty can be avoided by insisting that in any macro the body, the right hand side, is actually processed by the parser and that it has to be a complete formula or maybe a factor.  This will allow macro <code>A</code> but not macros <code>B</code> and <code>C</code>.  There are two methods in which the body might be stored: in source form or in translated form.  In both a call to a macro occurs inside a factor, as an atom.  In the first method the body would have to be translated at every call.  In the second method the translated form would merely be copied at every call, clearly this method is more efficient.  Neither text macros nor syntax macros require any change to the stack evaluator.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-8" class="outline-3">
+<div id="outline-container-sec-5-8" class="outline-3">
 <h3 id="sec-5-8"><span class="section-number-3">5.8</span> <i>Run Time Calls</i>:</h3>
 <div class="outline-text-3" id="text-5-8">
-
-<p>Instead of expanding macros in the parser it is possible not to expand at all but to generate a call to the macro in the postfix code, effectively treating all upper and lower case letters as atoms merely to be distinguished at run time.  In that case the stack evaluator will need an additional case for upper case atoms: it has to stop executing the current postfix formula and instead start executing the postfix formula which is the translated body of the defined atom, and when it has finished with that formula it has to resume executing the previous formula.  There are two ways of implementing this: In one the stack evaluator uses recursion for such calls, and probably this is the simplest method (it is the method that will be used in Chapter 7).  In another method the evaluator saves where it has to resume on an explicit stack of return addresses, and when it has finished executing a defined formula it picks up the return address from that stack (this is the method used in Chapters 13 and 14).
+<p>
+Instead of expanding macros in the parser it is possible not to expand at all but to generate a call to the macro in the postfix code, effectively treating all upper and lower case letters as atoms merely to be distinguished at run time.  In that case the stack evaluator will need an additional case for upper case atoms: it has to stop executing the current postfix formula and instead start executing the postfix formula which is the translated body of the defined atom, and when it has finished with that formula it has to resume executing the previous formula.  There are two ways of implementing this: In one the stack evaluator uses recursion for such calls, and probably this is the simplest method (it is the method that will be used in Chapter 7).  In another method the evaluator saves where it has to resume on an explicit stack of return addresses, and when it has finished executing a defined formula it picks up the return address from that stack (this is the method used in Chapters 13 and 14).
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-9" class="outline-3">
+<div id="outline-container-sec-5-9" class="outline-3">
 <h3 id="sec-5-9"><span class="section-number-3">5.9</span> <i>A difficult optimisation</i>:</h3>
 <div class="outline-text-3" id="text-5-9">
-
-<p>Consider <code>(p v q) &amp; (r v s)</code> in the first four lines of the truth table.  Since the <code>p</code> and <code>q</code> do not change, <code>p v q</code> should not have to be recomputed.  Can you think of an algorithm which avoids this?
+<p>
+Consider <code>(p v q) &amp; (r v s)</code> in the first four lines of the truth table.  Since the <code>p</code> and <code>q</code> do not change, <code>p v q</code> should not have to be recomputed.  Can you think of an algorithm which avoids this?
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-10" class="outline-3">
+<div id="outline-container-sec-5-10" class="outline-3">
 <h3 id="sec-5-10"><span class="section-number-3">5.10</span> <i>Other logics</i>:</h3>
 <div class="outline-text-3" id="text-5-10">
-
-<p>Study one of the non-classical logic which has 3 or more truth values, see Martin (1987) for some such systems.  Adapt the program for such a logic.
+<p>
+Study one of the non-classical logic which has 3 or more truth values, see Martin (1987) for some such systems.  Adapt the program for such a logic.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-11" class="outline-3">
+<div id="outline-container-sec-5-11" class="outline-3">
 <h3 id="sec-5-11"><span class="section-number-3">5.11</span> <i>Cartesian Product</i>:</h3>
 <div class="outline-text-3" id="text-5-11">
-
-
 <p>
 Write a program which repeatedly reads expressions which are Cartesian products of sets and then writes out the set of n-tuples of the product.  Use <code>a</code>..=z= as elements, use <code>{</code> and <code>}</code> to enclose (possibly empty) sets, use <code>*</code> to form products. In the output, use <code>&amp;lt</code> and <code>&gt;</code> to enclose tuples.  Example:
 </p>
 
-
-
-<pre class="example">input   {ab} * {cde} * {fg}.
+<pre class="example">
+input   {ab} * {cde} * {fg}.
 output  {&lt;acf&gt;&lt;acg&gt;&lt;adf&gt;&lt;adg&gt;&lt;aef&gt;&lt;aeg&gt;&lt;bcf&gt;&lt;bcg&gt;&lt;bdf&gt;&lt;bdg&gt;&lt;bef&gt;&lt;beg&gt;}
 </pre>
-
 
 <p>
 For long output lines you will have to be careful not to exceed the size of Pascal's output buffer, you will have to insert new lines as appropriate.  You will find the method used to generate all combinations of truth values in the truth table program useful here.  (This exercise was suggested to me by Yum Kwok Keung.)
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-12" class="outline-3">
+<div id="outline-container-sec-5-12" class="outline-3">
 <h3 id="sec-5-12"><span class="section-number-3">5.12</span> <i>Reading</i>:</h3>
 <div class="outline-text-3" id="text-5-12">
-
-<p>Compare the program designed in this chapter with the truth table algorithm given by Schagrin, Rapaport and Dipert (1985, pp 108 - 109) and their evaluation algorithm (p 91).  One lesson to learn from their attempt is that formulas just are not strings.  For a recursive descent program which translates arithmetical expressions from minimally parenthesised infix notation to postfix notation, see McCracken (1987, pp 162 - 169).  Many books on compilers will contain something similar.
+<p>
+Compare the program designed in this chapter with the truth table algorithm given by Schagrin, Rapaport and Dipert (1985, pp 108 - 109) and their evaluation algorithm (p 91).  One lesson to learn from their attempt is that formulas just are not strings.  For a recursive descent program which translates arithmetical expressions from minimally parenthesised infix notation to postfix notation, see McCracken (1987, pp 162 - 169).  Many books on compilers will contain something similar.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-13" class="outline-3">
+<div id="outline-container-sec-5-13" class="outline-3">
 <h3 id="sec-5-13"><span class="section-number-3">5.13</span> <i>Petri Nets</i>:</h3>
 <div class="outline-text-3" id="text-5-13">
-
-<p>Consider a system comprising several propositional variables Any particular change <i>may</i> occur if some variables specific to the change are true and some variables specific to the change are false.  If a particular change does occur, then the variables required to be true or false all change their truth value to the opposite.  One question that arises for such a system is whether there are possible assignments of truth values to the variables for which none of the permitted changes is possible.  A dual question is whether there are assignments which cannot be the result of any of the permitted changes.  1)~Show how the truth table program can be used to answer these two kinds of questions for any particular system of variables and changes.  2)~Modify the program so that instead of reading a formula it reads a system of changes and answers these two questions.  You will have to design a suitable notation for the changes.
+<p>
+Consider a system comprising several propositional variables Any particular change <i>may</i> occur if some variables specific to the change are true and some variables specific to the change are false.  If a particular change does occur, then the variables required to be true or false all change their truth value to the opposite.  One question that arises for such a system is whether there are possible assignments of truth values to the variables for which none of the permitted changes is possible.  A dual question is whether there are assignments which cannot be the result of any of the permitted changes.  1)~Show how the truth table program can be used to answer these two kinds of questions for any particular system of variables and changes.  2)~Modify the program so that instead of reading a formula it reads a system of changes and answers these two questions.  You will have to design a suitable notation for the changes.
 </p>
+
 <p>
 In the literature systems like the above are known as (simple) Petri nets.  The variables are called <i>places</i>, and they are said to be occupied by a <i>token</i> or to be empty.  The changes are called <i>transitions</i>, and they are always given names.  A transition is said to be <i>enabled</i> if there are so-called <i>input arcs</i> from the places they require to contain a token and there are so-called <i>output arcs</i> to the places they require to be empty.  If an enabled transition does produce its change, it is said to <i>fire</i>, and then tokens are removed from the places connected to the transition by input arcs, and tokens are sent to places connected to the transition by output arcs.  A particular distribution of tokens at a particular time is called a <i>marking</i>.  Nets are often presented as a graph, in particular, a bi-partite graph of places and transitions, with input arcs and output arcs connecting them.  The first question in the previous paragraph asks whether there are markings for which the net will <i>deadlock</i>, the second asks whether there are <i>unreachable</i> markings.  For some more reading, see Chapter~20 and the references given there.  As may be seen, the usual terminology does not make it obvious how close such nets are to propositional logic, and that a simple truth table program can answer significant questions about nets.  In practice, however, nets tend to have so many places that a truth table program is not really adequate.  The truth tree or semantic tableau program in Chapter 10 presents some improvements.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-14" class="outline-3">
+<div id="outline-container-sec-5-14" class="outline-3">
 <h3 id="sec-5-14"><span class="section-number-3">5.14</span> <i>Compiling into Pascal</i>:</h3>
 <div class="outline-text-3" id="text-5-14">
-
-<p>For large truth tables the <i>interpretation</i> of the postfix code could be too slow.  The same is true for any other internal code that needs interpretation.  It might be faster to <i>compile</i> the formula to be tested into an (inputless) Pascal program which, when run, produces either all lines in the truth table, or only those lines, if any, in which the formula is false, or only the first line, if there is one, in which it is false.  The resultant Pascal program should look like the program in Chapter 1: it will consist of several nested <code>FOR</code> loops and a write statement.  Can you write such a compiler from formulas to Pascal without reading the formula twice?  Without storing the formula internally?  The computation cost for such a system will of course consist of the compile cost and the run cost &mdash; so it will only be worth it for very large formulas.
+<p>
+For large truth tables the <i>interpretation</i> of the postfix code could be too slow.  The same is true for any other internal code that needs interpretation.  It might be faster to <i>compile</i> the formula to be tested into an (inputless) Pascal program which, when run, produces either all lines in the truth table, or only those lines, if any, in which the formula is false, or only the first line, if there is one, in which it is false.  The resultant Pascal program should look like the program in Chapter 1: it will consist of several nested <code>FOR</code> loops and a write statement.  Can you write such a compiler from formulas to Pascal without reading the formula twice?  Without storing the formula internally?  The computation cost for such a system will of course consist of the compile cost and the run cost &#x2014; so it will only be worth it for very large formulas.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-5-15" class="outline-3">
+<div id="outline-container-sec-5-15" class="outline-3">
 <h3 id="sec-5-15"><span class="section-number-3">5.15</span> <i>Petri Nets again</i>:</h3>
 <div class="outline-text-3" id="text-5-15">
-
-<p>Write two compilers for a little Petri net language to Pascal to test a given net for deadlock and for unreachability.  Alternatively, write a dual purpose compiler.
+<p>
+Write two compilers for a little Petri net language to Pascal to test a given net for deadlock and for unreachability.  Alternatively, write a dual purpose compiler.
 </p>
 </div>
 </div>
 </div>
-</div>
-
-<div id="postamble">
-<p class="date">Date: 2013-01-11 07:38:09 CST</p>
-<p class="author">Author: michal</p>
-<p class="creator">Org version 7.8.11 with Emacs version 24</p>
-<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
-
 </div>
 </body>
 </html>

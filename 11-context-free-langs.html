@@ -1,66 +1,38 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<title>Chapter x : Context free languages</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Chapter x : Context free languages"/>
+<title>Chapter 11 : Context free languages</title>
+<!-- 2013-05-31 Fri 19:02 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-01-11 07:38:01 CST"/>
 <meta name="author" content="michal"/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
-<style type="text/css">
- <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
-  .title  { text-align: center; }
-  .todo   { color: red; }
-  .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
-  .timestamp { color: #bebebe; }
-  .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
-  pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
-  }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
-  dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
-    background: #ffffcc;
-  }
-  textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
-  /*]]>*/-->
-</style>
+<link rel="stylesheet" type="text/css" href="/etc/style.css">
 <script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012  Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
 <!--/*--><![CDATA[/*><!--*/
  function CodeHighlightOn(elem, id)
  {
@@ -82,63 +54,44 @@
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
-
-</div>
-
 <div id="content">
-<h1 class="title">Chapter x : Context free languages</h1>
-
-<p>&lt;HTML&gt;
-&lt;head&gt;
-&lt;TITLE&gt;SYMBOLIC PROCESSING IN PASCAL - Chapter 11&lt;/TITLE&gt;
-&lt;/head&gt;
-</p>
-<p>
-&lt;body&gt;
-</p>
-
+<h1 class="title">Chapter 11 : Context free languages</h1>
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 intro</a></li>
-<li><a href="#sec-2">2 Grammars</a>
+<li><a href="#sec-1">1. </a></li>
+<li><a href="#sec-2">2. Grammars</a>
 <ul>
-<li><a href="#sec-2-1">2.1 User manual</a></li>
-<li><a href="#sec-2-2">2.2 An example run</a></li>
+<li><a href="#sec-2-1">2.1. User manual</a></li>
+<li><a href="#sec-2-2">2.2. An example run</a></li>
 </ul>
 </li>
-<li><a href="#sec-3">3 Designing the implementation</a>
+<li><a href="#sec-3">3. Designing the implementation</a>
 <ul>
-<li><a href="#sec-3-1">3.1 Reading and storing the grammar</a></li>
-<li><a href="#sec-3-2">3.2 Processing input strings</a></li>
+<li><a href="#sec-3-1">3.1. Reading and storing the grammar</a></li>
+<li><a href="#sec-3-2">3.2. Processing input strings</a></li>
 </ul>
 </li>
-<li><a href="#sec-4">4 The program</a></li>
-<li><a href="#sec-5">5 Exercises and reading</a></li>
-<li><a href="#sec-6">6 Proplog &mdash; propositional Prolog</a>
+<li><a href="#sec-4">4. The program</a></li>
+<li><a href="#sec-5">5. Exercises and reading</a></li>
+<li><a href="#sec-6">6. Proplog &#x2014; propositional Prolog</a>
 <ul>
-<li><a href="#sec-6-1">6.1 Generalising the use of grammars</a></li>
-<li><a href="#sec-6-2">6.2 A dramatic restriction on productions</a></li>
-<li><a href="#sec-6-3">6.3 A logical interpretation</a></li>
-<li><a href="#sec-6-4">6.4 <i>Exercise</i>:</a></li>
-<li><a href="#sec-6-5">6.5 <i>Negation</i>:</a></li>
+<li><a href="#sec-6-1">6.1. Generalising the use of grammars</a></li>
+<li><a href="#sec-6-2">6.2. A dramatic restriction on productions</a></li>
+<li><a href="#sec-6-3">6.3. A logical interpretation</a></li>
+<li><a href="#sec-6-4">6.4. <i>Exercise</i>:</a></li>
+<li><a href="#sec-6-5">6.5. <i>Negation</i>:</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
-
-<div id="outline-container-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <a id="intro" name="intro"></a></h2>
 <div class="outline-text-2" id="text-1">
-
-
 <p>
 In this chapter we write a small program
 which parses strings in accordance with
@@ -147,14 +100,10 @@ The program uses the same backtracking technique
 as the programs in the preceding two chapters.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2"><span class="section-number-2">2</span> Grammars</h2>
 <div class="outline-text-2" id="text-2">
-
-
 <p>
 We return to the topic of formal language theory.
 So far we have used grammars for describing the syntax
@@ -181,6 +130,7 @@ and then determine whether input strings
 provided by the user are in the language
 defined by the grammar.
 </p>
+
 <p>
 In most languages white space characters such as
 blanks, tabs and new lines play a very special role:
@@ -193,14 +143,11 @@ So in the program that we shall write,
 white space is to be allowed for readable input,
 but will not be passed as input to the parser.
 </p>
-
 </div>
 
-<div id="outline-container-2-1" class="outline-3">
+<div id="outline-container-sec-2-1" class="outline-3">
 <h3 id="sec-2-1"><span class="section-number-3">2.1</span> User manual</h3>
 <div class="outline-text-3" id="text-2-1">
-
-
 <p>
 The program reads one context free grammar
 and then it repeatedly reads strings to determine whether
@@ -210,9 +157,8 @@ in accordance with the following grammar,
 so this is a <i>grammar</i> for <i>grammars</i>:
 </p>
 
-
-
-<pre class="example">grammar         ::=   production  [ ';' production ]  '.'
+<pre class="example">
+grammar         ::=   production  [ ';' production ]  '.'
 production      ::=   identifier  '='  expression
 identifier      ::=   letter  [ letter | digit | underscore ]
 letter          ::=   'A' .. 'Z' | 'a' .. 'z'
@@ -226,7 +172,6 @@ factor          ::=   identifier
                 |  '[' expression ']'
                 |  '{' expression '}'
 </pre>
-
 
 <p>
 Thus a grammar consists of one or more productions
@@ -250,6 +195,7 @@ or an expression in (round) parentheses for overriding precedences,
 or an expression in (square) brackets to be repeated zero or more times,
 or an expression in (curly) braces to be repeated zero or one times.
 </p>
+
 <p>
 A further restriction,
 one which cannot be expressed by the above context free grammar,
@@ -258,31 +204,28 @@ occur on the left hand side of some production.
 It does not matter whether the definition of that identifier
 occurs before or after its first use in a factor.
 </p>
+
 <p>
 During the reading of the program any context free errors are reported
 in the form
 </p>
 
-
-
-<pre class="example">error: seen "X" when MESSAGE
+<pre class="example">
+error: seen "X" when MESSAGE
 </pre>
-
 
 <p>
 where <code>X</code> is the last identifier or single character seen, and
 <code>MESSAGE</code> is one of the following:
 </p>
 
-
-
-<pre class="example">no white space as terminal              no "." as terminal
+<pre class="example">
+no white space as terminal              no "." as terminal
 this character is illegal               beginning of factor expected
 ")" expected                            "]" expected
 "}" expected                            non-terminal for production
 "=" expected in production              "." expected at end of grammar
 </pre>
-
 
 <p>
 There is one possible context sensitive error:
@@ -291,27 +234,26 @@ is found to be undefined, then
 an error is reported in the form
 </p>
 
-
-
-<pre class="example">undefined non-terminal N
+<pre class="example">
+undefined non-terminal N
 </pre>
-
 
 <p>
 The first error found in the grammar causes the program to exit.
 </p>
+
 <p>
 When the grammar has been read successfully,
 the program is ready to read any number of strings,
 each terminated by a period.
-The strings may contain white space &mdash; blanks, tabs and newlines,
+The strings may contain white space &#x2014; blanks, tabs and newlines,
 but such white space is ignored.
 A string may contain up to a maximum of 100 printing characters.
 For each string that has been read an attempt is made
 to parse any initial segment of the string,
 including the whole string, in accordance with the grammar.
 If there are successful parses of any initial segments,
-the message = &hellip; well-formed -= is written on an output line.
+the message = &#x2026; well-formed -= is written on an output line.
 Then follow sequentially numbered lines each containing
 first an initial segment, then a longer space,
 and then the remainder, if any, of the input string.
@@ -319,7 +261,7 @@ If any one segment can be parsed in different ways,
 then the segment will be printed out as often as it can be parsed.
 On the other hand,
 if there are no successful parses of any initial segment of the input string,
-then the message = &hellip; ill-formed=
+then the message = &#x2026; ill-formed=
 is written on one line.
 The program terminates when the end of the input file
 has been reached, even if this occurs
@@ -327,14 +269,10 @@ during the reading of the grammar or during the reading
 of an input string.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2-2" class="outline-3">
+<div id="outline-container-sec-2-2" class="outline-3">
 <h3 id="sec-2-2"><span class="section-number-3">2.2</span> An example run</h3>
 <div class="outline-text-3" id="text-2-2">
-
-
 <p>
 The following is the output from a run of the program.
 The first half consists of the grammar as it was written out by
@@ -361,9 +299,8 @@ it was chosen here to illustrate the need for backtracking
 and to illustrate its implementation.
 </p>
 
-
-
-<pre class="example">FORMULA         =  EXPRESSION  { ('&gt; | '=) FORMULA };
+<pre class="example">
+FORMULA         =  EXPRESSION  { ('&gt; | '=) FORMULA };
 EXPRESSION      =  TERM  [ 'v  TERM ];
 TERM            =  FACTOR  [ '&amp; FACTOR ];
 FACTOR          =  PREDICATE  [ CONSTANT | VARIABLE ]
@@ -424,9 +361,7 @@ a = b.
 
 (Ai &amp; Bj  &gt;  Cx).
  ... ill-formed
-
 </pre>
-
 
 <p>
 The second part of the above output consists of echoed strings
@@ -439,28 +374,21 @@ followed by the remainder of the input string.
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-3" class="outline-2">
+<div id="outline-container-sec-3" class="outline-2">
 <h2 id="sec-3"><span class="section-number-2">3</span> Designing the implementation</h2>
 <div class="outline-text-2" id="text-3">
-
-
 <p>
 The program 1) reads one grammar,
 and then 2) repeatedly reads strings to determine whether
 they are in the language defined by grammar.
 It is best to break up the implementation into these two components.
 </p>
-
 </div>
 
-<div id="outline-container-3-1" class="outline-3">
+<div id="outline-container-sec-3-1" class="outline-3">
 <h3 id="sec-3-1"><span class="section-number-3">3.1</span> Reading and storing the grammar</h3>
 <div class="outline-text-3" id="text-3-1">
-
-
 <p>
 The input grammar has to be read and stored in some
 suitable internal form so that when a string is to be
@@ -471,25 +399,28 @@ the only really new aspects concern
 the handling of the non-terminals
 which are user declared identifiers.
 </p>
+
 <p>
 This part of the program falls naturally into five sections:
 the scanner, the parser, the code generator,
 the context sensitive check that all non-terminals are defined,
 and a relatively minor code optimisation.
 </p>
+
 <p>
 <i>The Scanner</i>:
 The scanner has to skip leading white space characters
 and then be able to recognise identifiers and the ten
 different single character symbols required by the grammar.
 </p>
+
 <p>
 To recognise identifiers,
 up to 16 characters have to be read into an otherwise blank string,
 and any additional characters are also read but they are not entered
 into the string.
 This part is independent of whether the strings are inbuilt
-reserved words &mdash; as they were in Chapter 7,
+reserved words &#x2014; as they were in Chapter 7,
 or whether they are user declared identifiers.
 For the grammar processor to be written here,
 they are always user declared,
@@ -510,7 +441,7 @@ To determine whether an identifier is in the table,
 we put a copy of it in a special place at the end of the table,
 then we step from the front of the table comparing
 what is in the table with the identifier being searched for,
-until a match is found &mdash; and there is guaranteed to be a match,
+until a match is found &#x2014; and there is guaranteed to be a match,
 at least at the end of the table.
 If the match occurs at the special place at the end,
 then this is because the identifier was not already in the
@@ -518,14 +449,15 @@ remainder of the table.
 In that case the identifier is entered properly,
 at the next free place in the table.
 The scanner has to report back to the parser
-that the symbol was an identifier &mdash; in our case always
+that the symbol was an identifier &#x2014; in our case always
 a non-terminal.
-In addition it has to report the location &mdash; old or new ---
+In addition it has to report the location &#x2014; old or new &#x2014;
 of the identifier.
 It is only in very simple cases,
 like the grammar processor,
 that the entire symbol table management can be handled by the scanner.
 </p>
+
 <p>
 To recognise the ten different single character symbols,
 the scanner just needs a <code>CASE</code> statement with ten cases,
@@ -535,6 +467,7 @@ The eleventh value of that variable is reported
 when an identifier has been found.
 This completes the scanner.
 </p>
+
 <p>
 <i>The Parser</i>:
 For the parser most steps are quite familiar.
@@ -559,30 +492,34 @@ as a production separator.
 At this point the main program should enforce a period,
 as required by the grammar.
 </p>
+
 <p>
 It is a good idea to allow instead of the period,
 say, a question mark
-&mdash; as the eleventh single character symbol in the scanner:
+&#x2014; as the eleventh single character symbol in the scanner:
 it can be used during debugging to signal
 that some internal reporting is to take place.
 Useful debugging information is
-</p><ol>
+</p>
+<ol class="org-ol">
 <li>a list of the non-terminals together with
 </li>
 </ol>
-
-<p>the root node for their expression tree,
-</p><ol>
+<p>
+the root node for their expression tree,
+</p>
+<ol class="org-ol">
 <li>the entire code that has been generated for the grammar, and
 </li>
 <li>during parsing of each input string
 </li>
 </ol>
-
-<p>the node currently being executed.
+<p>
+the node currently being executed.
 This secret feature of the program was used while it was being developed,
 but it is not used in the demonstration run shown earlier.
 </p>
+
 <p>
 However, for the remaining non-terminals,
 namely <code>expression</code>, <code>term</code> and <code>factor</code>,
@@ -598,14 +535,15 @@ or a parenthesised expression inside <code>()</code>,
 or a bracketed expression inside <code>[]</code>
 or a braced expression inside <code>{}</code>.
 As far as the parsing is concerned,
-there is no difference between parentheses, brackets or braces ---
+there is no difference between parentheses, brackets or braces &#x2014;
 as long as they are matched.
 This completes the parsing of the input grammars.
 </p>
+
 <p>
 <i>Internal Code Generation</i>:
 It is best to make the internal code as simple and familiar
-as possible &mdash; as so often before the binary tree form
+as possible &#x2014; as so often before the binary tree form
 recommends itself.
 The nodes of the tree can be binary nodes
 for alternation and concatenation,
@@ -631,6 +569,7 @@ repetition node or a unary option node.
 The code generation for terms and factors
 is routine by now.
 </p>
+
 <p>
 In the main program the body of the loop
 which handles productions must contain a call to the parsing
@@ -649,6 +588,7 @@ the code address of the last generated node
 has to be placed into the symbol table
 at the saved location.
 </p>
+
 <p>
 This completes the initial code generation:
 the symbol table should now contain
@@ -656,6 +596,7 @@ an entry for each non-terminal
 and beside that an entry for the address
 of the principal node of the expression for that non-terminal.
 </p>
+
 <p>
 <i>Checking whether all non-terminals are defined</i>:
 When the parsing and code generating is completed,
@@ -678,6 +619,7 @@ If such an error occurs,
 the undefined non-terminal has to be reported
 and a message given before program termination.
 </p>
+
 <p>
 <i>A minor code optimisation</i>:
 If the main program has reached this point,
@@ -713,14 +655,10 @@ to write out the names of non-terminals
 when they are being called.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-2" class="outline-3">
+<div id="outline-container-sec-3-2" class="outline-3">
 <h3 id="sec-3-2"><span class="section-number-3">3.2</span> Processing input strings</h3>
 <div class="outline-text-3" id="text-3-2">
-
-
 <p>
 After reading and storing a grammar,
 the program repeatedly reads input strings and determines
@@ -730,27 +668,31 @@ Hence after the grammar has been read and checked by the main
 program, a <code>REPEAT</code> loop is needed to process input strings.
 The processing of the input strings falls naturally into
 three parts:
-</p><ol>
+</p>
+<ol class="org-ol">
 <li>the input string has to be read and stored
 </li>
 </ol>
-
-<p>in some internal form,
-</p><ol>
+<p>
+in some internal form,
+</p>
+<ol class="org-ol">
 <li>the internal form of the string
 </li>
 </ol>
-
-<p>together with the internal form of the grammar
+<p>
+together with the internal form of the grammar
 have to be passed to a parsing routine, and
-</p><ol>
+</p>
+<ol class="org-ol">
 <li>if the parsing of the string or an initial segment was
 </li>
 </ol>
-
-<p>successful then this has to be reported in some way,
+<p>
+successful then this has to be reported in some way,
 and if it was unsuccessful an error has to be reported.
 </p>
+
 <p>
 <i>Storing the input string</i>:
 For many likely uses input strings will be allowed to contain
@@ -775,6 +717,7 @@ characters.
 Since we now need an explicit terminator for the
 input string, we select the period <code>.</code>.
 </p>
+
 <p>
 To implement this,
 we need to declare a string variable
@@ -787,6 +730,7 @@ and put them into the string until
 the last such character is the string terminator period <code>.</code>.
 This completes the saving of the input string.
 </p>
+
 <p>
 <i>The parsing routine</i>:
 This is very similar to the expanding procedure
@@ -794,6 +738,7 @@ of the regular expression program in Chapter 9.
 Indeed for the operators of concatenation, alternation,
 repetition and option the cases are identical.
 </p>
+
 <p>
 The first major difference concerns the atomic case of a terminal symbol.
 In the regular expression expander the character encoded in
@@ -814,9 +759,10 @@ the continuation procedure is called,
 and when that returns the pointer is decremented again.
 On the other hand, if the two characters in the instruction
 and in the input buffer are not identical,
-then nothing happens &mdash; the continuation procedure is ignored
+then nothing happens &#x2014; the continuation procedure is ignored
 and the recursive call simply returns.
 </p>
+
 <p>
 The second major difference concerns the case of non-terminal symbols.
 These result in a recursive call of the parsing procedure,
@@ -830,6 +776,7 @@ was originally stored in the symbol table
 and which in the optimisation stage was put into the
 calling instruction itself.
 </p>
+
 <p>
 <i>Reporting on the parse</i>:
 In the initial global call of the parsing procedure
@@ -860,22 +807,17 @@ before writing out the two parts of the input string.
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-4" class="outline-2">
+<div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4"><span class="section-number-2">4</span> The program</h2>
 <div class="outline-text-2" id="text-4">
-
-
 <p>
 The following is the standard Pascal source program
 for the context free grammar parser.
 </p>
 
-
-
-<pre class="example">PROGRAM confre(input,output);
+<pre class="example">
+PROGRAM confre(input,output);
 (*  parser for CONtext FREe grammars *)
 (*  uses "continuation" procedures as parameters        *)
 
@@ -1150,17 +1092,11 @@ REPEAT (* read and parse strings *)
 99:
 END.
 </pre>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-5" class="outline-2">
+<div id="outline-container-sec-5" class="outline-2">
 <h2 id="sec-5"><span class="section-number-2">5</span> Exercises and reading</h2>
 <div class="outline-text-2" id="text-5">
-
-
 <p>
 <i>Another input grammar</i>:
 The following is another input grammar,
@@ -1168,9 +1104,8 @@ this time for a small programming language,
 followed by a few input strings.
 </p>
 
-
-
-<pre class="example">STATEMENTSEQUENCE =
+<pre class="example">
+STATEMENTSEQUENCE =
       STATEMENT  [ '; STATEMENT ] ;
 
 STATEMENT =
@@ -1214,13 +1149,13 @@ END.
 IF a = b THEN IF c = d THEN e := f ELSE g := h.
 </pre>
 
-
 <p>
 How many initial segments are accepted for each
 of the three input strings, and what are they?
 Where does the parser have to backtrack?
 Where does the parser find two ways of parsing an input string?
 </p>
+
 <p>
 <i>A grammar written in itself</i>:
 The grammar given in the manual is a grammar for
@@ -1232,6 +1167,7 @@ can you devise a different context free grammar
 suitable for describing context free languages,
 including the language it is written in?
 </p>
+
 <p>
 <i>A subset of English</i>:
 A grammar processor in which the terminals have to be single
@@ -1241,9 +1177,10 @@ Nevertheless, as an exercise,
 write a context free grammar for a very small subset of English
 and use the program to parse some candidate sentences.
 The sentence <code>Time flies like an arrow</code>
-is a classic example of structural ambiguity ---
+is a classic example of structural ambiguity &#x2014;
 can your grammar handle it?
 </p>
+
 <p>
 <i>White space in grammars</i>:
 Assume that you have two programs which read grammars
@@ -1258,11 +1195,13 @@ with white space allowed for readability.
 Compare the two grammars that you have written for readability.
 Compare the two programs (one fictitious) for efficiency.
 </p>
+
 <p>
 <i>No initial segments</i>:
 Modify the program so that a parse is successful
 only  if the entire input string has been consumed.
 </p>
+
 <p>
 <i>Sets of characters</i>:
 It is very bothersome for people to write long alternatives
@@ -1283,6 +1222,7 @@ Implement such an extension;
 represent an alternation of characters by a <code>SET OF char</code>
 in the tree representation.
 </p>
+
 <p>
 <i>Reading</i>:
 Sudkamp (1988, pp 82 - 86)
@@ -1296,6 +1236,7 @@ for context free languages,
 which is very different from the backtracking parser
 developed in this chapter.
 </p>
+
 <p>
 <i>A Language Generator</i>:
 The program in Chapter~9 was a generator,
@@ -1306,6 +1247,7 @@ As for the regular expression expander of Chapter~9,
 it will be necessary to impose a (preferably flexible)
 length limit on the strings generated.
 </p>
+
 <p>
 <i>Grammar transformations</i>:
 We have used extended BNF notation for the input grammar
@@ -1334,6 +1276,7 @@ with chapters on context free grammars and on normal forms.
 Hopcroft and Ullman (1979) is another comprehensive theoretical
 text in the field.
 </p>
+
 <p>
 <i>Rewriting systems</i>:
 Grammars are only one species of a wide class of what are called
@@ -1354,6 +1297,7 @@ lend themselves to an implementation
 using the backtracking techniques of the present
 and the two previous chapters.
 </p>
+
 <p>
 <i>For Reflection</i>:
 Study the evolution of the procedure <code>getsym</code>
@@ -1361,27 +1305,20 @@ in most of the previous programs.
 Notice how various capabilities have changed.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6" class="outline-2">
-<h2 id="sec-6"><span class="section-number-2">6</span> Proplog &mdash; propositional Prolog</h2>
+<div id="outline-container-sec-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> Proplog &#x2014; propositional Prolog</h2>
 <div class="outline-text-2" id="text-6">
-
-
 <p>
 This sections describes a very special case of context free grammars
 and its relation to the propositional fragment
 of the programming language Prolog.
 </p>
-
 </div>
 
-<div id="outline-container-6-1" class="outline-3">
+<div id="outline-container-sec-6-1" class="outline-3">
 <h3 id="sec-6-1"><span class="section-number-3">6.1</span> Generalising the use of grammars</h3>
 <div class="outline-text-3" id="text-6-1">
-
-
 <p>
 Grammars define languages or sets of strings.
 Context free grammars define a particular species of languages,
@@ -1398,13 +1335,14 @@ which define two very special languages:
 the empty language which contains no strings at all,
 and the language which contains just the null string.
 </p>
+
 <p>
 Grammars consist of one or more productions
 which declare non-terminals.
 Each non-terminal then defines a language or set of strings.
 In grammars one of the non-terminals is normally singled out
 as the starting non-terminal,
-either explicitly or implicitly &mdash; say, the first.
+either explicitly or implicitly &#x2014; say, the first.
 The language defined by the grammar is then taken to be the one
 defined by the starting non-terminal.
 But grammars can equally well be used without a fixed
@@ -1422,27 +1360,24 @@ For example, using the grammar of the first exercise,
 one might specify
 </p>
 
-
-
-<pre class="example">STATEMENT  DIGIT  '!  ( FACTOR | '% )
+<pre class="example">
+STATEMENT  DIGIT  '!  ( FACTOR | '% )
 </pre>
-
 
 <p>
 as the starting expression for parsing or for generating.
 Among the strings accepted or generated will be:
 </p>
 
-
-
-<pre class="example">x := y  8  !  123
+<pre class="example">
+x := y  8  !  123
 IF  a = b  THEN  c := d  3  !  %
 </pre>
-
 
 <p>
 and so on.
 </p>
+
 <p>
 In the program for the general parser we have insisted that all
 non-terminals must be defined.
@@ -1455,6 +1390,7 @@ more likely than not it is due to a typing error.
 However, in what follows we shall allow undefined non-terminals
 and make good use of them.
 </p>
+
 <p>
 In grammars there are generally many terminal symbols,
 and then they occur as factors inside expressions,
@@ -1470,25 +1406,19 @@ Parsing the null string always succeeds,
 so in procedure parse we might have had a further case:
 </p>
 
-
-
-<pre class="example">nul : cp;
+<pre class="example">
+nul : cp;
 </pre>
-
 
 <p>
 In the next section we shall look at grammars in which
 the null string is the <i>only</i> terminal.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-2" class="outline-3">
+<div id="outline-container-sec-6-2" class="outline-3">
 <h3 id="sec-6-2"><span class="section-number-3">6.2</span> A dramatic restriction on productions</h3>
 <div class="outline-text-3" id="text-6-2">
-
-
 <p>
 Grammars in which there are no terminals at all can only generate
 the empty language {} which does not contain any strings as members.
@@ -1501,6 +1431,7 @@ whose only member is the null string.
 But note that this language is different from the empty language <code>{}</code>
 which does not have any members at all.
 </p>
+
 <p>
 Without further loss of generality we stipulate that the right hand
 side of any production is either just the null string,
@@ -1508,16 +1439,14 @@ or it is an expression built up solely from non-terminals.
 Here is an example:
 </p>
 
-
-
-<pre class="example">alpha  =  0;
+<pre class="example">
+alpha  =  0;
 beta  =  0;
 gamma  =  alpha delta;
 epsilon  =  beta;
 zeta  =  eta | epsilon;
 theta  =  iota | gamma.
 </pre>
-
 
 <p>
 Note that delta, eta and iota are used but not defined,
@@ -1528,9 +1457,8 @@ Instead a starting symbol or a whole
 expression has to be specified for generation.
 </p>
 
-
-
-<pre class="example">expression                                              language
+<pre class="example">
+expression                                              language
 beta                                                    {0}
 delta                                                   {}
 theta                                                   {}
@@ -1539,44 +1467,40 @@ gamma  | iota  |  theta                                 {}
 alpha  epsilon  (zeta | beta | theta)                   {0}
 </pre>
 
-
 <p>
-Think of the expressions in the left column as questions about the grammar &mdash; "what is the language generated by this expression?", and think of the right hand column as the answers to this question.  Since there are only two possible answers, we can treat the questions as being of the form: "is the language generated by this expression the language containing just the null string?".  Answers will no longer be <code>{0}</code> or <code>{}</code>, but <code>yes</code> or <code>no</code> instead.  Note that in normal use of a grammar the interest is in the typically complex languages generated, the grammar itself is only a tool.  Here, however, the interest is in the productions of the grammar itself.
+Think of the expressions in the left column as questions about the grammar &#x2014; "what is the language generated by this expression?", and think of the right hand column as the answers to this question.  Since there are only two possible answers, we can treat the questions as being of the form: "is the language generated by this expression the language containing just the null string?".  Answers will no longer be <code>{0}</code> or <code>{}</code>, but <code>yes</code> or <code>no</code> instead.  Note that in normal use of a grammar the interest is in the typically complex languages generated, the grammar itself is only a tool.  Here, however, the interest is in the productions of the grammar itself.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-3" class="outline-3">
+<div id="outline-container-sec-6-3" class="outline-3">
 <h3 id="sec-6-3"><span class="section-number-3">6.3</span> A logical interpretation</h3>
 <div class="outline-text-3" id="text-6-3">
-
-
 <p>
 The restricted grammars and the questions in the preceding section can be given a surprisingly different interpretation.  There are two kinds of productions:
 </p>
-<ol>
-<li>those which have the null string as their right hand side &mdash; these we now call <i>facts</i>.
 
+<ol class="org-ol">
+<li>those which have the null string as their right hand side &#x2014; these we now call <i>facts</i>.
 </li>
-<li>those which have an expression built up from non-terminals as their right hand side &mdash; these we now call <i>rules</i>.
+
+<li>those which have an expression built up from non-terminals as their right hand side &#x2014; these we now call <i>rules</i>.
 </li>
 </ol>
 
+<p>
+The idea is that facts state that something is known to be true, and that rules state that something can be shown to be true if the right hand side can be shown to be true.  A <i>database</i> is a collection of facts and rules.  Questions are interpreted as requests to show that something is true &#x2014; a <code>yes</code> answer indicates that it can be shown, a <code>no</code> answer indicates that it cannot.  In expressions the explicit alternation symbol <code>|</code> is taken to mean OR, the (implicit) concatenations are taken to mean AND; there is no negation.
+</p>
 
 <p>
-The idea is that facts state that something is known to be true, and that rules state that something can be shown to be true if the right hand side can be shown to be true.  A <i>database</i> is a collection of facts and rules.  Questions are interpreted as requests to show that something is true &mdash; a <code>yes</code> answer indicates that it can be shown, a <code>no</code> answer indicates that it cannot.  In expressions the explicit alternation symbol <code>|</code> is taken to mean OR, the (implicit) concatenations are taken to mean AND; there is no negation.
+This is the essence of Proplog, the propositional fragment of the programming language Prolog.  The fragment, its use and an implementation are described in detail in Maier and Warren (1988 Part I).  To make the surface syntax identical to that of Prolog, we make the following changes: Productions are not separated by semicolons but terminated with periods.  For productions that are facts the <code>=</code> and the <code>0</code> are not written at all.  For productions that are rules the <code>=</code> is replaced by a turnstyle <code>:-</code> to mean <i>if</i>.  In expressions, alternations are now called disjunctions and written with an infix semicolon <code>;</code> to mean <i>or</i>.  Concatenations are now called conjunctions and are written with an explicit infix comma =,= to mean <i>and</i>.
 </p>
-<p>
-This is the essence of Proplog, the propositional fragment of the programming language Prolog.  The fragment, its use and an implementation are described in detail in Maier and Warren (1988 Part I).  To make the surface syntax identical to that of Prolog, we make the following changes: Productions are not separated by semicolons but terminated with periods.  For productions that are facts the === and the <code>0</code> are not written at all.  For productions that are rules the === is replaced by a turnstyle <code>:-</code> to mean <i>if</i>.  In expressions, alternations are now called disjunctions and written with an infix semicolon <code>;</code> to mean <i>or</i>.  Concatenations are now called conjunctions and are written with an explicit infix comma =,= to mean <i>and</i>.
-</p>
+
 <p>
 The following is a tiny database written in this form, followed by several questions.  The entries to the database are preceded by a <code>+</code>, there are two facts and four rules.  The questions are preceded by a <code>-</code>, there are six questions, each followed immediately by a yes/no answer.
 </p>
 
-
-
-<pre class="example">+
+<pre class="example">
++
 Sun_is_shining.
 Peter_is_happy.
 Weather_is_nice  :-  Sun_is_shining, It_is_warm.
@@ -1599,47 +1523,32 @@ Sun_is_shining, Peter_is_pleasant,
  ... yes
 </pre>
 
-
 <p>
 Note that the database and the questions and answers are <i>isomorphic</i> to the grammar and the expressions and languages of the previous section.
 </p>
+
 <p>
 Proplog is less expressive than propositional logic, just as Prolog is less expressive than predicate logic.  For example, Proplog cannot be used to demonstrate the validity of the complex constructive dilemma: <code>p v q, p &gt; r, q &gt; s, therefore s v r</code>.  In the same way, Prolog cannot be used to demonstrate the validity of: <code>Everything is F v G, ALL F are H, ALL G are I, therefore Everything is H v I</code>.  Nevertheless, Prolog is an immensely useful programming language, especially in applications that require backtracking.  Its propositional fragment Proplog illustrates its basic structure and its origins in grammars.  An understanding of the difference between Proplog and classical propositional logic goes a long way towards explaining the difference between Prolog and classical predicate logic.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-4" class="outline-3">
+<div id="outline-container-sec-6-4" class="outline-3">
 <h3 id="sec-6-4"><span class="section-number-3">6.4</span> <i>Exercise</i>:</h3>
 <div class="outline-text-3" id="text-6-4">
-
-
 <p>
 Modify the general parser for context free grammars so that it becomes a theorem prover for Proplog.  You will need to distinguish between adding new facts and rules to the database on the one hand, and asking questions on the other.  One way is to precede each question with a question mark.  Another is to have two modes: entering mode and questioning mode, together with some way of switching between the two.  For instance, <code>+</code> and <code>-</code> could be used for the switching, as in the example given above.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-5" class="outline-3">
+<div id="outline-container-sec-6-5" class="outline-3">
 <h3 id="sec-6-5"><span class="section-number-3">6.5</span> <i>Negation</i>:</h3>
 <div class="outline-text-3" id="text-6-5">
-
-
 <p>
 All Prolog systems have a form of negation; however, it is different from the classical one.  For a given database, if <code>p</code> can be proven inside an expression, then <code>not p</code> cannot, and if <code>p</code> cannot be proven, then <code>not p</code> can.  But there is no way of entering negative facts into the database.  However, if it is assumed that the database contains all the positive facts and rules that are relevant, then the absence of a fact or rule should be sufficient to establish its falsity.  This assumption is called the <i>closed world assumption</i>, and it makes Proplog's and Prolog's <i>negation by failure</i> quite different from its counterpart in classical logic.  Note that negation of either kind does not correspond to anything familiar in grammars.  Implement negation by failure in your theorem prover for Proplog.
-</p></div>
+</p>
 </div>
 </div>
 </div>
-
-<div id="postamble">
-<p class="date">Date: 2013-01-11 07:38:01 CST</p>
-<p class="author">Author: michal</p>
-<p class="creator">Org version 7.8.11 with Emacs version 24</p>
-<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
-
 </div>
 </body>
 </html>

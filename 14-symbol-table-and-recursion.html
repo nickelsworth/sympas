@@ -1,66 +1,38 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Chapter 14: Symbol Table and Recursion</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Chapter 14: Symbol Table and Recursion"/>
+<!-- 2013-05-31 Fri 19:02 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-01-11 07:37:57 CST"/>
 <meta name="author" content="michal"/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
-<style type="text/css">
- <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
-  .title  { text-align: center; }
-  .todo   { color: red; }
-  .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
-  .timestamp { color: #bebebe; }
-  .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
-  pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
-  }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
-  dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
-    background: #ffffcc;
-  }
-  textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
-  /*]]>*/-->
-</style>
+<link rel="stylesheet" type="text/css" href="/etc/style.css">
 <script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012  Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
 <!--/*--><![CDATA[/*><!--*/
  function CodeHighlightOn(elem, id)
  {
@@ -82,223 +54,208 @@
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
-
-</div>
-
 <div id="content">
 <h1 class="title">Chapter 14: Symbol Table and Recursion</h1>
-
-
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1 intro</a></li>
-<li><a href="#sec-2">2 THE MACHINE</a>
+<li><a href="#sec-1">1. </a></li>
+<li><a href="#sec-2">2. THE MACHINE</a>
 <ul>
-<li><a href="#sec-2-1">2.1 A Brief Description</a></li>
-<li><a href="#sec-2-2">2.2 The Simulating Program</a></li>
+<li><a href="#sec-2-1">2.1. A Brief Description</a></li>
+<li><a href="#sec-2-2">2.2. The Simulating Program</a></li>
 </ul>
 </li>
-<li><a href="#sec-3">3 DESIGNING THE HIGH LEVEL LANGUAGE</a>
+<li><a href="#sec-3">3. DESIGNING THE HIGH LEVEL LANGUAGE</a>
 <ul>
-<li><a href="#sec-3-1">3.1 Language Level</a></li>
-<li><a href="#sec-3-2">3.2 Syntax</a></li>
+<li><a href="#sec-3-1">3.1. Language Level</a></li>
+<li><a href="#sec-3-2">3.2. Syntax</a></li>
 </ul>
 </li>
-<li><a href="#sec-4">4 DESIGNING THE COMPILER</a>
+<li><a href="#sec-4">4. DESIGNING THE COMPILER</a>
 <ul>
-<li><a href="#sec-4-1">4.1 Syntax</a>
+<li><a href="#sec-4-1">4.1. Syntax</a>
 <ul>
-<li><a href="#sec-4-1-1">4.1.1 Step 1: <i>Visibility requirements</i>.</a></li>
-<li><a href="#sec-4-1-2">4.1.2 Step 2: <i>Context free parsing</i>:</a></li>
-<li><a href="#sec-4-1-3">4.1.3 Step 3: <i>Declarations</i>:</a></li>
-<li><a href="#sec-4-1-4">4.1.4 Step 4: <i>Types</i>.</a></li>
+<li><a href="#sec-4-1-1">4.1.1. Step 1: <i>Visibility requirements</i>.</a></li>
+<li><a href="#sec-4-1-2">4.1.2. Step 2: <i>Context free parsing</i>:</a></li>
+<li><a href="#sec-4-1-3">4.1.3. Step 3: <i>Declarations</i>:</a></li>
+<li><a href="#sec-4-1-4">4.1.4. Step 4: <i>Types</i>.</a></li>
 </ul>
 </li>
-<li><a href="#sec-4-2">4.2 Semantics</a>
+<li><a href="#sec-4-2">4.2. Semantics</a>
 <ul>
-<li><a href="#sec-4-2-1">4.2.1 Step 5: <i>Memory management</i>.</a></li>
-<li><a href="#sec-4-2-2">4.2.2 Step 6: <i>Generating opcodes</i>:</a></li>
-<li><a href="#sec-4-2-3">4.2.3 Step 7: <i>Memory references</i>.</a></li>
-<li><a href="#sec-4-2-4">4.2.4 Step 8: <i>Code references</i>.</a></li>
-<li><a href="#sec-4-2-5">4.2.5 Step 9: <i>Register references</i>.</a></li>
-<li><a href="#sec-4-2-6">4.2.6 Step 10: <i>Constant folding</i>.</a></li>
+<li><a href="#sec-4-2-1">4.2.1. Step 5: <i>Memory management</i>.</a></li>
+<li><a href="#sec-4-2-2">4.2.2. Step 6: <i>Generating opcodes</i>:</a></li>
+<li><a href="#sec-4-2-3">4.2.3. Step 7: <i>Memory references</i>.</a></li>
+<li><a href="#sec-4-2-4">4.2.4. Step 8: <i>Code references</i>.</a></li>
+<li><a href="#sec-4-2-5">4.2.5. Step 9: <i>Register references</i>.</a></li>
+<li><a href="#sec-4-2-6">4.2.6. Step 10: <i>Constant folding</i>.</a></li>
 </ul>
 </li>
-<li><a href="#sec-4-3">4.3 A Look Inside</a></li>
+<li><a href="#sec-4-3">4.3. A Look Inside</a></li>
 </ul>
 </li>
-<li><a href="#sec-5">5 The Compiler</a></li>
-<li><a href="#sec-6">6 Exercises and Reading</a>
+<li><a href="#sec-5">5. The Compiler</a></li>
+<li><a href="#sec-6">6. Exercises and Reading</a>
 <ul>
-<li><a href="#sec-6-1">6.1 <i>Manual</i>:</a></li>
-<li><a href="#sec-6-2">6.2 <i>Use of identifiers</i>:</a></li>
-<li><a href="#sec-6-3">6.3 <i>Records and arrays</i>:</a></li>
-<li><a href="#sec-6-4">6.4 <i>Constant folding</i>:</a></li>
-<li><a href="#sec-6-5">6.5 <i>A different machine</i>:</a></li>
-<li><a href="#sec-6-6">6.6 <i>Instruction folding</i>:</a></li>
-<li><a href="#sec-6-7">6.7 <i>Parameters</i>:</a></li>
-<li><a href="#sec-6-8">6.8 <i>Functions</i>:</a></li>
-<li><a href="#sec-6-9">6.9 <i>Input and output</i>:</a></li>
-<li><a href="#sec-6-10">6.10 <i>An assembler</i>:</a></li>
-<li><a href="#sec-6-11">6.11 <i>Reading</i>:</a></li>
+<li><a href="#sec-6-1">6.1. <i>Manual</i>:</a></li>
+<li><a href="#sec-6-2">6.2. <i>Use of identifiers</i>:</a></li>
+<li><a href="#sec-6-3">6.3. <i>Records and arrays</i>:</a></li>
+<li><a href="#sec-6-4">6.4. <i>Constant folding</i>:</a></li>
+<li><a href="#sec-6-5">6.5. <i>A different machine</i>:</a></li>
+<li><a href="#sec-6-6">6.6. <i>Instruction folding</i>:</a></li>
+<li><a href="#sec-6-7">6.7. <i>Parameters</i>:</a></li>
+<li><a href="#sec-6-8">6.8. <i>Functions</i>:</a></li>
+<li><a href="#sec-6-9">6.9. <i>Input and output</i>:</a></li>
+<li><a href="#sec-6-10">6.10. <i>An assembler</i>:</a></li>
+<li><a href="#sec-6-11">6.11. <i>Reading</i>:</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> <span class="target">intro</span></h2>
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> <a id="intro" name="intro"></a></h2>
 <div class="outline-text-2" id="text-1">
-
-
 <p>
 As in the previous chapter, we shall again take an approach that is different from the one taken in other chapters.  Instead of designing a program which only has to meet user specification, we shall design one that has to meet two specifications: - a low level specification of the hardware on which the compiled program is to run, and a high level specification of the language that is used for communicating with the hardware.  Actually, we shall not be dealing with "real" hardware, but only with "virtual" hardware; although it would be possible for someone to build the hardware out of real transistors, we shall use the specification of the hardware as a software interpreter.
 </p>
+
 <p>
 The compiler and interpreter in this chapter should be studied as alternatives to Wirth's (1976, pp 307 - 349) PLZERO compiler and interpreter.  While they have a fair amount in common, there are sufficient differences to make it profitable to study both - probably in any order.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2"><span class="section-number-2">2</span> THE MACHINE</h2>
 <div class="outline-text-2" id="text-2">
-
-
 <p>
 This section gives a brief description of the machine together with a PASCAL program for simulating the machine.  The machine is a typical von Neumann machine, although it is much smaller than most actual ones are.  Before running, the machine has to load its program from an external file into its internal memory.  It then starts by executing the first instruction, always continuing with the next instruction unless explicitly told to do otherwise.  Even at this very gross level, the machine is different from the recursive machine we designed in Chapter#7.  The machine is similar to the parsing machine of the previous Chapter, although there are many more instructions.
 </p>
-
 </div>
 
-<div id="outline-container-2-1" class="outline-3">
+<div id="outline-container-sec-2-1" class="outline-3">
 <h3 id="sec-2-1"><span class="section-number-3">2.1</span> A Brief Description</h3>
 <div class="outline-text-3" id="text-2-1">
-
-
 <p>
 The machine has 8 registers used for arithmetic and logical operations, and a memory that can be accessed randomly, either directly or modified by a base register.  Instructions consist of an operator together with two addresses or values.  There are the usual arithmetic and logical operations which operate on the contents of registers, instructions for loading from memory into registers or for storing from registers into memory, unconditional and conditional jump instructions and procedure call and return.
 </p>
+
 <p>
 For the first 12 instructions the two addresses are names of registers, and the effect of such an instruction is to compute a value from the two values in the two registers given by the two addresses, and to store it in the value given by the first address.  There is a further 13-th instruction which does not use a second register.
 </p>
+
 <p>
 The first five instructions perform arithmetic operations: addition, subtraction, multiplication, division and the modulus operation.  The next six instructions perform comparisons on the contents of two registers, and return 1 if the comparison is true, and 0 if not.
 </p>
+
 <p>
 There is also a disjunction operation which returns 1 if at least one register contain 1, and 0 otherwise.  There is no conjunction instruction, but the last instruction in this group performs complementation with respect to 1.
 </p>
+
 <p>
 The next three instructions transfer data into registers, the next four transfer data from registers.  Of these seven, the first instruction transfers from a memory location given by the second address to the register given by the first address; the second instruction is similar, except that is does not use the second address directly but as an offset from a base register - this is useful for local variables of (potentially) recursive procedures for which multiple instances may exist at run time.  In the third instruction the second address field is not used as an address at all but as the literal value to be put into the register given by the first address.  The next two instructions transfer data from registers into memory, either directly or relative to the base register.  The last two instructions are for output, they can be used to write the contents of a register in Boolean or integer form.
 </p>
+
 <p>
 The next three instructions control the program counter, and the last two also set the base register as needed for local variables and a further register for the top of the stack.  Of these five, the first is an unconditional jump instruction to a code address given by the first address, the second is similar except that the jump is conditional upon the register given by the second address containing the value 0, the third sets the program counter to 0 causing the machine to stop execution.  Much more difficult to understand are the last two instructions which are for (potentially recursive) procedure call and return.  When a procedure is being called, then it has to be known (before execution begins)
 </p>
-<ol>
+
+<ol class="org-ol">
 <li>what its start address in the code is, and
 </li>
 <li>how many local variables it has.
 </li>
 </ol>
 
-
 <p>
 The compiler or assembler has to put these two items of information into the two address fields of the call instruction.  What is not known at compile time is how deep in the recursion the current call will be at run time.  It is for this purpose that a special register is needed for the top of the stack containing local variables of still active procedures.  For each procedure call the following information is needed for correct returns: the value of the base register, and the program counter for the instruction that is to be executed after the return of the procedure.  These two items have to be recorded on the stack by the call instruction, and they are restored by the return instruction.  When the call instruction has saved these two items, it can safely change them: set the base register to the stack top, set the program counter to the address given by the first address field of the instruction.  And finally the call instruction can increment the top of stack register by the value of the second address field; this is in preparation for a potential call from the procedure to ensure that the two items saved and any locals do not get clobbered.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-2-2" class="outline-3">
+<div id="outline-container-sec-2-2" class="outline-3">
 <h3 id="sec-2-2"><span class="section-number-3">2.2</span> The Simulating Program</h3>
 <div class="outline-text-3" id="text-2-2">
-
-
 <p>
 The details of the machine may be seen from the following PASCAL program.  Note that input is not declared in the program header.  This is because the program does not take its input from a standard text file, but from a user declared file type which resembles machine code.  When the content of this file has been loaded, interpretation begins.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">PROGRAM syreci(output);
-(* SYmboltable, RECursion, INTerpreter only,
-   interprets a file of instruction produced by syrecc *)
+<pre class="src src-pascal"><span style="color: #00ffff;">PROGRAM</span> <span style="color: #ffffff; font-weight: bold;">syreci</span>(output);
+<span style="color: #66f;">(* </span><span style="color: #66f;">SYmboltable, RECursion, INTerpreter only,</span>
+<span style="color: #66f;">   interprets a file of instruction produced by syrecc *)</span>
 
 LABEL 99;
 
-CONST
-    inputfile = '32syreci.tmp';
+<span style="color: #ff00ff;">CONST</span>
+    inputfile = <span style="color: #00ff00;">'32syreci.tmp'</span>;
     showcode = false;
     tracing = false;
     maxcode = 200;
     maxstack = 1000;
     topregister = 7;
 
-TYPE
+<span style="color: #ff00ff;">TYPE</span>
     operator = (
         add, sub, mul, dvd, mdl, eql, neq, gtr, geq, lss, leq, orr,
         neg, loadglobl, loadlocal, loadimmed, storglobl, storlocal,
         writebool, writeint, cal, ret, jmp, jiz, hlt);
-    instruction = RECORD op : operator; ad1,ad2 : integer END;
+    instruction = <span style="color: #ff00ff;">RECORD</span> op : operator; ad1,ad2 : <span style="color: #ff00ff;">integer</span> <span style="color: #00ffff;">END</span>;
 
-VAR
-    infile : PACKED FILE OF instruction;
-    code : ARRAY [1..maxcode] OF instruction;
-    I : integer;
+<span style="color: #ff00ff;">VAR</span>
+    infile : <span style="color: #ff00ff;">PACKED</span> <span style="color: #ff00ff;">FILE</span> <span style="color: #00ffff;">OF</span> instruction;
+    code : <span style="color: #ff00ff;">ARRAY</span> [1..maxcode] <span style="color: #00ffff;">OF</span> instruction;
+    I : <span style="color: #ff00ff;">integer</span>;
 
-    pc : integer;
+    pc : <span style="color: #ff00ff;">integer</span>;
     ir : instruction;
-    stack : ARRAY [0..maxstack] OF integer;
+    stack : <span style="color: #ff00ff;">ARRAY</span> [0..maxstack] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">integer</span>;
     stacktop : 0..maxstack;
-    reg : ARRAY [0..topregister] OF integer;
-    baseregister : integer;
+    reg : <span style="color: #ff00ff;">ARRAY</span> [0..topregister] <span style="color: #00ffff;">OF</span> <span style="color: #ff00ff;">integer</span>;
+    baseregister : <span style="color: #ff00ff;">integer</span>;
 
-BEGIN (* main *)
-writeln('SYRECI ...');
+<span style="color: #00ffff;">BEGIN</span> <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
+writeln(<span style="color: #00ff00;">'SYRECI ...'</span>);
 
-(* load: *)
+<span style="color: #66f;">(* </span><span style="color: #66f;">load: *)</span>
 open(infile,inputfile,OLD); reset(infile);
 i := 0;
-WHILE NOT eof(infile) DO
-    BEGIN
+<span style="color: #00ffff;">WHILE</span> <span style="color: #00ffff;">NOT</span> eof(infile) <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span>
     i := i + 1;
     code[i] := infile^;
-    IF showcode THEN WITH code[i] DO writeln(i,op,ad1,ad2);
+    <span style="color: #00ffff;">IF</span> showcode <span style="color: #00ffff;">THEN</span> <span style="color: #00ffff;">WITH</span> code[i] <span style="color: #00ffff;">DO</span> writeln(i,op,ad1,ad2);
     get(infile)
-    END;
+    <span style="color: #00ffff;">END</span>;
 
-(* interpret: *)
-IF tracing THEN writeln('interpreting ...');
+<span style="color: #66f;">(* </span><span style="color: #66f;">interpret: *)</span>
+<span style="color: #00ffff;">IF</span> tracing <span style="color: #00ffff;">THEN</span> writeln(<span style="color: #00ff00;">'interpreting ...'</span>);
 stacktop := 0;
 pc := 1;
-REPEAT
-    WITH code[pc] DO
-        BEGIN
-        IF tracing THEN writeln(pc,op,ad1,ad2);
+<span style="color: #00ffff;">REPEAT</span>
+    <span style="color: #00ffff;">WITH</span> code[pc] <span style="color: #00ffff;">DO</span>
+        <span style="color: #00ffff;">BEGIN</span>
+        <span style="color: #00ffff;">IF</span> tracing <span style="color: #00ffff;">THEN</span> writeln(pc,op,ad1,ad2);
         pc := pc + 1;
-        CASE op OF
+        <span style="color: #00ffff;">CASE</span> op <span style="color: #00ffff;">OF</span>
 
             add : reg[ad1] := reg[ad1] + reg[ad2];
             sub : reg[ad1] := reg[ad1] - reg[ad2];
             mul : reg[ad1] := reg[ad1] * reg[ad2];
-            dvd : reg[ad1] := reg[ad1] DIV reg[ad2];
-            mdl : reg[ad1] := reg[ad1] MOD reg[ad2];
+            dvd : reg[ad1] := reg[ad1] <span style="color: #00ffff;">DIV</span> reg[ad2];
+            mdl : reg[ad1] := reg[ad1] <span style="color: #00ffff;">MOD</span> reg[ad2];
             eql : reg[ad1] := ord(reg[ad1] = reg[ad2]);
             neq : reg[ad1] := ord(reg[ad1] &lt;&gt; reg[ad2]);
             gtr : reg[ad1] := ord(reg[ad1] &gt; reg[ad2]);
             geq : reg[ad1] := ord(reg[ad1] &gt;= reg[ad2]);
             lss : reg[ad1] := ord(reg[ad1] &lt; reg[ad2]);
             leq : reg[ad1] := ord(reg[ad1] &lt;= reg[ad2]);
-            orr : reg[ad1] := ord((reg[ad1]=1) OR (reg[ad2]=1));
+            orr : reg[ad1] := ord((reg[ad1]=1) <span style="color: #00ffff;">OR</span> (reg[ad2]=1));
             neg : reg[ad1] := 1 - reg[ad1];
 
             loadglobl : reg[ad1] := stack[ad2];
@@ -310,339 +267,306 @@ REPEAT
             writeint  : writeln(reg[ad2]);
 
             jmp : pc := ad1;
-            jiz : IF reg[ad2] = 0 THEN pc := ad1;
+            jiz : <span style="color: #00ffff;">IF</span> reg[ad2] = 0 <span style="color: #00ffff;">THEN</span> pc := ad1;
             hlt : pc := 0;
             cal :
-                BEGIN
-                IF stacktop + ad2 &gt; maxstack THEN
-                    BEGIN
-                    writeln('stack overflow,',
-                            ' PC =',pc-1:6,' , execution aborted');
-                    GOTO 99
-                    END;
+                <span style="color: #00ffff;">BEGIN</span>
+                <span style="color: #00ffff;">IF</span> stacktop + ad2 &gt; maxstack <span style="color: #00ffff;">THEN</span>
+                    <span style="color: #00ffff;">BEGIN</span>
+                    writeln(<span style="color: #00ff00;">'stack overflow,'</span>,
+                            <span style="color: #00ff00;">' PC ='</span>,pc-1:6,<span style="color: #00ff00;">' , execution aborted'</span>);
+                    <span style="color: #00ffff;">GOTO</span> <span style="color: #7fffd4;">99</span>
+                    <span style="color: #00ffff;">END</span>;
                 stack[stacktop + 1] := baseregister;
                 stack[stacktop + 2] := pc;
                 baseregister := stacktop;
                 pc := ad1;
                 stacktop := stacktop + ad2
-                END;
+                <span style="color: #00ffff;">END</span>;
             ret :
-                BEGIN
+                <span style="color: #00ffff;">BEGIN</span>
                 stacktop := baseregister;
                 pc := stack[stacktop + 2];
                 baseregister := stack[stacktop + 1]
-                END
+                <span style="color: #00ffff;">END</span>
 
-            END (* CASE *)
-        END (* WITH *)
-    UNTIL pc = 0;
+            <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">CASE *)</span>
+        <span style="color: #00ffff;">END</span> <span style="color: #66f;">(* </span><span style="color: #66f;">WITH *)</span>
+    <span style="color: #00ffff;">UNTIL</span> pc = 0;
 99:
-END. (* main *)
+<span style="color: #00ffff;">END</span>. <span style="color: #66f;">(* </span><span style="color: #66f;">main *)</span>
 </pre>
-
-
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-3" class="outline-2">
+</div>
+<div id="outline-container-sec-3" class="outline-2">
 <h2 id="sec-3"><span class="section-number-2">3</span> DESIGNING THE HIGH LEVEL LANGUAGE</h2>
 <div class="outline-text-2" id="text-3">
-
-
 <p>
 In this section we shall design a high level language to match the low level machine language described by the interpreter program of the previous section.
 </p>
-
 </div>
 
-<div id="outline-container-3-1" class="outline-3">
+<div id="outline-container-sec-3-1" class="outline-3">
 <h3 id="sec-3-1"><span class="section-number-3">3.1</span> Language Level</h3>
 <div class="outline-text-3" id="text-3-1">
-
-
 <p>
 We now come to deciding on the level of the language, and there are many possibilities here.  At the one extreme is a language that is not high level at all, but is nothing but an assembler with symbolic instructions.  In such a language a program would be a sequence of instructions like these two:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">ADD             1       2
+<pre class="src src-pascal">ADD             1       2
 STOREGLOBAL     17      1
 </pre>
-
+</div>
 
 <p>
 This would mean: take the contents of registers 1 and 2, add these two values and put the result into register 1; then store the contents of register 1 in the memory location whose absolute address is 17.  A major improvement would be the use of symbolic addresses to replace numeric references to memory locations (such as 17 above).  Symbols instead of numbers could also be used to refer to code addresses in unconditional and conditional jumps and in procedure calls.
 </p>
+
 <p>
 At the other extreme is a ultra high level language with inbuilt artificial intelligence.  This would be a very ambitious project, and it is quite out of the question - and not simply because the machine architecture lacks several facilities that one would need.  Instead we shall design a small language at about the same level as a very simple form of ALGOL, PASCAL or ADA.  Firstly, the registers of the machine will entirely disappear from the view of the programmer.  Secondly, absolute and relative memory locations will be referred to by symbolic global or local variable names.  Local variables will be invisible outside the procedure to which they are local, and all variables will be typed.  Thirdly, procedures are called by a symbolic name rather than by a code address, and jumps to code addresses will be eliminated in favour of structured flow of control.
 </p>
+
 <p>
 High level languages are nothing but convenience to the user, anything that can be done in the high level language can also be done in the machine language.  But we want to ensure that everything that the machine can do can also be done in the high level language.  So our approach will be to examine the machine instructions in groups.  Since the machine contains the arithmetic operations and arithmetic comparisons, we shall put them into the high level language too.  For the Boolean operations, disjunction and negation are available on the machine.  For conjunction we could use the simulation "p AND q" is equivalent (by De Morgan) to "NOT(NOT p OR NOT q)", but there is a simpler one using multiplication.  So both integers and Booleans can be fully supported.  So we can have a data type of integer and a data type of Boolean, we can have operations on both data types, and we can have integer relations yielding Boolean values.  Since the machine can distinguish between direct access to memory and relative access via a base register, we can have global variables in the main program and local variables in procedures.  This also requires that the base register is set correctly by the call and return instructions.
 </p>
+
 <p>
 As may be seen, the semantic primitives for the high level language should include at least the two types Boolean and integer, with constants and both global and local variables occurring in expressions built up by familiar operations, and should include assignment statements to variables of these types.  Some flow of control will be needed, too, and we shall aim for structured control statements such as conditionals, loops and procedure calls.  This is only a modest beginning, but for the time being we shall be content with this.  The exercises at the end of the chapter give some suggestions how the language can be extended further.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-3-2" class="outline-3">
+<div id="outline-container-sec-3-2" class="outline-3">
 <h3 id="sec-3-2"><span class="section-number-3">3.2</span> Syntax</h3>
 <div class="outline-text-3" id="text-3-2">
-
-
 <p>
 We begin with expressions, which will be typed.  For binary operators we have the choice of prefix, infix or postfix notation, and to make the notation as conventional as possible we use infix.  Now a decision has to be made about precedences.  The most conventional precedence ordering for type number is that multiplication takes precedence over addition which takes precedence over comparisons, and for type Boolean it is that negation takes precedence over conjunction which takes precedence over disjunction.  This still leaves open the precedence ordering between the types.  PASCAL programmers sometimes complain that they cannot write
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">IF  a &lt; b  AND  c = d  THEN  ...
+<pre class="src src-pascal"><span style="color: #00ffff;">IF</span>  a &lt; b  <span style="color: #00ffff;">AND</span>  c = d  <span style="color: #00ffff;">THEN</span>  ...
 </pre>
-
+</div>
 
 <p>
 but have to put both comparisons into parentheses.  This is easily fixed by treating comparisons like Boolean atoms whose precedence is higher than that of conjunction.  The most natural syntax now is:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">factor          ::=  variable | number | "FALSE" | "TRUE" |
-                     "NOT" factor | "(" expression2 ")"
-term1           ::=  factor [ ("*" | "/" | "MOD") factor ]
-expression1     ::=  term1 [ ("+" | "-") term1 ]
-comparison      ::=  expression1 [ ("&lt;" | "=" | "&gt;") expression1 ]
-term2           ::=  comparison [ "AND" comparison ]
-s-expression    ::=  term2 [ "OR" term2 ]
-expression2     ::=  s-expression [ "IFF" s-expression ]
+<pre class="src src-pascal">factor          ::=  variable | number | <span style="color: #00ff00;">"FALSE"</span> | <span style="color: #00ff00;">"TRUE"</span> |
+                     <span style="color: #00ff00;">"NOT"</span> factor | <span style="color: #00ff00;">"("</span> expression2 <span style="color: #00ff00;">")"</span>
+term1           ::=  factor [ (<span style="color: #00ff00;">"*"</span> | <span style="color: #00ff00;">"/"</span> | <span style="color: #00ff00;">"MOD"</span>) factor ]
+expression1     ::=  term1 [ (<span style="color: #00ff00;">"+"</span> | <span style="color: #00ff00;">"-"</span>) term1 ]
+comparison      ::=  expression1 [ (<span style="color: #00ff00;">"&lt;"</span> | <span style="color: #00ff00;">"="</span> | <span style="color: #00ff00;">"&gt;"</span>) expression1 ]
+term2           ::=  comparison [ <span style="color: #00ff00;">"AND"</span> comparison ]
+s-expression    ::=  term2 [ <span style="color: #00ff00;">"OR"</span> term2 ]
+expression2     ::=  s-expression [ <span style="color: #00ff00;">"IFF"</span> s-expression ]
 </pre>
-
+</div>
 
 <p>
 This makes all infix operators more or less alike as far as the context free syntax.  There will be some obvious type restrictions: factors which are variables will have the type of the variable, constant factors have type integer or Boolean, negations are Boolean and must have a Boolean operand, parenthesised factors have the type of the expressions2.  All arithmetic and comparison operators require integer operands, the arithmetic operators return integer type and the comparisons return Boolean.  The logical infix operators all return Boolean.  It is important to keep in mind that the strict division into two types is in no way forced upon us by the machine - we could equally well have chosen to have these operators without any type enforcement.
 </p>
+
 <p>
-Statements are either assignments, procedure calls, conditionals, loops or write statements.  As an illustration only, we choose not to have a compound statement of the form "BEGIN &hellip; END", so the two kinds of statement which sometimes need an embedded statement sequence will have to have these built in.  This is done by several languages, including MODULA; a disadvantage is that the two sorts of ENDs are now compulsory even when there is only one statement in the statement sequence, and an advantage is that one is more likely to be able to track missing ENDs.
+Statements are either assignments, procedure calls, conditionals, loops or write statements.  As an illustration only, we choose not to have a compound statement of the form "BEGIN &#x2026; END", so the two kinds of statement which sometimes need an embedded statement sequence will have to have these built in.  This is done by several languages, including MODULA; a disadvantage is that the two sorts of ENDs are now compulsory even when there is only one statement in the statement sequence, and an advantage is that one is more likely to be able to track missing ENDs.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">statement  ::=  variable ":=" expression2 |
-                procedure |
-                "IF" expression2 "THEN" statementsequence "ENDIF" |
-                "WHILE" expression2 "DO" statementsequence "ENDWHILE"
-statementsequence  ::=  statement [ ";" statement ]
+<pre class="src src-pascal">statement  ::=  variable <span style="color: #00ff00;">":="</span> expression2 |
+                <span style="color: #00ffff;">procedure</span> |
+                <span style="color: #00ff00;">"IF"</span> expression2 <span style="color: #00ff00;">"THEN"</span> statementsequence <span style="color: #00ff00;">"ENDIF"</span> |
+                <span style="color: #00ff00;">"WHILE"</span> expression2 <span style="color: #00ff00;">"DO"</span> statementsequence <span style="color: #00ff00;">"ENDWHILE"</span>
+statementsequence  ::=  statement [ <span style="color: #00ff00;">";"</span> statement ]
 </pre>
-
+</div>
 
 <p>
 Since expressions are being typed, we shall insist that the tests in IF and WHILE statements are indeed of type Boolean.  The bodies of procedures and also of the main program will typically be statement sequences, so the following will be more readable:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">body   ::=   "BEGIN" statementsequence "END"
+<pre class="src src-pascal">body   ::=   <span style="color: #00ff00;">"BEGIN"</span> statementsequence <span style="color: #00ff00;">"END"</span>
 </pre>
-
+</div>
 
 <p>
 Finally, we can design the structure of a main program.  It is beneficial to program structure if declarations of variables and of procedures can be given in any order.  We have already decided that variables are to be typed, so a type indicator is needed for both types, we can make the indicator also signal that what is being declared is a variable.  Inside a procedure the same indicators serve to declare local variables.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">program   ::=   [ ("BOOLEAN" | "INTEGER") [identifier] |
-                  "PROCEDURE" identifier
-                    [ ("BOOLEAN" | "INTEGER") [identifier] ]
+<pre class="src src-pascal"><span style="color: #00ffff;">program</span>   ::=   [ (<span style="color: #00ff00;">"BOOLEAN"</span> | <span style="color: #00ff00;">"INTEGER"</span>) [identifier] |
+                  <span style="color: #00ff00;">"PROCEDURE"</span> identifier
+                    [ (<span style="color: #00ff00;">"BOOLEAN"</span> | <span style="color: #00ff00;">"INTEGER"</span>) [identifier] ]
                     body ]
-                body "."
+                body <span style="color: #00ff00;">"."</span>
 </pre>
-
+</div>
 
 <p>
 We shall insist that identifiers be declared before use, but that local variables in one procedure are not visible to the outside - so different procedures can use local variables by the same name.  We shall also require that local variables do not have the same name as global ones; this is a controversial paternalistic design decision that you may wish to discuss.
 </p>
+
 <p>
 At the end of the next section is a file containing three example programs.  The first illustrates recursion by computing factorials.  The second illustrates the operator precedences.  The third is there to illustrate what can be done by the compiler for generating code for expressions whose value is known at compile time.  
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-4" class="outline-2">
+<div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4"><span class="section-number-2">4</span> DESIGNING THE COMPILER</h2>
 <div class="outline-text-2" id="text-4">
-
-
 <p>
 "The bliss of the language designer is matched only by the torment of the language implementor."  (Ancient proverb, late 20-th Century)
 </p>
+
 <p>
 This section gives a description of the design of the compiler.  We follow the design steps recommended in Chapter 7, by distinguishing syntax and semantics.
 </p>
-
 </div>
 
-<div id="outline-container-4-1" class="outline-3">
+<div id="outline-container-sec-4-1" class="outline-3">
 <h3 id="sec-4-1"><span class="section-number-3">4.1</span> Syntax</h3>
 <div class="outline-text-3" id="text-4-1">
-
-
 <p>
 If we follow the recommendations of Chapter 7 to the letter, we would now base the parser directly on the grammar, by writing a parsing procedure for each nonterminal of the grammar.  To obtain the required visibility pattern, we should have factor innermost, and programme outermost.  But notice that all the rules for infix operators are just about identical in form, and even statement sequences are of this form.  We could make the parser much simpler by having one procedure do all the work for infix operators and even for ";", indeed it is not difficult to make it do the work for factor and for statement, too.  This will require that each infix operator (including ";") be given a numeric precedence value, and much of the parser then simply looks at the precedence of the current symbol rather than the actual symbol.  This will make it necessary that the scanner be able to tell the parser what the precedence is.
 </p>
+
 <p>
 The scanner consists of the by now familiar procedure getch and the procedure getsym which reads symbols.  The handling of numeric symbols is more than familiar by now, whereas for non-numeric symbols two kinds of cases are distinguished: alphabetic and special; they differ in the kind of termination condition.  Since the language is case insensitive, lower case letters have to be translated to upper case.  When a complete symbol has been read into an alfa array, the table of reserved words has to be searched.  Since all entries in this table are known at compile time, they have been sorted at the time they were entered.  Consequently a binary search can be used.  If the symbol is found there, the parser needs to be told what kind of symbol it was, and what its precedence was.  If the symbol was not a reserved word, then a search through the symbol table is conducted.  Since the entries into the symbol table have been in no particular order, a linear search (with a sentinel) has to be used.  If the symbol has not been found, then it is entered, and the fact that it was a new identifier has to be reported to the parser.  (Note that many compilers would leave the entering into the symbol table to whatever parsing procedure handles declarations.)
 </p>
+
 <p>
 .P The (global) enumeration type symbol comprises 25 values (add .. hlt) that are used in both the compiler and the interpreter, and 28 values (noop .. rparsym) that are used only in the compiler.  To make the entire program more modular, a procedure initialise is used to enter the reserved words.  For each reserved word a local procedure is called which will enter the external representation (e.g. 'BEGIN') and the internal representation (a value of the enumeration type symbol, in this case the value beginsym).  In addition a small number ('1' for beginsym) is entered to indicate the precedence of the symbol.  When the scanner recognises a reserved word, it reports to the parser both the internal representation and its precedence.  The very simple error handling procedure writes a message containing the most recently seen symbol and the specific error message transmitted via a parameter from the parser.  This completes the utilities, and we now concentrate on the syntax and semantics:
 </p>
-
 </div>
 
-<div id="outline-container-4-1-1" class="outline-4">
+<div id="outline-container-sec-4-1-1" class="outline-4">
 <h4 id="sec-4-1-1"><span class="section-number-4">4.1.1</span> Step 1: <i>Visibility requirements</i>.</h4>
 <div class="outline-text-4" id="text-4-1-1">
-
-<p>As may be seen from the grammar, programme needs access to body which needs access to statementsequence, etc.  All visibility requirements are easily met by nesting.  However, because of a possible simplification for all the infix operators, we do not describe this aspect further here.
+<p>
+As may be seen from the grammar, programme needs access to body which needs access to statementsequence, etc.  All visibility requirements are easily met by nesting.  However, because of a possible simplification for all the infix operators, we do not describe this aspect further here.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-1-2" class="outline-4">
+<div id="outline-container-sec-4-1-2" class="outline-4">
 <h4 id="sec-4-1-2"><span class="section-number-4">4.1.2</span> Step 2: <i>Context free parsing</i>:</h4>
 <div class="outline-text-4" id="text-4-1-2">
-
-<p>This should present no problem for the non-terminals programme and body.  The principal parsing procedure programme is called only from main, so it could equally well be included there.  Following the grammar, a WHILE-loop is needed to handle declarations - for global variables and for procedures.  Any procedure of course may have local variables, so another WHILE-loop handles those.  All variable declarations can be handled in almost the same way, so this lends itself to the use of a parsing procedure to handle sequences of identifiers.  A procedure declaration needs to call body, and the main program does the same, terminating with a check for the final ".".  The parsing procedure for body is obvious.
+<p>
+This should present no problem for the non-terminals programme and body.  The principal parsing procedure programme is called only from main, so it could equally well be included there.  Following the grammar, a WHILE-loop is needed to handle declarations - for global variables and for procedures.  Any procedure of course may have local variables, so another WHILE-loop handles those.  All variable declarations can be handled in almost the same way, so this lends itself to the use of a parsing procedure to handle sequences of identifiers.  A procedure declaration needs to call body, and the main program does the same, terminating with a check for the final ".".  The parsing procedure for body is obvious.
 </p>
+
 <p>
 Context free parsing for the remainder of the grammar can be made surprisingly simple.  All other non-terminals are potentially recursive, and those for infix operators are identical in form.  To save writing a lot of repetitive code, we deal with the rest of the context free parsing with just one recursive procedure which has a numeric value parameter which mostly indicates the precedence level of operators.  All infix operators, including ";", are handled by the following:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">call recursively, with actual parameter incremented by 1
-WHILE the precedence of the current symbol
-        is equal to the actual parameter DO
-    BEGIN
+<pre class="src src-pascal">call recursively, <span style="color: #00ffff;">with</span> actual parameter incremented by 1
+<span style="color: #00ffff;">WHILE</span> the precedence <span style="color: #00ffff;">of</span> the current symbol
+        <span style="color: #00ffff;">is</span> equal <span style="color: #00ffff;">to</span> the actual parameter <span style="color: #00ffff;">DO</span>
+    <span style="color: #00ffff;">BEGIN</span>
     getsym;
     call recursively, actual parameter incremented by 1
-    END;
+    <span style="color: #00ffff;">END</span>;
 </pre>
-
+</div>
 
 <p>
 The two parameter values for which this pattern is not called for are treated separately: for statements and for factors.  These are modelled directly on the grammar.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-1-3" class="outline-4">
+<div id="outline-container-sec-4-1-3" class="outline-4">
 <h4 id="sec-4-1-3"><span class="section-number-4">4.1.3</span> Step 3: <i>Declarations</i>:</h4>
 <div class="outline-text-4" id="text-4-1-3">
-
-<p>We now come to the context sensitive aspects of the parser.  First comes the management of the symbol table to enforce that identifiers have to be declared before use.  Much of the work can already be done by the scanner: when a symbol is not a reserved word the current symbol table is searched, and if the symbol is not found then it is entered as new.  The entry is completed either by the parsing procedure for global or local variables, or by programme for procedures.  For procedure declarations it is important to hide the names of all local variables from the outside.  So when local variables are being declared they have to remain visible up to the end of the procedure to which they are local, and then they have to disappear.  A simple way of achieving this is to reset the top of the symbol table to what it was before the locals were being declared.  So the top of the symbol table has to be saved before any locals are being declared, and when the compilation of the body of the procedure has been completed the top of the symbol table has to be restored to what it was when saved.
+<p>
+We now come to the context sensitive aspects of the parser.  First comes the management of the symbol table to enforce that identifiers have to be declared before use.  Much of the work can already be done by the scanner: when a symbol is not a reserved word the current symbol table is searched, and if the symbol is not found then it is entered as new.  The entry is completed either by the parsing procedure for global or local variables, or by programme for procedures.  For procedure declarations it is important to hide the names of all local variables from the outside.  So when local variables are being declared they have to remain visible up to the end of the procedure to which they are local, and then they have to disappear.  A simple way of achieving this is to reset the top of the symbol table to what it was before the locals were being declared.  So the top of the symbol table has to be saved before any locals are being declared, and when the compilation of the body of the procedure has been completed the top of the symbol table has to be restored to what it was when saved.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-1-4" class="outline-4">
+<div id="outline-container-sec-4-1-4" class="outline-4">
 <h4 id="sec-4-1-4"><span class="section-number-4">4.1.4</span> Step 4: <i>Types</i>.</h4>
 <div class="outline-text-4" id="text-4-1-4">
-
-<p>The other aspect of the context sensitive syntax concerns types.  When variables are being entered in the symbol table, their type is recorded by the procedure for global and local variables.  If that variable is later used, its type is immediately available.  So when a variable is seen in factor, the all-in-one parsing procedure needs a VAR parameter which has to be set to the type of the variable.  All this is already familiar from our earlier program TYPROC in Chapter 7, including the treatment of constants, all operators, the required type checking there and the assignment of result types, the Boolean type of conditions in IF and WHILE statements and the type agreement in assignment statements.
+<p>
+The other aspect of the context sensitive syntax concerns types.  When variables are being entered in the symbol table, their type is recorded by the procedure for global and local variables.  If that variable is later used, its type is immediately available.  So when a variable is seen in factor, the all-in-one parsing procedure needs a VAR parameter which has to be set to the type of the variable.  All this is already familiar from our earlier program TYPROC in Chapter 7, including the treatment of constants, all operators, the required type checking there and the assignment of result types, the Boolean type of conditions in IF and WHILE statements and the type agreement in assignment statements.
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-4-2" class="outline-3">
+<div id="outline-container-sec-4-2" class="outline-3">
 <h3 id="sec-4-2"><span class="section-number-3">4.2</span> Semantics</h3>
 <div class="outline-text-3" id="text-4-2">
-
-<p>Since the machine and its code is already supplied, we do not have to design code that is eventually passed to the machine.  The code has to be emitted to a FILE of instructions, but before the code is emitted, it has to be manipulated slightly in an internal form.  The simplest internal form is that of an ARRAY of instructions.  The internal code to be generated has to have the right instructions with the right references to memory and to the right registers.  These are three separate concerns.
+<p>
+Since the machine and its code is already supplied, we do not have to design code that is eventually passed to the machine.  The code has to be emitted to a FILE of instructions, but before the code is emitted, it has to be manipulated slightly in an internal form.  The simplest internal form is that of an ARRAY of instructions.  The internal code to be generated has to have the right instructions with the right references to memory and to the right registers.  These are three separate concerns.
 </p>
-
 </div>
 
-<div id="outline-container-4-2-1" class="outline-4">
+<div id="outline-container-sec-4-2-1" class="outline-4">
 <h4 id="sec-4-2-1"><span class="section-number-4">4.2.1</span> Step 5: <i>Memory management</i>.</h4>
 <div class="outline-text-4" id="text-4-2-1">
-
-<p>In the interpreter there is a data structure called the stack which holds the values of global and local variables.  When a procedure is entered, space for its local variables is reserved on this stack, and if a procedure is being called recursively then there will be several instances of local variables.  None of this exists at compile time, except that the ordering of local variables in a procedure is known, and when all local variables of a procedure have been declared, their total number is known.  When the body of the procedure has been compiled, the count of the data on the stack is restored in the same way as the top of the symbol table is restored.  Thus, whenever a variable is declared its absolute address (for globals) or its relative address (for locals) has to be entered into the symbol table.  This is best done when its type is being recorded by the parsing procedure for global and local variables.  The address will later be needed in assignment statements and in factors.  Similarly, when a procedure is being declared the total number of its local variables has to be recorded for later use in procedure call statements.
+<p>
+In the interpreter there is a data structure called the stack which holds the values of global and local variables.  When a procedure is entered, space for its local variables is reserved on this stack, and if a procedure is being called recursively then there will be several instances of local variables.  None of this exists at compile time, except that the ordering of local variables in a procedure is known, and when all local variables of a procedure have been declared, their total number is known.  When the body of the procedure has been compiled, the count of the data on the stack is restored in the same way as the top of the symbol table is restored.  Thus, whenever a variable is declared its absolute address (for globals) or its relative address (for locals) has to be entered into the symbol table.  This is best done when its type is being recorded by the parsing procedure for global and local variables.  The address will later be needed in assignment statements and in factors.  Similarly, when a procedure is being declared the total number of its local variables has to be recorded for later use in procedure call statements.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-2-2" class="outline-4">
+<div id="outline-container-sec-4-2-2" class="outline-4">
 <h4 id="sec-4-2-2"><span class="section-number-4">4.2.2</span> Step 6: <i>Generating opcodes</i>:</h4>
 <div class="outline-text-4" id="text-4-2-2">
-
-<p>Code in an internal ARRAY is best generated by a now familiar procedure with three parameters which become the three fields of an instruction.  Initially we concentrate on the operation field: Inside factor all constants generate an immediate load operation, global and local variables generate a global load or local load, negations generate a negation operation - just as for postfix.  All infix operators generate the corresponding machine operation, except that for logical conjunction we can use arithmetic multiplication.  Again, the instructions are generated after both operands have been compiled - just as for postfix.  In statements, assignment statements to globals or locals generate global or local store operations, the instructions are generated after the expression has been processed.  Statements which are procedure calls generate call instructions.  In IF and WHILE statements a conditional jump instruction has to be generated after the expression has been processed, the effect of the jump is to skip the THEN or DO part.  In WHILE statements after the DO part an unconditional jump has to be generated to jump back to the test.
+<p>
+Code in an internal ARRAY is best generated by a now familiar procedure with three parameters which become the three fields of an instruction.  Initially we concentrate on the operation field: Inside factor all constants generate an immediate load operation, global and local variables generate a global load or local load, negations generate a negation operation - just as for postfix.  All infix operators generate the corresponding machine operation, except that for logical conjunction we can use arithmetic multiplication.  Again, the instructions are generated after both operands have been compiled - just as for postfix.  In statements, assignment statements to globals or locals generate global or local store operations, the instructions are generated after the expression has been processed.  Statements which are procedure calls generate call instructions.  In IF and WHILE statements a conditional jump instruction has to be generated after the expression has been processed, the effect of the jump is to skip the THEN or DO part.  In WHILE statements after the DO part an unconditional jump has to be generated to jump back to the test.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-2-3" class="outline-4">
+<div id="outline-container-sec-4-2-3" class="outline-4">
 <h4 id="sec-4-2-3"><span class="section-number-4">4.2.3</span> Step 7: <i>Memory references</i>.</h4>
 <div class="outline-text-4" id="text-4-2-3">
-
-<p>As described so far, memory references in load and store operations have not yet been inserted.  Inside factors, in load operations for global and local variables the required second address is taken from the symbol table, in load operations for literals the value for the second address field is either the number returned by the scanner, or 0 for FALSE and 1 for TRUE.  Inside assignment statements the first address field has to be taken from the symbol table; but since the instruction is generated well after the variable is seen, the address has to be saved for later generation.
+<p>
+As described so far, memory references in load and store operations have not yet been inserted.  Inside factors, in load operations for global and local variables the required second address is taken from the symbol table, in load operations for literals the value for the second address field is either the number returned by the scanner, or 0 for FALSE and 1 for TRUE.  Inside assignment statements the first address field has to be taken from the symbol table; but since the instruction is generated well after the variable is seen, the address has to be saved for later generation.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-2-4" class="outline-4">
+<div id="outline-container-sec-4-2-4" class="outline-4">
 <h4 id="sec-4-2-4"><span class="section-number-4">4.2.4</span> Step 8: <i>Code references</i>.</h4>
 <div class="outline-text-4" id="text-4-2-4">
-
-<p>Several instructions which are generated inside statements require an address field which is a code address.  Procedure calls are easiest: here the code address is taken from the symbol table as the instruction is being generated, and the other field, the number of locals (+ 2, as required by the machine) is also taken from the table.  A little trickier are the conditional and unconditional jump instructions in IF and WHILE statements.  As the conditional jump instructions are generated, the target address of the jump is not yet known since the THEN or DO parts have not been read yet.  A very simple solution is a "fixup": as the instruction is being generated, we save in a local variable where in the code this incomplete instruction resides; and when the THEN or DO part has been processed the required address field of the instruction at the saved address is set to the next instruction number that is due to be generated.  Note that the need for these fixups is the only reason for not emitting the code directly to a file.  In WHILE statements the unconditional jump at the end of the DO part is a little easier: before processing the expression we record in a local variable the first instruction number due to be generated by the expression, and when generating the unconditional jump we use that saved code address.  A final point concerns the main program.  When the code that is generated is eventually interpreted, it has to start at the beginning of the code generated by programme, and not at any of the procedures.  A convenient way of ensuring that this happens is to let the very first instruction, generated right at the beginning of programme, be a call of the body of the code for programme.  Since the address of what is being called is not known at the beginning of the program, an incomplete call instruction has to be generated by programme before any declarations are processed, and when the processing of the body is about to start, this instruction can be fixed up with the now known number of globals and the address of the next instruction due to be generated by the body.
+<p>
+Several instructions which are generated inside statements require an address field which is a code address.  Procedure calls are easiest: here the code address is taken from the symbol table as the instruction is being generated, and the other field, the number of locals (+ 2, as required by the machine) is also taken from the table.  A little trickier are the conditional and unconditional jump instructions in IF and WHILE statements.  As the conditional jump instructions are generated, the target address of the jump is not yet known since the THEN or DO parts have not been read yet.  A very simple solution is a "fixup": as the instruction is being generated, we save in a local variable where in the code this incomplete instruction resides; and when the THEN or DO part has been processed the required address field of the instruction at the saved address is set to the next instruction number that is due to be generated.  Note that the need for these fixups is the only reason for not emitting the code directly to a file.  In WHILE statements the unconditional jump at the end of the DO part is a little easier: before processing the expression we record in a local variable the first instruction number due to be generated by the expression, and when generating the unconditional jump we use that saved code address.  A final point concerns the main program.  When the code that is generated is eventually interpreted, it has to start at the beginning of the code generated by programme, and not at any of the procedures.  A convenient way of ensuring that this happens is to let the very first instruction, generated right at the beginning of programme, be a call of the body of the code for programme.  Since the address of what is being called is not known at the beginning of the program, an incomplete call instruction has to be generated by programme before any declarations are processed, and when the processing of the body is about to start, this instruction can be fixed up with the now known number of globals and the address of the next instruction due to be generated by the body.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-2-5" class="outline-4">
+<div id="outline-container-sec-4-2-5" class="outline-4">
 <h4 id="sec-4-2-5"><span class="section-number-4">4.2.5</span> Step 9: <i>Register references</i>.</h4>
 <div class="outline-text-4" id="text-4-2-5">
-
-<p>This is perhaps the hardest part, and it is best to reflect again on evaluation of postfix expressions on a stack, as described in our truth table program.  The fact that we now have integer operands makes no difference.  When evaluating expressions on a stack, all operands are pushed onto the stack and all operators take their operands from the top few elements of the stack.  The values that are to be pushed or operated on are typically not known at compile time, but their position on the stack is known - at least relative to what the stack was before the evaluation of the expression commenced.  For our language we can evaluate expressions on a make-believe stack if we consider the registers to form a stack, starting with register 0 as the lowest stack position.  So, when assignment statements or IF and WHILE statements require an expression to be evaluated, they can tell the all-in-one procedure that the value is expected in register 0.  This already settles the register references in store and conditional jump instructions.  The telling is best done by a new parameter which is the numeric name of the register where a value is to be found.  When the all-in-one parsing procedure calls itself recursively for infix operators it first calls itself with its own register parameter, and while the operator matches the current precedence it calls itself with the successor of that register as a parameter and upon return from that the code that has been generated from the two calls will leave two values in adjacent registers - hence the required address fields for all infix operators are the ones given by this new parameter and its successor.  Eventually the highest precedence will be reached, and load instructions will be generated - for these the required register address is this parameter.
+<p>
+This is perhaps the hardest part, and it is best to reflect again on evaluation of postfix expressions on a stack, as described in our truth table program.  The fact that we now have integer operands makes no difference.  When evaluating expressions on a stack, all operands are pushed onto the stack and all operators take their operands from the top few elements of the stack.  The values that are to be pushed or operated on are typically not known at compile time, but their position on the stack is known - at least relative to what the stack was before the evaluation of the expression commenced.  For our language we can evaluate expressions on a make-believe stack if we consider the registers to form a stack, starting with register 0 as the lowest stack position.  So, when assignment statements or IF and WHILE statements require an expression to be evaluated, they can tell the all-in-one procedure that the value is expected in register 0.  This already settles the register references in store and conditional jump instructions.  The telling is best done by a new parameter which is the numeric name of the register where a value is to be found.  When the all-in-one parsing procedure calls itself recursively for infix operators it first calls itself with its own register parameter, and while the operator matches the current precedence it calls itself with the successor of that register as a parameter and upon return from that the code that has been generated from the two calls will leave two values in adjacent registers - hence the required address fields for all infix operators are the ones given by this new parameter and its successor.  Eventually the highest precedence will be reached, and load instructions will be generated - for these the required register address is this parameter.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-4-2-6" class="outline-4">
+<div id="outline-container-sec-4-2-6" class="outline-4">
 <h4 id="sec-4-2-6"><span class="section-number-4">4.2.6</span> Step 10: <i>Constant folding</i>.</h4>
 <div class="outline-text-4" id="text-4-2-6">
-
-<p>If the values of the operands of an operator are already known at compile time, the resulting value need not be computed every time the program is run, but could be computed at compile time.  If the two instructions preceding an infix operator are immediate load instructions, then the operator could be applied to the two values to be loaded, and the two load instructions replaced by a new one to load the computed value - no instruction is generated for the operator.  One additional benefit of the all-in-one procedure for all infix operators is that the test for two successive immediate load instructions can be done in just one place, when the code for the second operand has been generated and before the code for the operator is generated.  If the test is passed, a CASE statement computes the required value depending on what the infix operator was, replaces the first value to be loaded by the computed one and deletes the second load instruction.  Essentially the same is done for the unary negation operator.
+<p>
+If the values of the operands of an operator are already known at compile time, the resulting value need not be computed every time the program is run, but could be computed at compile time.  If the two instructions preceding an infix operator are immediate load instructions, then the operator could be applied to the two values to be loaded, and the two load instructions replaced by a new one to load the computed value - no instruction is generated for the operator.  One additional benefit of the all-in-one procedure for all infix operators is that the test for two successive immediate load instructions can be done in just one place, when the code for the second operand has been generated and before the code for the operator is generated.  If the test is passed, a CASE statement computes the required value depending on what the infix operator was, replaces the first value to be loaded by the computed one and deletes the second load instruction.  Essentially the same is done for the unary negation operator.
 </p>
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-4-3" class="outline-3">
+<div id="outline-container-sec-4-3" class="outline-3">
 <h3 id="sec-4-3"><span class="section-number-3">4.3</span> A Look Inside</h3>
 <div class="outline-text-3" id="text-4-3">
-
-
 <p>
 The following is the total output from three runs of the compiler and of the interpreter.  Each run consists of
 </p>
-<ol>
+
+<ol class="org-ol">
 <li>a program (here echoed by the operating system, not by the compiler),
 </li>
 <li>a readable form of the code written by the compiler, and
@@ -651,47 +575,46 @@ The following is the total output from three runs of the compiler and of the int
 </li>
 </ol>
 
-
 <p>
 The three programs illustrate recursion, large expressions, and constant folding.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">$ ! compile a program to compute factorials
+<pre class="src src-pascal">$ ! compile a program <span style="color: #00ffff;">to</span> compute factorials
 $ RUN 32SYRECC.EXE
 ?
-INTEGER argument value
+<span style="color: #ff00ff;">INTEGER</span> argument value
 
-PROCEDURE factorial
-    INTEGER temporary
-    BEGIN
-    IF argument = 0 THEN
+<span style="color: #00ffff;">PROCEDURE</span> <span style="color: #ffffff; font-weight: bold;">factorial</span>
+    <span style="color: #ff00ff;">INTEGER</span> temporary
+    <span style="color: #00ffff;">BEGIN</span>
+    <span style="color: #00ffff;">IF</span> argument = 0 <span style="color: #00ffff;">THEN</span>
         value := 1
         ENDIF;
-    IF argument &lt;&gt; 0 THEN
+    <span style="color: #00ffff;">IF</span> argument &lt;&gt; 0 <span style="color: #00ffff;">THEN</span>
         temporary := argument;
         argument := argument - 1;
         factorial;
         value := temporary * value;
         argument := temporary
         ENDIF
-    END
+    <span style="color: #00ffff;">END</span>
 
-                total of 1 variable(s)
+                total <span style="color: #00ffff;">of</span> 1 variable(s)
 
-BEGIN
+<span style="color: #00ffff;">BEGIN</span>
 argument := 0;
-WHILE argument &lt;= 10 DO
+<span style="color: #00ffff;">WHILE</span> argument &lt;= 10 <span style="color: #00ffff;">DO</span>
     factorial;
-    WRITE value;
+    <span style="color: #00ffff;">WRITE</span> value;
     argument := argument + 1
     ENDWHILE
-END .
+<span style="color: #00ffff;">END</span> .
 
-                total of 2 variable(s)
+                total <span style="color: #00ffff;">of</span> 2 variable(s)
 
-code written to 32SYRECI.TMP :
+code written <span style="color: #00ffff;">to</span> 32SYRECI.TMP :
  address             op       ad1       ad2
        1            CAL        26         2
        2      LOADGLOBL         0         0
@@ -751,26 +674,26 @@ SYRECI ...
    3628800
 $
 $
-$ ! compile a program to illustrate operator precedences
+$ ! compile a program <span style="color: #00ffff;">to</span> illustrate operator precedences
 $ RUN 32SYRECC.EXE
 ?
-INTEGER i j k
-BOOLEAN p q r
-BEGIN
+<span style="color: #ff00ff;">INTEGER</span> i j k
+<span style="color: #ff00ff;">BOOLEAN</span> p q r
+<span style="color: #00ffff;">BEGIN</span>
 i := 1; j := 2; k := 3; p := TRUE; q := FALSE; r := TRUE;
-WRITE
+<span style="color: #00ffff;">WRITE</span>
       k * 1  -  j * i   &gt;   i + j + k * i
-    AND
+    <span style="color: #00ffff;">AND</span>
       k   &lt;   i + j
-  OR
-    p AND NOT q
-  OR
-    r AND i = j - k AND NOT (k + i &gt; j - i * i)
-END .
+  <span style="color: #00ffff;">OR</span>
+    p <span style="color: #00ffff;">AND</span> <span style="color: #00ffff;">NOT</span> q
+  <span style="color: #00ffff;">OR</span>
+    r <span style="color: #00ffff;">AND</span> i = j - k <span style="color: #00ffff;">AND</span> <span style="color: #00ffff;">NOT</span> (k + i &gt; j - i * i)
+<span style="color: #00ffff;">END</span> .
 
-                total of 6 variable(s)
+                total <span style="color: #00ffff;">of</span> 6 variable(s)
 
-code written to 32SYRECI.TMP :
+code written <span style="color: #00ffff;">to</span> 32SYRECI.TMP :
  address             op       ad1       ad2
        1            CAL         2         6
        2      LOADIMMED         0         1
@@ -839,21 +762,21 @@ SYRECI ...
   TRUE
 $
 
-$! compile a program to illustrate constant folding
+$! compile a program <span style="color: #00ffff;">to</span> illustrate constant folding
 $ RUN 32SYRECC.EXE
 ?
-BEGIN
-WRITE
+<span style="color: #00ffff;">BEGIN</span>
+<span style="color: #00ffff;">WRITE</span>
     1 * (5000 + 5000) +
     2 * (600 + 400) +
     3 * (70 + 30) +
     4 * (8 + 2) +
     5 * (1000 - 900 - 90 - 9)
-END .
+<span style="color: #00ffff;">END</span> .
 
-                total of 0 variable(s)
+                total <span style="color: #00ffff;">of</span> 0 variable(s)
 
-code written to 32SYRECI.TMP :
+code written <span style="color: #00ffff;">to</span> 32SYRECI.TMP :
  address             op       ad1       ad2
        1            CAL         2         0
        2      LOADIMMED         0     12345
@@ -865,205 +788,163 @@ $ RUN 32SYRECI.EXE
 SYRECI ...
      12345
 </pre>
-
-
 </div>
 </div>
-
 </div>
-
-<div id="outline-container-5" class="outline-2">
+</div>
+<div id="outline-container-sec-5" class="outline-2">
 <h2 id="sec-5"><span class="section-number-2">5</span> The Compiler</h2>
 <div class="outline-text-2" id="text-5">
-
-
 <p>
 This version of the notes does not include the sources.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6" class="outline-2">
+<div id="outline-container-sec-6" class="outline-2">
 <h2 id="sec-6"><span class="section-number-2">6</span> Exercises and Reading</h2>
 <div class="outline-text-2" id="text-6">
-
-
 <p>
 Both the high level language treated in this chapter and the virtual machine with its low level language lend themselves to extensive improvements.
 </p>
-
 </div>
 
-<div id="outline-container-6-1" class="outline-3">
+<div id="outline-container-sec-6-1" class="outline-3">
 <h3 id="sec-6-1"><span class="section-number-3">6.1</span> <i>Manual</i>:</h3>
 <div class="outline-text-3" id="text-6-1">
-
-<p>In section 2 of this chapter the more important design decisions for the high level language were discussed.  But in a manual one does not want such a discussion, only a very precise description of the language including any necessary details of the implementation.  Write such a manual.  Base your manual either on the information you have now, or on some other design decisions you made yourself.
+<p>
+In section 2 of this chapter the more important design decisions for the high level language were discussed.  But in a manual one does not want such a discussion, only a very precise description of the language including any necessary details of the implementation.  Write such a manual.  Base your manual either on the information you have now, or on some other design decisions you made yourself.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-2" class="outline-3">
+<div id="outline-container-sec-6-2" class="outline-3">
 <h3 id="sec-6-2"><span class="section-number-3">6.2</span> <i>Use of identifiers</i>:</h3>
 <div class="outline-text-3" id="text-6-2">
-
-<ol>
+<ol class="org-ol">
 <li>As designed so far, the language forbids the re-use of identifiers even where this would be quite harmless. Identify these cases, and then discuss whether more flexibility should be allowed.
-
 </li>
+
 <li>Whether or not you thought that it is a good idea, change the manual and the implementation to allow maximum flexibility for the user.
 </li>
 </ol>
-
-
 </div>
-
 </div>
-
-<div id="outline-container-6-3" class="outline-3">
+<div id="outline-container-sec-6-3" class="outline-3">
 <h3 id="sec-6-3"><span class="section-number-3">6.3</span> <i>Records and arrays</i>:</h3>
 <div class="outline-text-3" id="text-6-3">
-
-<p>Try to add records to the high level language.  Try to add arrays to the high level language - restrict yourself to one dimensional arrays initially.  Are any new instructions needed for the machine?
+<p>
+Try to add records to the high level language.  Try to add arrays to the high level language - restrict yourself to one dimensional arrays initially.  Are any new instructions needed for the machine?
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-4" class="outline-3">
+<div id="outline-container-sec-6-4" class="outline-3">
 <h3 id="sec-6-4"><span class="section-number-3">6.4</span> <i>Constant folding</i>:</h3>
 <div class="outline-text-3" id="text-6-4">
-
-<p>The compiler can fold constants in expressions such as "a + 2 + 3" by adding the 2 and the 3 at compile time and then generating the same code as for "a + 5".  But the compiler cannot handle the possible folding of constants in "2 + a + 3", because the two constants 2 and 3 do not occur consecutively.  How difficult would it be to handle constant folding here?  Would it be easier if the code were in tree format?
+<p>
+The compiler can fold constants in expressions such as "a + 2 + 3" by adding the 2 and the 3 at compile time and then generating the same code as for "a + 5".  But the compiler cannot handle the possible folding of constants in "2 + a + 3", because the two constants 2 and 3 do not occur consecutively.  How difficult would it be to handle constant folding here?  Would it be easier if the code were in tree format?
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-5" class="outline-3">
+<div id="outline-container-sec-6-5" class="outline-3">
 <h3 id="sec-6-5"><span class="section-number-3">6.5</span> <i>A different machine</i>:</h3>
 <div class="outline-text-3" id="text-6-5">
-
-<p>The hardware manufacturers have decided to delete the halt instruction.  Fix the compiler.  The manufacturers have decided to delete the unconditional jump instruction. Fix the compiler.  The manufacturers have decided to halve the number of comparison operators.  Which ones should they retain? Fix the compiler.  The hardware manufacturers have noticed that the base register and the top of stack perform complementary functions, and they wish to replace this pair of registers by just one.  Advise them how this can be done in a way that does not require any change to the compiler.  Alternatively, advise them how it can be done by letting the return instruction make use of an address field to decrement the base register.
+<p>
+The hardware manufacturers have decided to delete the halt instruction.  Fix the compiler.  The manufacturers have decided to delete the unconditional jump instruction. Fix the compiler.  The manufacturers have decided to halve the number of comparison operators.  Which ones should they retain? Fix the compiler.  The hardware manufacturers have noticed that the base register and the top of stack perform complementary functions, and they wish to replace this pair of registers by just one.  Advise them how this can be done in a way that does not require any change to the compiler.  Alternatively, advise them how it can be done by letting the return instruction make use of an address field to decrement the base register.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-6" class="outline-3">
+<div id="outline-container-sec-6-6" class="outline-3">
 <h3 id="sec-6-6"><span class="section-number-3">6.6</span> <i>Instruction folding</i>:</h3>
 <div class="outline-text-3" id="text-6-6">
-
-<p>For simple assignment statements such as "a := 5" the compiler has to generate two instructions:
+<p>
+For simple assignment statements such as "a := 5" the compiler has to generate two instructions:
 </p>
-<ol>
+
+<ol class="org-ol">
 <li>to load 5 into a register, and
 </li>
 <li>to store the value in that register at the location for a.
 </li>
 </ol>
 
-
 <p>
 It would clearly be more efficient if this could be done by one instruction.  There is no such instruction in the machine as described by the interpreter program, so you will have to add one.  But actually you need two, depending on whether the variable a is global or local.  Also, if instead of the constant value 5 the value of a variable, say b, is to be assigned to a, then the same kind of optimisation is possible.  How many new single instructions do you need now?  All these modifications to the interpreter are of no use unless the compiler can recognise the special cases and generate the new instructions appropriately.  Modify the compiler to handle all the new instructions.  There is another class of possible optimisations for assignment statements of the form "a := a + b", where a is a global or local variable and b is a constant (possibly folded) or a global or local variable.  Can you devise single instructions for these assignment statements?  Of course these optimising extensions have to be applied to operators other than addition.  The total number of machine instructions grows very rapidly.  Study the PDP11 or the VAX assembly language to see how this explosion can be prevented by adding the concept of addressing mode.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-7" class="outline-3">
+<div id="outline-container-sec-6-7" class="outline-3">
 <h3 id="sec-6-7"><span class="section-number-3">6.7</span> <i>Parameters</i>:</h3>
 <div class="outline-text-3" id="text-6-7">
-
-
 <p>
 As the example program which computes factorials shows, it is possible to use global variables to serve the same purpose as (value) parameters to procedures.  So parameters are not really necessary, as long as there are local variables available in which the value of global variables can be saved when necessary.  But the technique can be cumbersome.  Extend the manual and the compiler to handle (properly typed) value parameters.  Can you do all this without adding any new instructions to the interpreter?  Can you add VAR parameters without adding new instructions to the interpreter?
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-8" class="outline-3">
+<div id="outline-container-sec-6-8" class="outline-3">
 <h3 id="sec-6-8"><span class="section-number-3">6.8</span> <i>Functions</i>:</h3>
 <div class="outline-text-3" id="text-6-8">
-
-
 <p>
 As the factorial program shows, programming with procedures is often possible where programming with functions would be more natural.  Try to add (properly typed) functions to the language, without adding any new features to the interpreter.  Can your extension handle recursive function calls properly?  Since function calls occur inside expressions, is there a problem about the limited number (8) of registers?  You might decide to save the contents of some registers somewhere in memory before the body of the function is executed, and to restore them afterwards, but the hard part is to avoid any unnecessary saves and restores.  The exercise will make you appreciate the advantages of a pure stack machine (i.e. without registers) as in Wirth's PLZERO machine.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-9" class="outline-3">
+<div id="outline-container-sec-6-9" class="outline-3">
 <h3 id="sec-6-9"><span class="section-number-3">6.9</span> <i>Input and output</i>:</h3>
 <div class="outline-text-3" id="text-6-9">
-
-
 <p>
 The machine has an unrealistically high level machine instruction for writing integers.  Replace this by an instruction for writing characters given by an ASCII number.  Change the compiler so that for each number to be written it will write the correct string of digits.  This can be done by in-line code or by a procedure to be called whenever a number is to be written.  Alternatively, design an IO library of "system" calls for such tasks.  Do the same for reading characters and reading integers.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-10" class="outline-3">
+<div id="outline-container-sec-6-10" class="outline-3">
 <h3 id="sec-6-10"><span class="section-number-3">6.10</span> <i>An assembler</i>:</h3>
 <div class="outline-text-3" id="text-6-10">
-
-
 <p>
 Design a low level assembly language for this machine.  Write an assembler. You might even include macros.
 </p>
 </div>
-
 </div>
-
-<div id="outline-container-6-11" class="outline-3">
+<div id="outline-container-sec-6-11" class="outline-3">
 <h3 id="sec-6-11"><span class="section-number-3">6.11</span> <i>Reading</i>:</h3>
 <div class="outline-text-3" id="text-6-11">
-
-
 <p>
 For expositions of the implementation of block-structured languages, see Wirth (1976, Ch. 5, esp. Sec. 5.10) and MacLennan (1983, Ch. 6).
 </p>
+
 <p>
 For a compiler along the same lines as PLZERO, but for a much larger language, see Wirth's PASCAL-S reprinted in Berry (1981).
 </p>
+
 <p>
 An excellent book on compilers which uses PASCAL-S as the principal example is Rees and Robson (1988).
 </p>
+
 <p>
 See also The Open University (1986) for the stepwise development
 of a compiler based on PASCAL-S (the acknowledgement, seemingly as an afterthought, appears in Vol. 1, p. 20, footnote).
 </p>
+
 <p>
 Terry (1986) extends PASCAL-S with concurrency and monitors.  Brinch Hansen (1985) is another excellent book describing a two pass compiler-interpreter for a substantial subset of PASCAL.
 </p>
+
 <p>
 If you are familiar with UNIX and the C programming language, you might like to look at Kernighan and Pike (1984, Chapter 8) for a small compiler written largely in the compiler writing tool YACC.
 </p>
+
 <p>
 For a more detailed exposition of YACC, and a development of a compiler for a subset of C, see Schreiner and Friedman (1985).  Another small compiler, written in LEX and YACC, producing code for a hypothetical register machine, is described in Bennett (1990).
 </p>
+
 <p>
 Loeckx, Mehlhorn and Wilhelm (1988) give a systematic development and an (informal) correctness proof for a compiler.  The source language is similar to PASCAL, the target language is for a low level machine which in some respects is even simpler than those for PLZERO, PASCAL-S and the P-CODE machine.
 </p>
+
 <p>
 A very sophisticated interpreter for the unconventional language ICON is described in Griswold and Griswold (1986).
-</p></div>
+</p>
 </div>
 </div>
 </div>
-
-<div id="postamble">
-<p class="date">Date: 2013-01-11 07:37:57 CST</p>
-<p class="author">Author: michal</p>
-<p class="creator">Org version 7.8.11 with Emacs version 24</p>
-<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
-
 </div>
 </body>
 </html>
